@@ -1,0 +1,10 @@
+- main "Daniel Tiwari development website" [ref=e2]:
+  - generic [ref=e3]:
+    - paragraph [ref=e4]: Development website
+    - heading "Daniel Tiwari" [level=1] [ref=e5]
+    - paragraph [ref=e6]: This staging site is connected for the new Daniel Tiwari website build. The full site is being prepared and will be published here during development.
+    - generic "Project status" [ref=e7]:
+      - generic [ref=e8]: Netlify ready
+      - generic [ref=e9]: Staging setup
+      - generic [ref=e10]: Build in progress
+    - generic [ref=e11]: danieltiwari.com

@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow, noarchive">
+    <title>Apply — Daniel Tiwari</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <meta name="description" content="Apply for a free introductory call with Daniel Tiwari.">
+    <meta name="theme-color" content="#15140f">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+SC:wght@300;400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,200..700;1,6..72,200..700&display=swap">
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+
+    <header class="nav" id="nav">
+      <a href="/" class="mark">Daniel Tiwari <span>·</span></a>
+      <nav aria-label="Primary">
+        <ul>
+          <li><a href="/">Index</a></li>
+          <li><a href="/about.html">About</a></li>
+          <li><a href="/apply.html" class="is-current">Apply</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main id="main">
+
+      <!-- HERO -->
+      <section class="hero" style="min-height: 80vh; padding-top: 140px; padding-bottom: 60px;">
+        <div class="wrap hero-inner">
+          <p class="eyebrow reveal" style="--d:120ms"><span class="dot"></span>Apply</p>
+
+          <h1 class="h-display hero-headline">
+            <span class="line"><span style="--d:280ms">Apply for</span></span>
+            <span class="line"><span style="--d:420ms">an introductory</span></span>
+            <span class="line"><span style="--d:560ms">call.</span></span>
+          </h1>
+
+          <hr class="hero-rule reveal" style="--d:780ms" aria-hidden="true">
+
+          <p class="lede col reveal" style="--d:880ms">
+            Free of charge. Zero obligation. We'll spend the call understanding what's going on for you, whether your topic is a fit for the work I do, and what working together might actually look like.
+          </p>
+        </div>
+      </section>
+
+      <!-- FORM -->
+      <section id="form" style="padding-top: 0;">
+        <div class="wrap">
+          <div class="manifesto">
+            <div class="obs-fade">
+              <span class="eyebrow"><span class="dot"></span>The form</span>
+              <div class="spacer-sm"></div>
+              <h2 style="margin-bottom: 28px;">Tell me a little<br>about you.</h2>
+              <p class="lede" style="max-width: 36ch;">
+                There is no right answer. Honesty is more useful than polish. I read every application personally.
+              </p>
+            </div>
+
+            <form
+              class="form obs-fade"
+              name="apply"
+              method="POST"
+              action="/apply.html?success=1"
+              data-netlify="true"
+              data-netlify-honeypot="bot-field"
+              aria-label="Application for introductory call"
+            >
+              <input type="hidden" name="form-name" value="apply">
+              <p hidden><label>Don't fill this out if you're human: <input name="bot-field"></label></p>
+
+              <div class="field">
+                <label for="name"><span class="num">01</span> Your name</label>
+                <input id="name" name="name" type="text" required autocomplete="name" placeholder="First and last">
+              </div>
+
+              <div class="field">
+                <label for="email"><span class="num">02</span> Email</label>
+                <input id="email" name="email" type="email" required autocomplete="email" placeholder="you@example.com">
+              </div>
+
+              <div class="field">
+                <label><span class="num">03</span> Preferred language</label>
+                <div class="radios">
+                  <label><input type="radio" name="language" value="English" checked> English</label>
+                  <label><input type="radio" name="language" value="German"> Deutsch</label>
+                  <label><input type="radio" name="language" value="Either"> Either is fine</label>
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="situation"><span class="num">04</span> What's going on for you right now?</label>
+                <textarea id="situation" name="situation" required placeholder="What you're dealing with. What you'd like to change. Anything that feels relevant. Bullet points are fine."></textarea>
+              </div>
+
+              <div class="field">
+                <label for="found"><span class="num">05</span> How did you find me? <span style="opacity: .55;">(optional)</span></label>
+                <input id="found" name="found" type="text" placeholder="Instagram, a friend, a podcast, the void">
+              </div>
+
+              <div class="form-submit">
+                <button type="submit" class="btn btn-primary">
+                  <span>Send application</span>
+                  <span class="arrow" aria-hidden="true">→</span>
+                </button>
+                <p class="form-note"><span class="dot"></span>I aim to reply within 48 hours.</p>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- ALT CONTACT -->
+      <section id="alt" style="padding-bottom: clamp(80px, 12vw, 140px);">
+        <div class="wrap">
+          <hr class="hair">
+          <div class="spacer-md"></div>
+          <div class="manifesto obs-fade">
+            <div>
+              <span class="eyebrow"><span class="dot"></span>Or just write to me</span>
+              <div class="spacer-sm"></div>
+              <h3 style="font-weight: 400;">Prefer email?</h3>
+              <p class="lede" style="margin-top: 16px;">
+                You can also reach me directly. I read everything that lands in this inbox.
+              </p>
+              <div class="spacer-sm"></div>
+              <p>
+                <a class="btn" href="mailto:email@danieltiwari.com">
+                  <span>email@danieltiwari.com</span>
+                  <span class="arrow" aria-hidden="true">→</span>
+                </a>
+              </p>
+            </div>
+            <aside class="pull">
+              <p class="quote">"If you don't stand for something, you'll fall for anything."</p>
+              <span class="quote-attr">Malcolm X</span>
+            </aside>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <footer class="foot">
+      <div class="wrap">
+        <div class="foot-inner">
+          <div>
+            <h4>Daniel Tiwari</h4>
+            <p>Holistic coaching and mentoring for ambitious individuals committed to living a life they would truly find worth living.</p>
+            <p><a href="mailto:email@danieltiwari.com">email@danieltiwari.com</a></p>
+          </div>
+          <div>
+            <h4>Navigate</h4>
+            <ul>
+              <li><a href="/">Index</a></li>
+              <li><a href="/about.html">About</a></li>
+              <li><a href="/apply.html">Apply</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4>Legal</h4>
+            <ul>
+              <li><a href="#">Site notice</a></li>
+              <li><a href="#">Privacy policy</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="foot-bottom">
+          <span class="mark">© 2026 Daniel Tiwari <span>·</span></span>
+          <span>Newcastle of the soul · Online worldwide</span>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      const nav = document.getElementById('nav');
+      const onScroll = () => {
+        if (window.scrollY > 8) nav.classList.add('scrolled');
+        else nav.classList.remove('scrolled');
+      };
+      window.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (!reduced && 'IntersectionObserver' in window) {
+        const io = new IntersectionObserver((entries) => {
+          for (const e of entries) {
+            if (e.isIntersecting) {
+              e.target.classList.add('is-in');
+              io.unobserve(e.target);
+            }
+          }
+        }, { threshold: 0.14, rootMargin: '0px 0px -8% 0px' });
+        document.querySelectorAll('.obs-fade').forEach((el) => io.observe(el));
+      } else {
+        document.querySelectorAll('.obs-fade').forEach((el) => el.classList.add('is-in'));
+      }
+
+      // Success message after Netlify form submit
+      if (new URLSearchParams(location.search).get('success') === '1') {
+        const form = document.querySelector('form[name="apply"]');
+        if (form) {
+          form.innerHTML = `
+            <div style="padding: 60px 0; text-align: left;">
+              <span class="eyebrow"><span class="dot"></span>Thanks</span>
+              <h2 style="margin: 28px 0;">Got it.</h2>
+              <p class="lede col">Your application is in. I'll be in touch within 48 hours.</p>
+            </div>
+          `;
+        }
+      }
+    </script>
+  </body>
+</html>

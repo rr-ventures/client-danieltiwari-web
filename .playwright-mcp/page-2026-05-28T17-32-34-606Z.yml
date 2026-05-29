@@ -1,0 +1,159 @@
+- generic [active] [ref=e1]:
+  - link "Skip to content" [ref=e2] [cursor=pointer]:
+    - /url: "#main"
+  - banner [ref=e3]:
+    - link "Daniel Tiwari ·" [ref=e4] [cursor=pointer]:
+      - /url: /
+    - navigation "Primary" [ref=e5]:
+      - list [ref=e6]:
+        - listitem [ref=e7]:
+          - link "Index" [ref=e8] [cursor=pointer]:
+            - /url: /
+        - listitem [ref=e9]:
+          - link "About" [ref=e10] [cursor=pointer]:
+            - /url: /about.html
+        - listitem [ref=e11]:
+          - link "Apply" [ref=e12] [cursor=pointer]:
+            - /url: /apply.html
+  - main [ref=e13]:
+    - generic [ref=e14]:
+      - generic [ref=e15]:
+        - paragraph [ref=e16]: About
+        - heading "Hey, I'm Daniel." [level=1] [ref=e18]:
+          - generic [ref=e20]: Hey,
+          - generic [ref=e22]: I'm Daniel.
+        - separator [ref=e23]
+        - paragraph [ref=e24]: My work revolves around transforming the unique potential of the ambitious individual into an enjoyable, fulfilling, and meaningful life, despite the struggles that naturally go along with being human.
+      - generic [ref=e25]:
+        - generic [ref=e26]: Thinker · Life Coach · Mentor
+        - generic [ref=e29]: Read on
+    - generic [ref=e31]:
+      - generic [ref=e32]:
+        - generic [ref=e33]: 01 — How I got here
+        - heading "It took me almost a decade." [level=2] [ref=e35]
+      - generic [ref=e36]:
+        - generic [ref=e37]:
+          - paragraph [ref=e38]: I know through personal experience how exhausting and frustrating it is to be dissatisfied yet feel stuck in life — often for reasons you aren't even fully aware of.
+          - paragraph [ref=e39]:
+            - text: Until I trained as a coach myself, I had never worked with one. It took me almost a decade to gain the insights I needed to slowly, steadily, climb out of the deep rut I was in. The insights ranged from finding appealing answers to fundamental questions like
+            - emphasis [ref=e40]: what is the purpose of life?
+            - text: ", all the way up to figuring out what I actually wanted and how to get there in today's complex world. Uncovering the limiting beliefs and inner conflicts that were holding me back — and quietly causing a lot of suffering — was a big part of it."
+          - paragraph [ref=e41]: As nihilistic, disheartened, and lost as I had once been, I can assure you that that does not have to be the final destination.
+          - paragraph [ref=e42]: "My own journey turned into my vocation: coaching and mentoring dissatisfied yet ambitious individuals who are struggling, for whatever reasons, to make use of their potential or to live a truly satisfying life. I am so fascinated by the unique potential each of us brings into the world that it genuinely breaks my heart to imagine someone spending years, decades, or even a lifetime settling for less than the life they would truly find worth living — simply because they didn't have access to someone who believed in them and could help them tap into it."
+        - complementary [ref=e43]:
+          - paragraph [ref=e44]: "\"When a bubbling spring flows out from the mountains, it's doing its thing. And if a thirsty traveller helps himself, well that's fine. And so I talk in the same spirit.\""
+          - generic [ref=e45]: Alan Watts
+    - generic [ref=e47]:
+      - paragraph [ref=e49]: Accepting · Changing · Knowing the difference.
+      - paragraph [ref=e51]: Simple, right? But as you may know, this is often far easier said than done. I spent an unnecessary number of years dissatisfied and frustrated with my life because I was too stubborn and proud to make use of tools such as coaching. I ended up having to invest so much more time, energy, and suffering than I would have, had I simply gotten someone like myself on board.
+    - generic [ref=e53]:
+      - generic [ref=e54]:
+        - generic [ref=e55]: 02 — What I want for you
+        - heading "What we're aiming for." [level=2] [ref=e57]
+        - paragraph [ref=e58]: The six things that, in my experience, make a life worth living.
+      - generic [ref=e59]:
+        - generic [ref=e60]:
+          - generic [ref=e61]: "01"
+          - heading "An attractive vision." [level=3] [ref=e62]
+          - paragraph [ref=e63]: Every day existing within a context of life that fuels you with inspiration and positive energy.
+        - generic [ref=e64]:
+          - generic [ref=e65]: "02"
+          - heading "Freedom & individuality." [level=3] [ref=e66]
+          - paragraph [ref=e67]: The internal freedom and confidence to live authentically — rather than constantly making yourself fit life.
+        - generic [ref=e68]:
+          - generic [ref=e69]: "03"
+          - heading "Your version of success." [level=3] [ref=e70]
+          - paragraph [ref=e71]: By removing limitations, your performance becomes equivalent to your inherent potential. Success follows almost inevitably.
+        - generic [ref=e72]:
+          - generic [ref=e73]: "04"
+          - heading "Joy & meaningfulness." [level=3] [ref=e74]
+          - paragraph [ref=e75]: A life full of activities you genuinely enjoy, or that are at least fulfilling and meaningful to you.
+        - generic [ref=e76]:
+          - generic [ref=e77]: "05"
+          - heading "Personal growth." [level=3] [ref=e78]
+          - paragraph [ref=e79]: Living in a way that enables you to grow as the individual you truly are, rather than becoming a better actor.
+        - generic [ref=e80]:
+          - generic [ref=e81]: "06"
+          - heading "Making hardship worth it." [level=3] [ref=e82]
+          - paragraph [ref=e83]: Let's face the facts. There are times in life that may not be great — but we can at least make them worth it.
+    - generic [ref=e85]:
+      - generic [ref=e86]:
+        - generic [ref=e87]: 03 — What working together looks like
+        - heading "When we work together, you will have the opportunity to:" [level=2] [ref=e89]:
+          - text: When we work together,
+          - text: "you will have the opportunity to:"
+      - generic [ref=e90]:
+        - generic [ref=e91]:
+          - generic [ref=e92]: i
+          - paragraph [ref=e93]: Express yourself openly & honestly in a non-judgemental, confidential safe space.
+        - generic [ref=e94]:
+          - generic [ref=e95]: ii
+          - paragraph [ref=e96]: Gain clarity and understanding over the situation you're actually in.
+        - generic [ref=e97]:
+          - generic [ref=e98]: iii
+          - paragraph [ref=e99]: Receive honest, constructive criticism — including on the blind spots you cannot yet see yourself.
+        - generic [ref=e100]:
+          - generic [ref=e101]: iv
+          - paragraph [ref=e102]: Uncover, debunk, and replace false and limiting beliefs.
+        - generic [ref=e103]:
+          - generic [ref=e104]: v
+          - paragraph [ref=e105]: Determine who you actually are behind the social masks and false ideals.
+        - generic [ref=e106]:
+          - generic [ref=e107]: vi
+          - paragraph [ref=e108]: Discover that vision for your life that fuels you with energy.
+        - generic [ref=e109]:
+          - generic [ref=e110]: vii
+          - paragraph [ref=e111]: Gain an accurate model of how life and the world out there actually work.
+        - generic [ref=e112]:
+          - generic [ref=e113]: viii
+          - paragraph [ref=e114]: Create authentic strategies to implement change that actually works for you.
+        - generic [ref=e115]:
+          - generic [ref=e116]: ix
+          - paragraph [ref=e117]: Check in regularly to deal with whatever comes up along the way.
+      - complementary [ref=e119]:
+        - paragraph [ref=e120]: "\"It is no measure of health to be well-adjusted to a profoundly sick society.\""
+        - generic [ref=e121]: J. Krishnamurti
+    - generic [ref=e124]:
+      - generic [ref=e125]: If this is your kind of work
+      - paragraph [ref=e128]:
+        - text: The next step is
+        - emphasis [ref=e129]: one conversation.
+      - paragraph [ref=e130]: The introductory call is free of charge, with zero obligation. If anything you've read here resonates, that's enough of a reason to find out whether we're a fit.
+      - paragraph [ref=e131]:
+        - link "Apply for intro call" [ref=e132] [cursor=pointer]:
+          - /url: /apply.html
+          - generic [ref=e133]: Apply for intro call
+          - generic [ref=e134]: →
+  - contentinfo [ref=e135]:
+    - generic [ref=e136]:
+      - generic [ref=e137]:
+        - generic [ref=e138]:
+          - heading "Daniel Tiwari" [level=4] [ref=e139]
+          - paragraph [ref=e140]: Holistic coaching and mentoring for ambitious individuals committed to living a life they would truly find worth living.
+          - paragraph [ref=e141]:
+            - link "email@danieltiwari.com" [ref=e142] [cursor=pointer]:
+              - /url: mailto:email@danieltiwari.com
+        - generic [ref=e143]:
+          - heading "Navigate" [level=4] [ref=e144]
+          - list [ref=e145]:
+            - listitem [ref=e146]:
+              - link "Index" [ref=e147] [cursor=pointer]:
+                - /url: /
+            - listitem [ref=e148]:
+              - link "About" [ref=e149] [cursor=pointer]:
+                - /url: /about.html
+            - listitem [ref=e150]:
+              - link "Apply" [ref=e151] [cursor=pointer]:
+                - /url: /apply.html
+        - generic [ref=e152]:
+          - heading "Legal" [level=4] [ref=e153]
+          - list [ref=e154]:
+            - listitem [ref=e155]:
+              - link "Site notice" [ref=e156] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=e157]:
+              - link "Privacy policy" [ref=e158] [cursor=pointer]:
+                - /url: "#"
+      - generic [ref=e159]:
+        - generic [ref=e160]: © 2026 Daniel Tiwari ·
+        - generic [ref=e161]: Newcastle of the soul · Online worldwide

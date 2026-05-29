@@ -1,2 +1,10 @@
-# Local Netlify folder
-.netlify
+# Build / deploy
+.netlify/
+.playwright-mcp/
+
+# Verification screenshots (session artifacts, not production)
+/*.png
+
+# OS
+.DS_Store
+Thumbs.db

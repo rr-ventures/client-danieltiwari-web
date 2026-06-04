@@ -1,9 +1,44 @@
 [build]
   publish = "."
 
+[functions]
+  directory = "netlify/functions"
+
+[[redirects]]
+  from = "/api/assessment-submit"
+  to = "/.netlify/functions/assessment-submit"
+  status = 200
+
+# Old V2 pages folded into the single-page direction — send them home.
+[[redirects]]
+  from = "/about.html"
+  to = "/"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/apply.html"
+  to = "/#enquire"
+  status = 301
+  force = true
+
+# Working/scratch files — never publicly reachable.
+[[redirects]]
+  from = "/style-picker.html"
+  to = "/"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/homepage-direction-v1.html"
+  to = "/"
+  status = 301
+  force = true
+
 [[headers]]
   for = "/*"
   [headers.values]
-    X-Robots-Tag = "noindex, nofollow, noarchive"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
+
+# Assessment + 404 keep their own per-page noindex meta tags; the homepage is indexable.

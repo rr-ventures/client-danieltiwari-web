@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daniel Tiwari — direction v1 (low-fi)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alegreya+SC:wght@400;500;700;800&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,300&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#15140f;            /* warm near-black, from Dan's IG corpus */
+    --ink:#efeae0;           /* off-white */
+    --muted:#9a9488;          /* bone, secondary */
+    --hair:#2c2a22;           /* faint rule */
+    --measure:34rem;          /* reading column */
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"Newsreader",Georgia,serif;
+    font-weight:300;
+    line-height:1.7;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+    /* faint paper grain */
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  }
+  .sc{font-family:"Alegreya SC",serif;font-weight:500;letter-spacing:.04em}
+  .wrap{max-width:var(--measure);margin:0 auto;padding:0 2rem}
+
+  /* top bar */
+  header{
+    position:fixed;top:0;left:0;right:0;z-index:10;
+    display:flex;justify-content:space-between;align-items:center;
+    padding:1.4rem 2.4rem;
+    font-family:"Alegreya SC",serif;font-size:.92rem;letter-spacing:.18em;
+    color:var(--muted);
+  }
+  header a{text-decoration:none}
+  /* difference blend keeps the name legible over both dark and light sections */
+  header .name{color:#f5f2ec;mix-blend-mode:difference}
+
+  /* generic section rhythm — one idea per screen */
+  section{padding:18vh 0;display:flex;align-items:center;justify-content:center;min-height:62vh}
+  section.tall{min-height:100vh}
+  .center{text-align:center}
+
+  /* 1 — opening */
+  .hero{min-height:100vh}
+  .hero .line{
+    font-family:"Alegreya SC",serif;font-weight:500;
+    font-size:clamp(1.95rem,4.9vw,3.5rem);
+    line-height:1.2;letter-spacing:.02em;margin:0;
+  }
+  .hero .subhead{
+    max-width:31rem;margin:2.1rem auto 0;
+    font-size:clamp(1.05rem,1.6vw,1.22rem);line-height:1.75;color:#d6d1c6;
+  }
+  .hero .hooktease{margin-top:1.3rem;font-style:italic;color:var(--muted);font-size:1.02rem}
+  .cta-row{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-top:2.8rem}
+  .cta-note{margin-top:1.4rem;color:var(--muted);font-size:.95rem}
+  .scrollcue{margin-top:4.5rem;font-family:"Alegreya SC",serif;font-size:.78rem;letter-spacing:.34em;color:var(--muted)}
+
+  /* 2 — recognition */
+  .recog p{font-size:clamp(1.35rem,2.4vw,1.7rem);line-height:1.85;color:var(--ink)}
+  .recog p + p{margin-top:1.5rem}
+  .recog em{font-style:italic;color:#fff}
+
+  /* 3 — reframe */
+  .reframe .eq{
+    font-family:"Alegreya SC",serif;font-weight:500;
+    font-size:clamp(1.6rem,3.4vw,2.6rem);letter-spacing:.03em;
+  }
+  .reframe .sub{margin-top:1.8rem;color:var(--muted);font-size:1.15rem}
+
+  /* interstitial quote */
+  .quote .q{font-size:clamp(1.5rem,3vw,2.2rem);font-style:italic;line-height:1.6;color:var(--ink)}
+  .quote .cite{margin-top:2rem;font-family:"Alegreya SC",serif;letter-spacing:.22em;font-size:.85rem;color:var(--muted)}
+
+  /* who */
+  .who h2{font-family:"Alegreya SC",serif;font-weight:500;font-size:.85rem;letter-spacing:.3em;color:var(--muted);margin-bottom:2rem}
+  .who p{font-size:1.18rem;line-height:1.95}
+  .who p + p{margin-top:1.3rem}
+
+  /* mirror / assessment — primary door */
+  .mirror .k{font-family:"Alegreya SC",serif;letter-spacing:.3em;font-size:.8rem;color:var(--muted);margin-bottom:1.6rem}
+  .mirror .big{font-family:"Alegreya SC",serif;font-weight:500;font-size:clamp(1.9rem,4.4vw,3rem);line-height:1.25}
+  .mirror .body{margin:1.8rem auto 0;color:var(--muted);font-size:1.12rem;max-width:28rem}
+  .cta{
+    display:inline-flex;align-items:center;gap:.55rem;
+    font-family:"Alegreya SC",serif;font-weight:600;letter-spacing:.16em;font-size:1.02rem;
+    text-decoration:none;color:var(--ink);
+    padding:1.15rem 2.7rem;border:1px solid var(--ink);border-radius:2px;
+    transition:transform .25s ease,background .3s ease,color .3s ease,border-color .3s ease;
+  }
+  .cta:hover{transform:translateY(-2px)}
+  /* PRIMARY — solid bone fill, dark text. Unmistakable. */
+  .cta.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+  .cta.primary:hover{background:#fff;border-color:#fff}
+  /* SECONDARY — real outlined button, clearly second */
+  .cta.secondary{background:transparent;color:var(--ink);border-color:rgba(239,234,224,.45)}
+  .cta.secondary:hover{border-color:var(--ink);background:rgba(239,234,224,.06)}
+  /* MINI — sticky header cta */
+  .cta.mini{padding:.6rem 1.25rem;font-size:.76rem;letter-spacing:.14em;border-radius:2px}
+  .cta.mini.primary{background:var(--ink);color:var(--bg)}
+  /* GHOST — quiet in-body link */
+  .cta.ghost{border:0;border-radius:0;padding:.5rem 0;font-weight:500;letter-spacing:.12em;border-bottom:1px solid var(--hair)}
+  .cta.ghost:hover{border-bottom-color:var(--ink);transform:none}
+
+  /* section separation */
+  section{position:relative}
+  .panel{background:#1b1a14}
+  .panel::before,.panel::after{content:"";position:absolute;left:0;right:0;height:1px;background:var(--hair)}
+  .panel::before{top:0}.panel::after{bottom:0}
+  .stage{background:radial-gradient(ellipse at 50% 42%, rgba(239,234,224,.07), transparent 62%)}
+  .panel.stage{background:#1b1a14 radial-gradient(ellipse at 50% 42%, rgba(239,234,224,.07), transparent 62%)}
+
+  /* light sections — contrast + breathing white */
+  .light{background:#ece7db;color:#1f1c16}
+  .light::before,.light::after{content:"";position:absolute;left:0;right:0;height:1px;background:rgba(0,0,0,.1)}
+  .light::before{top:0}.light::after{bottom:0}
+  .light p{color:#1f1c16}
+  .light h2,.light .big,.light .line{color:#1f1c16}
+  .light .sub,.light .body,.light .cta-note,.light .k,.light .hooktease{color:#6a6354}
+  .light em{color:#000}
+  .light .cta.primary{background:#1f1c16;color:#ece7db;border-color:#1f1c16}
+  .light .cta.primary:hover{background:#000;border-color:#000}
+  .light .cta.secondary{color:#1f1c16;border-color:rgba(31,28,22,.42)}
+  .light .cta.secondary:hover{border-color:#1f1c16;background:rgba(31,28,22,.05)}
+
+  /* who — portrait + text */
+  .who-inner{display:grid;grid-template-columns:.82fr 1fr;gap:3.6rem;align-items:center;max-width:52rem;margin:0 auto;text-align:left}
+  .portrait img{
+    width:100%;height:auto;display:block;
+    filter:grayscale(.12) contrast(1.02);
+    -webkit-mask-image:radial-gradient(ellipse 74% 78% at 50% 44%, #000 22%, rgba(0,0,0,.7) 58%, transparent 88%);
+            mask-image:radial-gradient(ellipse 74% 78% at 50% 44%, #000 22%, rgba(0,0,0,.7) 58%, transparent 88%);
+  }
+  @media(max-width:720px){
+    .who-inner{grid-template-columns:1fr;gap:1.4rem;text-align:center;max-width:30rem}
+    .portrait{max-width:17rem;margin:0 auto}
+    .cta{padding:1.05rem 2rem}
+  }
+
+  /* working together */
+  .work h2{font-family:"Alegreya SC",serif;font-weight:500;font-size:.85rem;letter-spacing:.3em;color:var(--muted);margin-bottom:2rem}
+  .work p{font-size:1.16rem;line-height:1.9}
+  .work p + p{margin-top:1.2rem}
+  .work .refuse{color:var(--muted);font-style:italic}
+
+  /* close */
+  .close .line{font-family:"Alegreya SC",serif;font-weight:500;font-size:clamp(1.7rem,3.6vw,2.6rem);line-height:1.3}
+
+  footer{padding:8vh 0 6vh;text-align:center;color:var(--muted);font-family:"Alegreya SC",serif;letter-spacing:.2em;font-size:.78rem}
+  footer .hairline{width:42px;height:1px;background:var(--hair);margin:0 auto 2.4rem}
+  footer a{color:var(--muted);text-decoration:none;margin:0 .9rem}
+
+  hr.div{border:0;height:1px;background:var(--hair);width:46px;margin:0 auto}
+
+  /* quiet reveal */
+  .rise{opacity:0;transform:translateY(16px);transition:opacity 1.1s ease,transform 1.1s ease}
+  .rise.in{opacity:1;transform:none}
+  @media (prefers-reduced-motion:reduce){.rise{opacity:1;transform:none;transition:none}}
+</style>
+</head>
+<body>
+
+<header>
+  <a class="name sc" href="#top">Daniel Tiwari</a>
+  <a class="cta mini primary sc" href="#assessment">Take the assessment</a>
+</header>
+
+<a id="top"></a>
+
+<!-- 1 · opening statement -->
+<section class="hero tall center stage">
+  <div class="wrap">
+    <h1 class="line rise">You've built a life<br>that looks right.<br>It just isn't yours.</h1>
+    <p class="subhead rise">I work with ambitious people who look successful from the outside but feel something is fundamentally off. Together we uncover what is actually standing in your way, and start building a life that fits who you really are.</p>
+    <p class="hooktease rise">Most people mistake that feeling for a lack of discipline. It rarely is.</p>
+    <div class="cta-row rise">
+      <a class="cta primary sc" href="#assessment">Take the free assessment</a>
+      <a class="cta secondary sc" href="#enquire">Book a free intro call</a>
+    </div>
+    <p class="cta-note rise">A short, private self-reflection. No pitch, just a clear look at where you actually are.</p>
+  </div>
+</section>
+
+<!-- 2 · the recognition -->
+<section class="recog light">
+  <div class="wrap rise">
+    <p>From the outside, your life looks like it is working.</p>
+    <p>And yet something feels quietly, persistently <em>off</em>: a sense that you are living a version of yourself you were handed, not the one you actually are.</p>
+    <p>So you play smaller than you know you are, and call it being realistic.</p>
+  </div>
+</section>
+
+<!-- 3 · who (moved up — Dan early) -->
+<section class="who">
+  <div class="who-inner rise">
+    <div class="portrait">
+      <img src="assets/dan/dan-portrait-serious.jpg" alt="Daniel Tiwari" width="400" height="500">
+    </div>
+    <div>
+      <h2 class="sc">Who I am</h2>
+      <p>I spent the better part of a decade mistaking the life I was told to want for the life I actually wanted. It cost me years I did not need to lose.</p>
+      <p>My work now is one thing: helping clear-minded, ambitious people stop performing a borrowed self, and build a life around the one underneath it.</p>
+      <p>I am a thinker before I am a coach. If you want theory you can actually live, you are in the right place.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 4 · the reframe -->
+<section class="reframe center">
+  <div class="wrap rise">
+    <div class="eq">Performance = Potential &minus; Interference</div>
+    <div class="sub">You are not short on potential. Something is standing in front of it.</div>
+  </div>
+</section>
+
+<!-- interstitial · philosopher -->
+<section class="quote center panel">
+  <div class="wrap rise">
+    <div class="q">"It is no measure of health to be well-adjusted to a profoundly sick society."</div>
+    <div class="cite sc">Krishnamurti</div>
+  </div>
+</section>
+
+<!-- (who section moved up, see after the recognition) -->
+
+<!-- 5 · the mirror / assessment -->
+<section id="assessment" class="mirror tall center light">
+  <div class="wrap rise">
+    <div class="k sc">The first step</div>
+    <div class="big">Most people never get<br>an honest look at themselves.</div>
+    <div class="body">A short, private self-assessment. No advice, no pitch — just a clear reflection of where you actually are, and what is keeping you there.</div>
+    <a class="cta primary sc" href="#">Take the free assessment</a>
+  </div>
+</section>
+
+<!-- 6 · working together -->
+<section id="enquire" class="work panel">
+  <div class="wrap rise">
+    <h2 class="sc">Working together</h2>
+    <p>I take on a small number of people, one to one, over months rather than weeks. The work is direct, private, and demanding.</p>
+    <p class="refuse">If you are looking for someone to coddle, motivate, or tell you what you want to hear, I am almost certainly not the person for you.</p>
+    <p><a class="cta secondary sc" href="#">Book a free intro call</a></p>
+  </div>
+</section>
+
+<!-- 7 · close -->
+<section class="close tall center stage">
+  <div class="wrap rise">
+    <div class="line">Being human is the only<br>game in town.<br>Why not play to win?</div>
+    <p style="margin-top:3rem"><a class="cta primary sc" href="#assessment">Take the free assessment</a></p>
+  </div>
+</section>
+
+<footer>
+  <div class="hairline"></div>
+  <div class="sc">Daniel Tiwari</div>
+  <div style="margin-top:1.2rem"><a class="sc" href="#">Site Notice</a><a class="sc" href="#">Privacy</a></div>
+</footer>
+
+<script>
+  const io=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}})},{threshold:.2});
+  document.querySelectorAll('.rise').forEach(el=>io.observe(el));
+</script>
+</body>
+</html>

@@ -1,64 +1,30 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="robots" content="noindex, nofollow, noarchive">
-    <title>Not found — Daniel Tiwari</title>
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-    <meta name="theme-color" content="#15140f">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>Not found — Daniel Tiwari</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#15140f">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alegreya+SC:wght@400;500;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/site.css">
+</head>
+<body>
+<header class="bar">
+  <a class="name sc" href="/">Daniel Tiwari</a>
+  <a class="cta mini secondary sc" href="/">Back to site</a>
+</header>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+SC:wght@300;400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,200..700;1,6..72,200..700&display=swap">
-    <link rel="stylesheet" href="/styles.css">
-  </head>
-  <body>
-    <header class="nav" id="nav">
-      <a href="/" class="mark">Daniel Tiwari <span>·</span></a>
-      <nav aria-label="Primary">
-        <ul>
-          <li><a href="/">Index</a></li>
-          <li><a href="/about.html">About</a></li>
-          <li><a href="/apply.html">Apply</a></li>
-        </ul>
-      </nav>
-    </header>
-
-    <main>
-      <section class="hero" style="min-height: 100vh;">
-        <div class="wrap hero-inner">
-          <p class="eyebrow"><span class="dot"></span>404</p>
-
-          <h1 class="h-display hero-headline">
-            <span class="line"><span>Not</span></span>
-            <span class="line"><span>here.</span></span>
-          </h1>
-
-          <hr class="hero-rule" aria-hidden="true">
-
-          <p class="lede col">
-            The page you were looking for isn't on this site — at least, not under this address. The work continues elsewhere.
-          </p>
-
-          <p style="margin-top: 40px;">
-            <a class="btn btn-primary" href="/">
-              <span>Return to index</span>
-              <span class="arrow" aria-hidden="true">→</span>
-            </a>
-          </p>
-        </div>
-      </section>
-    </main>
-
-    <script>
-      const nav = document.getElementById('nav');
-      const onScroll = () => {
-        if (window.scrollY > 8) nav.classList.add('scrolled');
-        else nav.classList.remove('scrolled');
-      };
-      window.addEventListener('scroll', onScroll, { passive: true });
-      onScroll();
-    </script>
-  </body>
+<section class="hero tall center">
+  <div class="wrap">
+    <p class="eyebrow"><span class="dot"></span>404</p>
+    <h1 class="display" style="margin-top:1.2rem">Not here.</h1>
+    <p class="lede subhead">The page you were looking for isn't on this site — at least, not under this address. The work continues elsewhere.</p>
+    <p style="margin-top:2.6rem"><a class="cta sc" href="/">Return home</a></p>
+  </div>
+</section>
+</body>
 </html>

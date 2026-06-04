@@ -1,347 +1,261 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="robots" content="noindex, nofollow, noarchive">
-    <title>Assessment — Daniel Tiwari</title>
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-    <meta name="description" content="A private self-assessment for ambitious individuals who feel stuck in patterns more discipline cannot fix.">
-    <meta name="theme-color" content="#15140f">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>The assessment — Daniel Tiwari</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta name="description" content="A private self-assessment for ambitious people who feel stuck in patterns more discipline cannot fix.">
+<meta name="theme-color" content="#15140f">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alegreya+SC:wght@400;500;700;800&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/site.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+SC:wght@300;400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,200..700;1,6..72,200..700&display=swap">
-    <link rel="stylesheet" href="/styles.css">
-  </head>
-  <body>
-    <a class="skip" href="#main">Skip to content</a>
+<header class="bar" id="bar">
+  <a class="name sc" href="/">Daniel Tiwari</a>
+  <a class="cta mini secondary sc" href="/">Back to site</a>
+</header>
 
-    <header class="nav" id="nav">
-      <a href="/" class="mark">Daniel Tiwari <span>·</span></a>
-      <nav aria-label="Primary">
-        <ul>
-          <li><a href="/">Index</a></li>
-          <li><a href="/assessment.html" class="is-current">Assessment</a></li>
-          <li><a href="/about.html">About</a></li>
-          <li><a href="/apply.html">Apply</a></li>
-        </ul>
-      </nav>
-    </header>
+<main id="main">
+  <!-- hero -->
+  <section class="hero assess-hero stage">
+    <div class="wrap rise">
+      <p class="eyebrow"><span class="dot"></span>Private self-assessment</p>
+      <h1 class="display">Where are you<br>really stuck?</h1>
+      <p class="lede" style="max-width:32rem;margin:0 auto">A short diagnostic that maps the visible problem, the deeper pattern underneath it, and whether private coaching is the right next step.</p>
+      <p class="meta sc">10–15 minutes · private by default</p>
+    </div>
+  </section>
 
-    <main id="main">
-      <section class="hero assessment-hero">
-        <div class="hero-bg" aria-hidden="true">
-          <img src="/assets/hero-marble.png" alt="">
+  <div class="assessment-wrap">
+    <div class="assessment-intro obs-fade">
+      <p class="eyebrow"><span class="dot"></span>The point</p>
+      <h2 class="sc">Not a personality quiz.</h2>
+      <p class="lede">The goal is to surface where life is asking for more honesty: the area costing you the most, the pattern keeping it in place, and the seriousness of your desire to change it.</p>
+    </div>
+
+    <form id="assessment-form" class="obs-fade" aria-label="Daniel Tiwari self-assessment">
+      <!-- 01 · you -->
+      <section class="assessment-section">
+        <div class="assessment-section-head">
+          <span class="num">01</span>
+          <div>
+            <h2>You.</h2>
+            <p>Enough context to send your result and understand the life you are assessing.</p>
+          </div>
         </div>
-        <div class="wrap hero-inner">
-          <p class="eyebrow reveal" style="--d:120ms"><span class="dot"></span>Private self-assessment</p>
-
-          <h1 class="h-display hero-headline">
-            <span class="line"><span style="--d:280ms">Where are</span></span>
-            <span class="line"><span style="--d:420ms">you really</span></span>
-            <span class="line"><span style="--d:560ms">stuck?</span></span>
-          </h1>
-
-          <hr class="hero-rule reveal" style="--d:780ms" aria-hidden="true">
-
-          <p class="lede col reveal" style="--d:880ms">
-            A short diagnostic that maps the visible problem, the deeper pattern underneath it, and whether private coaching is the right next step.
-          </p>
-        </div>
-
-        <div class="hero-meta reveal" style="--d:1300ms">
-          <span>10-15 minutes · private by default</span>
-          <span class="scroll-cue" aria-hidden="true">
-            <span class="line"></span>
-            <span>Begin</span>
-          </span>
+        <div class="question-grid">
+          <div class="field">
+            <label for="name"><span class="num">01</span> Name</label>
+            <input id="name" name="name" type="text" required autocomplete="name" placeholder="First and last">
+          </div>
+          <div class="field">
+            <label for="email"><span class="num">02</span> Email</label>
+            <input id="email" name="email" type="email" required autocomplete="email" placeholder="you@example.com">
+          </div>
+          <div class="field">
+            <label for="age"><span class="num">03</span> Age</label>
+            <input id="age" name="age" type="number" min="16" max="100" placeholder="Optional">
+          </div>
+          <div class="field">
+            <label for="work_status"><span class="num">04</span> Work / life context</label>
+            <input id="work_status" name="work_status" type="text" placeholder="Founder, employed, studying, between things…">
+          </div>
         </div>
       </section>
 
-      <section id="assessment" style="padding-top:0">
-        <div class="wrap">
-          <div class="assessment-intro obs-fade">
-            <div>
-              <span class="eyebrow"><span class="dot"></span>The point</span>
-              <h2>Not a personality quiz.</h2>
-            </div>
-            <p class="lede">
-              The goal is to surface where life is asking for more honesty: the area costing you the most, the pattern keeping it in place, and the seriousness of your desire to change it.
-            </p>
+      <!-- 02 · the wheel -->
+      <section class="assessment-section">
+        <div class="assessment-section-head">
+          <span class="num">02</span>
+          <div>
+            <h2>The wheel.</h2>
+            <p>For each area, mark fulfilment now, long-term importance, and urgency to address it.</p>
           </div>
+        </div>
+        <div class="scale-legend"><span>1 = low</span><span>10 = high</span></div>
+        <div id="wheel-rows" class="scale-grid" aria-live="polite"></div>
+      </section>
 
-          <form id="assessment-form" class="assessment-form obs-fade" aria-label="Daniel Tiwari self-assessment">
-            <section class="assessment-section">
-              <div class="assessment-section-head">
-                <span class="num">01</span>
-                <div>
-                  <h2>You.</h2>
-                  <p>Enough context to send your result and understand the life you are assessing.</p>
-                </div>
-              </div>
-
-              <div class="question-grid">
-                <div class="field">
-                  <label for="name"><span class="num">01</span> Name</label>
-                  <input id="name" name="name" type="text" required autocomplete="name" placeholder="First and last">
-                </div>
-                <div class="field">
-                  <label for="email"><span class="num">02</span> Email</label>
-                  <input id="email" name="email" type="email" required autocomplete="email" placeholder="you@example.com">
-                </div>
-                <div class="field">
-                  <label for="age"><span class="num">03</span> Age</label>
-                  <input id="age" name="age" type="number" min="16" max="100" placeholder="Optional">
-                </div>
-                <div class="field">
-                  <label for="work_status"><span class="num">04</span> Work / life context</label>
-                  <input id="work_status" name="work_status" type="text" placeholder="Founder, employed, studying, between things...">
-                </div>
-              </div>
-            </section>
-
-            <section class="assessment-section">
-              <div class="assessment-section-head">
-                <span class="num">02</span>
-                <div>
-                  <h2>The wheel.</h2>
-                  <p>For each area, mark fulfilment now, long-term importance, and urgency to address it.</p>
-                </div>
-              </div>
-
-              <div class="scale-legend">
-                <span>1 = low</span>
-                <span>10 = high</span>
-              </div>
-              <div id="wheel-rows" class="scale-grid" aria-live="polite"></div>
-            </section>
-
-            <section class="assessment-section">
-              <div class="assessment-section-head">
-                <span class="num">03</span>
-                <div>
-                  <h2>The deeper layer.</h2>
-                  <p>Choose the answer that is most honest, not the answer that sounds best.</p>
-                </div>
-              </div>
-
-              <div class="question-grid">
-                <div class="field">
-                  <label for="path_signal"><span class="num">05</span> Your current path</label>
-                  <select id="path_signal" name="path_signal" required>
-                    <option value="">Choose one</option>
-                    <option value="1">I still believe the current path should work if I do it properly.</option>
-                    <option value="2">I am tired, frustrated, or drained, but still trying to push through.</option>
-                    <option value="3">Something feels fundamentally off, but I cannot fully name it yet.</option>
-                    <option value="4">I know I have been pursuing or performing a life that is not really mine.</option>
-                    <option value="5">I have admitted it and started choosing differently.</option>
-                    <option value="6">I am actively building life around what feels true now.</option>
-                  </select>
-                </div>
-
-                <div class="field">
-                  <label for="decision_signal"><span class="num">06</span> Decision</label>
-                  <select id="decision_signal" name="decision_signal" required>
-                    <option value="">Choose one</option>
-                    <option value="1">I have not made a real decision to change yet.</option>
-                    <option value="3">I want change, but I am still negotiating with comfort.</option>
-                    <option value="4">I have named the pattern and can no longer fully pretend.</option>
-                    <option value="5">I have decided to live more honestly, even if the path is unclear.</option>
-                    <option value="6">I am already acting from that decision.</option>
-                  </select>
-                </div>
-
-                <div class="field">
-                  <label for="previous_attempts"><span class="num">07</span> What have you tried?</label>
-                  <select id="previous_attempts" name="previous_attempts" required>
-                    <option value="">Choose one</option>
-                    <option value="1">I have mostly thought about it.</option>
-                    <option value="2">I have consumed books, content, or ideas.</option>
-                    <option value="3">I have tried changing it myself.</option>
-                    <option value="4">I have tried serious self-work but something is still stuck.</option>
-                    <option value="5">I know self-directed work is no longer enough.</option>
-                  </select>
-                </div>
-
-                <div class="field">
-                  <label for="help_openness"><span class="num">08</span> Outside help</label>
-                  <select id="help_openness" name="help_openness" required>
-                    <option value="">Choose one</option>
-                    <option value="1">I am not really open to help.</option>
-                    <option value="2">I am curious but resistant.</option>
-                    <option value="3">I would consider it if it felt right.</option>
-                    <option value="4">I am actively considering help.</option>
-                    <option value="5">I know I need the right person to reflect this back to me.</option>
-                  </select>
-                </div>
-
-                <div class="field">
-                  <label for="change_timeline"><span class="num">09</span> Timeline</label>
-                  <select id="change_timeline" name="change_timeline" required>
-                    <option value="">Choose one</option>
-                    <option value="1">There is no real timeline.</option>
-                    <option value="2">Sometime this year.</option>
-                    <option value="3">In the next few months.</option>
-                    <option value="4">Soon. I am tired of carrying this.</option>
-                    <option value="5">Now. Waiting is part of the pattern.</option>
-                  </select>
-                </div>
-
-                <div class="field">
-                  <label for="investment_readiness"><span class="num">10</span> Investment readiness</label>
-                  <select id="investment_readiness" name="investment_readiness" required>
-                    <option value="">Choose one</option>
-                    <option value="1">I am not ready to invest in coaching.</option>
-                    <option value="2">I would need a low-commitment option first.</option>
-                    <option value="3">I could invest if the fit was very clear.</option>
-                    <option value="4">I am ready to invest in the right support.</option>
-                    <option value="5">I see this as one of the most important investments I could make.</option>
-                  </select>
-                </div>
-              </div>
-            </section>
-
-            <section class="assessment-section">
-              <div class="assessment-section-head">
-                <span class="num">04</span>
-                <div>
-                  <h2>Fit signals.</h2>
-                  <p>This section helps separate real readiness from curiosity.</p>
-                </div>
-              </div>
-
-              <div class="question-grid">
-                <div class="field">
-                  <label for="vision_scale"><span class="num">11</span> Life vision</label>
-                  <select id="vision_scale" name="vision_scale" required>
-                    <option value="">Choose one</option>
-                    <option value="1">I mostly want life to hurt less.</option>
-                    <option value="2">I want things to be more stable and manageable.</option>
-                    <option value="3">I want a better life, but the picture is vague.</option>
-                    <option value="4">I know I am meant for something more alive and self-directed.</option>
-                    <option value="5">I have a serious vision for an extraordinary life.</option>
-                  </select>
-                </div>
-
-                <div class="field">
-                  <label for="truth_directness"><span class="num">12</span> Truth and directness</label>
-                  <select id="truth_directness" name="truth_directness" required>
-                    <option value="">Choose one</option>
-                    <option value="1">I prefer comfort over confrontation.</option>
-                    <option value="2">I say I want truth, but I often resist it.</option>
-                    <option value="3">I can handle directness if it is respectful.</option>
-                    <option value="4">I actively value honest reflection.</option>
-                    <option value="5">I would rather be told the truth than protected from it.</option>
-                  </select>
-                </div>
-
-                <div class="field">
-                  <label for="conformity_signal"><span class="num">13</span> Relationship to the mainstream</label>
-                  <select id="conformity_signal" name="conformity_signal" required>
-                    <option value="">Choose one</option>
-                    <option value="1">I mostly want to fit in and succeed by normal standards.</option>
-                    <option value="2">I question some of it, but still want approval.</option>
-                    <option value="3">I often feel like something about normal life is off.</option>
-                    <option value="4">I am willing to stand apart if that is what truth requires.</option>
-                    <option value="5">I cannot live by a script I do not believe in.</option>
-                  </select>
-                </div>
-
-                <div class="field">
-                  <label for="potential_signal"><span class="num">14</span> Potential</label>
-                  <select id="potential_signal" name="potential_signal" required>
-                    <option value="">Choose one</option>
-                    <option value="1">I am not sure I have much more in me.</option>
-                    <option value="2">I hope I do, but doubt it.</option>
-                    <option value="3">I know there is more, but I cannot access it consistently.</option>
-                    <option value="4">I know I am playing smaller than I could.</option>
-                    <option value="5">I know my current life does not match the force of what is in me.</option>
-                  </select>
-                </div>
-
-                <div class="field wide">
-                  <label for="life_vision"><span class="num">15</span> What would a life worth living look like?</label>
-                  <textarea id="life_vision" name="life_vision" required placeholder="Write the version you would usually censor."></textarea>
-                </div>
-
-                <div class="field wide">
-                  <label for="cost"><span class="num">16</span> What is staying where you are costing you?</label>
-                  <textarea id="cost" name="cost" required placeholder="Time, confidence, relationships, energy, self-respect, aliveness..."></textarea>
-                </div>
-              </div>
-            </section>
-
-            <div class="form-submit">
-              <button type="submit" class="btn btn-primary">
-                <span>Show my snapshot</span>
-                <span class="arrow" aria-hidden="true">→</span>
-              </button>
-              <p class="form-note"><span class="dot"></span>Your result appears immediately. A copy is sent by email when delivery is configured.</p>
-            </div>
-          </form>
-
-          <section id="assessment-result" class="assessment-result" hidden aria-live="polite"></section>
+      <!-- 03 · the deeper layer -->
+      <section class="assessment-section">
+        <div class="assessment-section-head">
+          <span class="num">03</span>
+          <div>
+            <h2>The deeper layer.</h2>
+            <p>Choose the answer that is most honest, not the answer that sounds best.</p>
+          </div>
+        </div>
+        <div class="question-grid">
+          <div class="field">
+            <label for="path_signal"><span class="num">05</span> Your current path</label>
+            <select id="path_signal" name="path_signal" required>
+              <option value="">Choose one</option>
+              <option value="1">I still believe the current path should work if I do it properly.</option>
+              <option value="2">I am tired, frustrated, or drained, but still trying to push through.</option>
+              <option value="3">Something feels fundamentally off, but I cannot fully name it yet.</option>
+              <option value="4">I know I have been pursuing or performing a life that is not really mine.</option>
+              <option value="5">I have admitted it and started choosing differently.</option>
+              <option value="6">I am actively building life around what feels true now.</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="decision_signal"><span class="num">06</span> Decision</label>
+            <select id="decision_signal" name="decision_signal" required>
+              <option value="">Choose one</option>
+              <option value="1">I have not made a real decision to change yet.</option>
+              <option value="3">I want change, but I am still negotiating with comfort.</option>
+              <option value="4">I have named the pattern and can no longer fully pretend.</option>
+              <option value="5">I have decided to live more honestly, even if the path is unclear.</option>
+              <option value="6">I am already acting from that decision.</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="previous_attempts"><span class="num">07</span> What have you tried?</label>
+            <select id="previous_attempts" name="previous_attempts" required>
+              <option value="">Choose one</option>
+              <option value="1">I have mostly thought about it.</option>
+              <option value="2">I have consumed books, content, or ideas.</option>
+              <option value="3">I have tried changing it myself.</option>
+              <option value="4">I have tried serious self-work but something is still stuck.</option>
+              <option value="5">I know self-directed work is no longer enough.</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="help_openness"><span class="num">08</span> Outside help</label>
+            <select id="help_openness" name="help_openness" required>
+              <option value="">Choose one</option>
+              <option value="1">I am not really open to help.</option>
+              <option value="2">I am curious but resistant.</option>
+              <option value="3">I would consider it if it felt right.</option>
+              <option value="4">I am actively considering help.</option>
+              <option value="5">I know I need the right person to reflect this back to me.</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="change_timeline"><span class="num">09</span> Timeline</label>
+            <select id="change_timeline" name="change_timeline" required>
+              <option value="">Choose one</option>
+              <option value="1">There is no real timeline.</option>
+              <option value="2">Sometime this year.</option>
+              <option value="3">In the next few months.</option>
+              <option value="4">Soon. I am tired of carrying this.</option>
+              <option value="5">Now. Waiting is part of the pattern.</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="investment_readiness"><span class="num">10</span> Investment readiness</label>
+            <select id="investment_readiness" name="investment_readiness" required>
+              <option value="">Choose one</option>
+              <option value="1">I am not ready to invest in coaching.</option>
+              <option value="2">I would need a low-commitment option first.</option>
+              <option value="3">I could invest if the fit was very clear.</option>
+              <option value="4">I am ready to invest in the right support.</option>
+              <option value="5">I see this as one of the most important investments I could make.</option>
+            </select>
+          </div>
         </div>
       </section>
-    </main>
 
-    <footer class="foot">
-      <div class="wrap">
-        <div class="foot-inner">
+      <!-- 04 · fit signals -->
+      <section class="assessment-section">
+        <div class="assessment-section-head">
+          <span class="num">04</span>
           <div>
-            <h4>Daniel Tiwari</h4>
-            <p>Holistic coaching and mentoring for ambitious individuals committed to living a life they would truly find worth living.</p>
-            <p><a href="mailto:email@danieltiwari.com">email@danieltiwari.com</a></p>
-          </div>
-          <div>
-            <h4>Navigate</h4>
-            <ul>
-              <li><a href="/">Index</a></li>
-              <li><a href="/assessment.html">Assessment</a></li>
-              <li><a href="/about.html">About</a></li>
-              <li><a href="/apply.html">Apply</a></li>
-            </ul>
-          </div>
-          <div>
-            <h4>Legal</h4>
-            <ul>
-              <li><a href="#">Site notice</a></li>
-              <li><a href="#">Privacy policy</a></li>
-            </ul>
+            <h2>Fit signals.</h2>
+            <p>This section helps separate real readiness from curiosity.</p>
           </div>
         </div>
-        <div class="foot-bottom">
-          <span class="mark">© 2026 Daniel Tiwari <span>·</span></span>
-          <span>Newcastle of the soul · Online worldwide</span>
+        <div class="question-grid">
+          <div class="field">
+            <label for="vision_scale"><span class="num">11</span> Life vision</label>
+            <select id="vision_scale" name="vision_scale" required>
+              <option value="">Choose one</option>
+              <option value="1">I mostly want life to hurt less.</option>
+              <option value="2">I want things to be more stable and manageable.</option>
+              <option value="3">I want a better life, but the picture is vague.</option>
+              <option value="4">I know I am meant for something more alive and self-directed.</option>
+              <option value="5">I have a serious vision for an extraordinary life.</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="truth_directness"><span class="num">12</span> Truth and directness</label>
+            <select id="truth_directness" name="truth_directness" required>
+              <option value="">Choose one</option>
+              <option value="1">I prefer comfort over confrontation.</option>
+              <option value="2">I say I want truth, but I often resist it.</option>
+              <option value="3">I can handle directness if it is respectful.</option>
+              <option value="4">I actively value honest reflection.</option>
+              <option value="5">I would rather be told the truth than protected from it.</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="conformity_signal"><span class="num">13</span> Relationship to the mainstream</label>
+            <select id="conformity_signal" name="conformity_signal" required>
+              <option value="">Choose one</option>
+              <option value="1">I mostly want to fit in and succeed by normal standards.</option>
+              <option value="2">I question some of it, but still want approval.</option>
+              <option value="3">I often feel like something about normal life is off.</option>
+              <option value="4">I am willing to stand apart if that is what truth requires.</option>
+              <option value="5">I cannot live by a script I do not believe in.</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="potential_signal"><span class="num">14</span> Potential</label>
+            <select id="potential_signal" name="potential_signal" required>
+              <option value="">Choose one</option>
+              <option value="1">I am not sure I have much more in me.</option>
+              <option value="2">I hope I do, but doubt it.</option>
+              <option value="3">I know there is more, but I cannot access it consistently.</option>
+              <option value="4">I know I am playing smaller than I could.</option>
+              <option value="5">I know my current life does not match the force of what is in me.</option>
+            </select>
+          </div>
+          <div class="field wide">
+            <label for="life_vision"><span class="num">15</span> What would a life worth living look like?</label>
+            <textarea id="life_vision" name="life_vision" required placeholder="Write the version you would usually censor."></textarea>
+          </div>
+          <div class="field wide">
+            <label for="cost"><span class="num">16</span> What is staying where you are costing you?</label>
+            <textarea id="cost" name="cost" required placeholder="Time, confidence, relationships, energy, self-respect, aliveness…"></textarea>
+          </div>
         </div>
+      </section>
+
+      <div class="form-submit">
+        <button type="submit" class="btn btn-primary">
+          <span>Show my snapshot</span>
+          <span class="arrow" aria-hidden="true">→</span>
+        </button>
+        <p class="form-note"><span class="dot"></span>Your result appears immediately, and a copy is sent to your email.</p>
       </div>
-    </footer>
+    </form>
 
-    <script>
-      const nav = document.getElementById('nav');
-      const onScroll = () => {
-        if (window.scrollY > 8) nav.classList.add('scrolled');
-        else nav.classList.remove('scrolled');
-      };
-      window.addEventListener('scroll', onScroll, { passive: true });
-      onScroll();
+    <section id="assessment-result" class="assessment-result" hidden aria-live="polite"></section>
+  </div>
+</main>
 
-      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      if (!reduced && 'IntersectionObserver' in window) {
-        const io = new IntersectionObserver((entries) => {
-          for (const e of entries) {
-            if (e.isIntersecting) {
-              e.target.classList.add('is-in');
-              io.unobserve(e.target);
-            }
-          }
-        }, { threshold: 0.14, rootMargin: '0px 0px -8% 0px' });
-        document.querySelectorAll('.obs-fade').forEach((el) => io.observe(el));
-      } else {
-        document.querySelectorAll('.obs-fade').forEach((el) => el.classList.add('is-in'));
-      }
-    </script>
-    <script src="/assessment.js" defer></script>
-  </body>
+<footer class="foot">
+  <div class="hairline"></div>
+  <div class="sc">Daniel Tiwari</div>
+  <div style="margin-top:.8rem;font-family:'Newsreader',serif;letter-spacing:0"><a href="mailto:email@danieltiwari.com" style="text-decoration:none">email@danieltiwari.com</a></div>
+  <div class="links"><a class="sc" href="/">Home</a><a class="sc" href="#">Privacy</a></div>
+</footer>
+
+<script>
+  const bar=document.getElementById('bar');
+  const onScroll=()=>{bar.classList.toggle('scrolled',scrollY>8)};
+  addEventListener('scroll',onScroll,{passive:true});onScroll();
+  if('IntersectionObserver' in window && !matchMedia('(prefers-reduced-motion: reduce)').matches){
+    const io=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('is-in');io.unobserve(e.target)}})},{threshold:.14});
+    document.querySelectorAll('.obs-fade,.rise').forEach(el=>io.observe(el));
+  }else{document.querySelectorAll('.obs-fade,.rise').forEach(el=>el.classList.add('is-in','in'))}
+</script>
+<script src="/assessment.js" defer></script>
+</body>
 </html>

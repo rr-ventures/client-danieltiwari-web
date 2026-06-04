@@ -1,0 +1,272 @@
+/* ============================================================
+   Daniel Tiwari — site design system
+   Warm near-black, Alegreya SC + Newsreader. Derived from Dan's
+   IG corpus. Shared by index.html and assessment.html.
+   ============================================================ */
+
+:root{
+  --bg:#15140f;          /* warm near-black */
+  --ink:#efeae0;         /* off-white */
+  --muted:#9a9488;       /* bone, secondary */
+  --hair:#2c2a22;        /* faint rule */
+  --panel:#1b1a14;       /* lifted dark panel */
+  --light:#ece7db;       /* warm bone, light sections */
+  --light-ink:#1f1c16;
+  --light-muted:#6a6354;
+  --measure:34rem;       /* reading column */
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:"Newsreader",Georgia,serif;
+  font-weight:300;
+  line-height:1.7;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+}
+.sc{font-family:"Alegreya SC",serif;font-weight:500;letter-spacing:.04em}
+.wrap{max-width:var(--measure);margin:0 auto;padding:0 2rem}
+.wrap.wide{max-width:52rem}
+a{color:inherit}
+img{max-width:100%;display:block}
+
+.skip{position:absolute;left:-999px;top:0}
+.skip:focus{left:1rem;top:1rem;z-index:50;background:var(--ink);color:var(--bg);padding:.6rem 1rem;border-radius:2px}
+
+/* ---- top bar ---- */
+header.bar{
+  position:fixed;top:0;left:0;right:0;z-index:20;
+  display:flex;justify-content:space-between;align-items:center;
+  padding:1.3rem 2.4rem;
+  font-family:"Alegreya SC",serif;font-size:.92rem;letter-spacing:.18em;
+  color:var(--muted);
+  transition:background .4s ease,padding .4s ease,border-color .4s ease;
+  border-bottom:1px solid transparent;
+}
+header.bar.scrolled{background:rgba(21,20,15,.82);backdrop-filter:blur(8px);border-bottom-color:var(--hair);padding-top:1rem;padding-bottom:1rem}
+header.bar a{text-decoration:none}
+header.bar .name{color:#f5f2ec;mix-blend-mode:difference}
+
+/* ---- section rhythm ---- */
+section{position:relative;padding:18vh 0;display:flex;align-items:center;justify-content:center;min-height:62vh}
+section.tall{min-height:100vh}
+.center{text-align:center}
+
+/* ---- buttons ---- */
+.cta{
+  display:inline-flex;align-items:center;gap:.55rem;
+  font-family:"Alegreya SC",serif;font-weight:600;letter-spacing:.16em;font-size:1.02rem;
+  text-decoration:none;color:var(--ink);
+  padding:1.15rem 2.7rem;border:1px solid var(--ink);border-radius:2px;
+  cursor:pointer;background:transparent;
+  transition:transform .25s ease,background .3s ease,color .3s ease,border-color .3s ease;
+}
+.cta:hover{transform:translateY(-2px)}
+.cta.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.cta.primary:hover{background:#fff;border-color:#fff}
+.cta.secondary{background:transparent;color:var(--ink);border-color:rgba(239,234,224,.45)}
+.cta.secondary:hover{border-color:var(--ink);background:rgba(239,234,224,.06)}
+.cta.mini{padding:.6rem 1.25rem;font-size:.76rem;letter-spacing:.14em}
+.cta.mini.primary{background:var(--ink);color:var(--bg)}
+.cta[disabled]{opacity:.55;pointer-events:none}
+.cta .arrow{transition:transform .25s ease}
+.cta:hover .arrow{transform:translateX(3px)}
+
+/* ---- panels / tones ---- */
+.panel{background:var(--panel)}
+.panel::before,.panel::after{content:"";position:absolute;left:0;right:0;height:1px;background:var(--hair)}
+.panel::before{top:0}.panel::after{bottom:0}
+.stage{background:radial-gradient(ellipse at 50% 42%, rgba(239,234,224,.07), transparent 62%)}
+.panel.stage{background:var(--panel) radial-gradient(ellipse at 50% 42%, rgba(239,234,224,.07), transparent 62%)}
+
+.light{background:var(--light);color:var(--light-ink)}
+.light::before,.light::after{content:"";position:absolute;left:0;right:0;height:1px;background:rgba(0,0,0,.1)}
+.light::before{top:0}.light::after{bottom:0}
+.light p{color:var(--light-ink)}
+.light h2,.light .big,.light .line{color:var(--light-ink)}
+.light .sub,.light .body,.light .cta-note,.light .k,.light .hooktease,.light .eyebrow{color:var(--light-muted)}
+.light em{color:#000}
+.light .cta.primary{background:var(--light-ink);color:var(--light);border-color:var(--light-ink)}
+.light .cta.primary:hover{background:#000;border-color:#000}
+.light .cta.secondary{color:var(--light-ink);border-color:rgba(31,28,22,.42)}
+.light .cta.secondary:hover{border-color:var(--light-ink);background:rgba(31,28,22,.05)}
+
+/* ---- hero ---- */
+.hero{min-height:100vh}
+.hero .line{font-family:"Alegreya SC",serif;font-weight:500;font-size:clamp(1.95rem,4.9vw,3.5rem);line-height:1.2;letter-spacing:.02em;margin:0}
+.hero .subhead{max-width:31rem;margin:2.1rem auto 0;font-size:clamp(1.05rem,1.6vw,1.22rem);line-height:1.75;color:#d6d1c6}
+.hero .hooktease{margin-top:1.3rem;font-style:italic;color:var(--muted);font-size:1.02rem}
+.cta-row{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-top:2.8rem}
+.cta-note{margin-top:1.4rem;color:var(--muted);font-size:.95rem}
+
+/* ---- recognition ---- */
+.recog p{font-size:clamp(1.35rem,2.4vw,1.7rem);line-height:1.85}
+.recog p + p{margin-top:1.5rem}
+.recog em{font-style:italic;color:#fff}
+
+/* ---- reframe ---- */
+.reframe .eq{font-family:"Alegreya SC",serif;font-weight:500;font-size:clamp(1.6rem,3.4vw,2.6rem);letter-spacing:.03em}
+.reframe .sub{margin-top:1.8rem;color:var(--muted);font-size:1.15rem}
+
+/* ---- interstitial quote ---- */
+.quote .q{font-size:clamp(1.5rem,3vw,2.2rem);font-style:italic;line-height:1.6}
+.quote .cite{margin-top:2rem;font-family:"Alegreya SC",serif;letter-spacing:.22em;font-size:.85rem;color:var(--muted)}
+
+/* ---- who + portrait ---- */
+.who-inner{display:grid;grid-template-columns:.82fr 1fr;gap:3.6rem;align-items:center;max-width:52rem;margin:0 auto;text-align:left}
+.who h2{font-family:"Alegreya SC",serif;font-weight:500;font-size:.85rem;letter-spacing:.3em;color:var(--muted);margin-bottom:2rem}
+.who p{font-size:1.18rem;line-height:1.95}
+.who p + p{margin-top:1.3rem}
+.portrait img{
+  width:100%;height:auto;border-radius:3px;
+  filter:grayscale(.1) contrast(1.02);
+  -webkit-mask-image:radial-gradient(ellipse 76% 80% at 50% 44%, #000 30%, rgba(0,0,0,.72) 62%, transparent 90%);
+          mask-image:radial-gradient(ellipse 76% 80% at 50% 44%, #000 30%, rgba(0,0,0,.72) 62%, transparent 90%);
+}
+
+/* ---- mirror / assessment lead-in ---- */
+.mirror .k{font-family:"Alegreya SC",serif;letter-spacing:.3em;font-size:.8rem;color:var(--muted);margin-bottom:1.6rem}
+.mirror .big{font-family:"Alegreya SC",serif;font-weight:500;font-size:clamp(1.9rem,4.4vw,3rem);line-height:1.25}
+.mirror .body{margin:1.8rem auto 2.4rem;color:var(--muted);font-size:1.12rem;max-width:28rem}
+
+/* ---- working together ---- */
+.work h2{font-family:"Alegreya SC",serif;font-weight:500;font-size:.85rem;letter-spacing:.3em;color:var(--muted);margin-bottom:2rem}
+.work p{font-size:1.16rem;line-height:1.9}
+.work p + p{margin-top:1.2rem}
+.work .refuse{color:var(--muted);font-style:italic}
+.work .terms{margin-top:2.2rem;font-size:1rem;color:var(--muted)}
+.work .terms strong{color:var(--ink);font-weight:500}
+
+/* ---- FAQ ---- */
+.faq{max-width:40rem}
+.faq h2{font-family:"Alegreya SC",serif;font-weight:500;font-size:.85rem;letter-spacing:.3em;color:var(--muted);margin-bottom:2.4rem;text-align:center}
+.faq details{border-top:1px solid var(--hair);padding:1.4rem 0}
+.faq details:last-of-type{border-bottom:1px solid var(--hair)}
+.faq summary{cursor:pointer;list-style:none;font-family:"Alegreya SC",serif;font-weight:500;letter-spacing:.02em;font-size:1.18rem;display:flex;justify-content:space-between;align-items:center;gap:1rem}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";color:var(--muted);font-size:1.4rem;line-height:1;transition:transform .25s ease}
+.faq details[open] summary::after{content:"\2212"}
+.faq details p{margin-top:1rem;color:#cdc7ba;font-size:1.04rem;line-height:1.85}
+
+/* ---- newsletter ---- */
+.news{max-width:34rem;text-align:center}
+.news h2{font-family:"Alegreya SC",serif;font-weight:500;font-size:clamp(1.4rem,3vw,2rem);line-height:1.25;margin-bottom:1.1rem}
+.news p.sub{color:var(--muted);font-size:1.05rem;margin-bottom:2.2rem}
+.news form{display:flex;gap:.7rem;flex-wrap:wrap;justify-content:center}
+.news input[type=email]{
+  flex:1 1 16rem;background:transparent;border:1px solid var(--hair);border-radius:2px;
+  color:var(--ink);font-family:"Newsreader",serif;font-size:1.02rem;padding:1rem 1.1rem;
+}
+.news input[type=email]:focus{outline:none;border-color:var(--ink)}
+.news .news-note{margin-top:1.1rem;color:var(--muted);font-size:.85rem}
+
+/* ---- close ---- */
+.close .line{font-family:"Alegreya SC",serif;font-weight:500;font-size:clamp(1.7rem,3.6vw,2.6rem);line-height:1.3}
+
+/* ---- footer ---- */
+footer.foot{padding:9vh 0 6vh;text-align:center;color:var(--muted);font-family:"Alegreya SC",serif;letter-spacing:.2em;font-size:.78rem}
+footer.foot .hairline{width:42px;height:1px;background:var(--hair);margin:0 auto 2.4rem}
+footer.foot .links{margin-top:1.2rem}
+footer.foot .links a{color:var(--muted);text-decoration:none;margin:0 .9rem}
+footer.foot a:hover{color:var(--ink)}
+
+hr.div{border:0;height:1px;background:var(--hair);width:46px;margin:0 auto}
+
+/* ============================================================
+   Assessment page
+   ============================================================ */
+.eyebrow{display:inline-flex;align-items:center;gap:.6rem;font-family:"Alegreya SC",serif;letter-spacing:.26em;font-size:.74rem;color:var(--muted);text-transform:uppercase}
+.dot{width:5px;height:5px;border-radius:50%;background:currentColor;display:inline-block}
+.lede{font-size:clamp(1.05rem,1.7vw,1.22rem);line-height:1.8;color:#d6d1c6}
+
+.assess-hero{min-height:72vh;text-align:center}
+.assess-hero .display{font-family:"Alegreya SC",serif;font-weight:500;font-size:clamp(2.2rem,6vw,4rem);line-height:1.1;letter-spacing:.02em;margin:1.4rem 0}
+.assess-hero .meta{margin-top:2.4rem;color:var(--muted);font-size:.9rem;letter-spacing:.04em}
+
+.assessment-wrap{max-width:46rem;margin:0 auto;padding:0 2rem 14vh}
+.assessment-intro{margin-bottom:4rem;text-align:center}
+.assessment-intro h2{font-family:"Alegreya SC",serif;font-weight:500;font-size:clamp(1.6rem,3.2vw,2.3rem);margin:.8rem 0 1.2rem}
+
+/* form groups are <section> elements — opt them out of the global flex-centered section rhythm */
+.assessment-section{display:block;min-height:0;padding:3.2rem 0;border-top:1px solid var(--hair)}
+.assessment-section-head{display:flex;gap:1.2rem;align-items:baseline;margin-bottom:2rem}
+.assessment-section-head .num{font-family:"Alegreya SC",serif;color:var(--muted);font-size:.9rem;letter-spacing:.1em}
+.assessment-section-head h2{font-family:"Alegreya SC",serif;font-weight:500;font-size:1.5rem;margin-bottom:.3rem}
+.assessment-section-head p{color:var(--muted);font-size:1rem}
+
+.question-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.6rem}
+.field{display:flex;flex-direction:column;gap:.55rem}
+.field.wide{grid-column:1 / -1}
+.field label{font-family:"Alegreya SC",serif;font-size:.92rem;letter-spacing:.04em;color:var(--ink);display:flex;gap:.5rem;align-items:baseline}
+.field label .num{color:var(--muted);font-size:.78rem}
+.field input,.field select,.field textarea{
+  background:transparent;border:1px solid var(--hair);border-radius:2px;color:var(--ink);
+  font-family:"Newsreader",serif;font-size:1rem;padding:.85rem .95rem;width:100%;
+}
+.field textarea{min-height:6.5rem;resize:vertical;line-height:1.6}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--ink)}
+.field select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%239a9488' stroke-width='1.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 1rem center}
+.field select option{background:var(--panel);color:var(--ink)}
+
+.scale-legend{display:flex;justify-content:space-between;color:var(--muted);font-size:.8rem;letter-spacing:.06em;margin-bottom:1rem}
+.scale-grid{display:flex;flex-direction:column;gap:1.4rem}
+.scale-row{border-top:1px solid var(--hair);padding-top:1.3rem;display:grid;grid-template-columns:1fr;gap:1rem}
+.scale-area{display:flex;align-items:baseline;gap:.7rem}
+.scale-area .num{color:var(--muted);font-size:.78rem;font-family:"Alegreya SC",serif}
+.scale-area strong{font-family:"Alegreya SC",serif;font-weight:500;font-size:1.05rem}
+.scale-row .controls,.scale-row > div.controls{display:grid}
+.scale-control{display:grid;grid-template-columns:5.5rem 1fr 2rem;align-items:center;gap:.8rem}
+.scale-control > span{color:var(--muted);font-size:.78rem;text-transform:capitalize;letter-spacing:.04em}
+.scale-control output{color:var(--ink);font-size:.95rem;text-align:right;font-variant-numeric:tabular-nums}
+.scale-control input[type=range]{-webkit-appearance:none;appearance:none;height:2px;background:var(--hair);border-radius:2px}
+.scale-control input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:16px;height:16px;border-radius:50%;background:var(--ink);cursor:pointer;border:0}
+.scale-control input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--ink);cursor:pointer;border:0}
+.scale-control:not(:last-child){margin-bottom:.7rem}
+
+.form-submit{margin-top:3.4rem;text-align:center}
+.btn{display:inline-flex;align-items:center;gap:.6rem;font-family:"Alegreya SC",serif;font-weight:600;letter-spacing:.14em;font-size:1rem;text-decoration:none;color:var(--bg);background:var(--ink);border:1px solid var(--ink);border-radius:2px;padding:1.1rem 2.6rem;cursor:pointer;transition:transform .25s ease,background .3s ease}
+.btn:hover{transform:translateY(-2px);background:#fff}
+.btn .arrow{transition:transform .25s ease}
+.btn:hover .arrow{transform:translateX(3px)}
+.btn.is-loading{opacity:.6;pointer-events:none}
+.btn-primary{}
+.form-note{margin-top:1.3rem;color:var(--muted);font-size:.85rem;display:inline-flex;align-items:center;gap:.5rem;justify-content:center}
+
+/* ---- result panel ---- */
+.assessment-result{display:block;min-height:0;padding:0;margin-top:4rem}
+.result-panel{border:1px solid var(--hair);border-radius:4px;padding:3rem 2.4rem;background:var(--panel)}
+.result-panel h2{font-family:"Alegreya SC",serif;font-weight:500;font-size:clamp(1.8rem,4vw,2.6rem);margin:1rem 0 1.2rem}
+.result-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:2.4rem;margin-top:2.4rem}
+.result-grid .label{font-family:"Alegreya SC",serif;letter-spacing:.2em;font-size:.74rem;color:var(--muted);text-transform:uppercase}
+.result-list{list-style:none;margin-top:1rem;display:flex;flex-direction:column;gap:1.2rem}
+.result-list li strong{display:block;font-family:"Alegreya SC",serif;font-weight:500;font-size:1.1rem;margin-bottom:.3rem}
+.result-list li span{color:var(--muted);font-size:.95rem;line-height:1.6}
+.pull{border-left:1px solid var(--hair);padding-left:1.6rem}
+.pull .quote{font-style:italic;font-size:1.15rem;line-height:1.6}
+.pull .quote-attr{display:block;margin-top:1rem;font-family:"Alegreya SC",serif;letter-spacing:.16em;font-size:.74rem;color:var(--muted)}
+.result-panel .btn{margin-top:2.4rem}
+
+/* ============================================================
+   Reveal animation
+   ============================================================ */
+.rise,.obs-fade{opacity:0;transform:translateY(16px);transition:opacity 1.1s ease,transform 1.1s ease}
+.rise.in,.obs-fade.is-in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.rise,.obs-fade{opacity:1;transform:none;transition:none}}
+
+/* ============================================================
+   Responsive
+   ============================================================ */
+@media(max-width:720px){
+  header.bar{padding:1.1rem 1.4rem;font-size:.8rem}
+  .who-inner{grid-template-columns:1fr;gap:1.6rem;text-align:center;max-width:30rem}
+  .portrait{max-width:18rem;margin:0 auto}
+  .cta{padding:1.05rem 2rem}
+  .question-grid{grid-template-columns:1fr}
+  .result-grid{grid-template-columns:1fr;gap:1.6rem}
+  .pull{border-left:0;border-top:1px solid var(--hair);padding-left:0;padding-top:1.6rem}
+  .scale-control{grid-template-columns:4.5rem 1fr 1.8rem}
+}

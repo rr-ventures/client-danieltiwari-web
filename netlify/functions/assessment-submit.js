@@ -108,8 +108,8 @@ function resultEmailHtml(name, result) {
       <p><strong>Your current focus areas:</strong></p>
       <ol>${focus}</ol>
       <p>${escapeHtml(result.cta)}</p>
-      <p>If this surfaced something important, you can apply for a private introductory call here:<br>
-      <a href="https://danieltiwari.com/apply.html">https://danieltiwari.com/apply.html</a></p>
+      <p>If this surfaced something important, you can book a private introductory call here:<br>
+      <a href="https://calendly.com/danieltiwari/intro-call">https://calendly.com/danieltiwari/intro-call</a></p>
       <p>Daniel Tiwari</p>
     </div>
   `;

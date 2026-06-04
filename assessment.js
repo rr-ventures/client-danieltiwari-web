@@ -14,19 +14,53 @@ const AREAS = [
 
 const CALENDLY = "https://calendly.com/reece-localleader/30min";
 
+// Per-stage reading: a literary diagnosis, what the stage is, what's next, and a 30-day move.
 const AUTH_INSIGHT = {
-  1: { label: "Conditioned", summary: "Part of you still expects the current path to deliver.",
-       means: "You're still largely inside the story you were handed — which is the most common place to begin. The work ahead isn't fixing you; it's noticing where that story quietly stops fitting." },
-  2: { label: "Draining", summary: "The old path is starting to cost more than it gives back.",
-       means: "The fatigue isn't weakness — it's information. Something you've been carrying is heavier than it's worth, even if you can't yet name what it is." },
-  3: { label: "Questioning", summary: "You can feel something is off, even if the whole pattern isn't named yet.",
-       means: "You're at the threshold most people never cross: admitting the doubt. The next move isn't a bigger push — it's getting honest about what, specifically, isn't yours." },
-  4: { label: "Breaking Point", summary: "The false path has been named. Relief and discomfort often arrive together here.",
-       means: "You've said the quiet thing out loud to yourself. It's uncomfortable, and it's also the real beginning — most lasting change starts at exactly this point." },
-  5: { label: "Returning", summary: "You've started backing what is true, even if the direction is still forming.",
-       means: "You've made the decision; now it's about building the structure that holds it. This is where good guidance compounds the fastest." },
-  6: { label: "Building", summary: "You're constructing a life around what feels more authentic.",
-       means: "You're past the hardest part. The work now is refinement and momentum — making sure the life you're building matches the force of what's actually in you." },
+  1: { label: "Conditioned", short: "you're still living inside a story you were handed",
+       tension: "You're working hard at a life you never quite chose — and a part of you is starting to feel the seam.",
+       means: "You've absorbed a definition of a good life and you're running it faithfully. There's nothing wrong with you; the map you were given simply isn't yours. The first work is noticing where it stops fitting.",
+       next: "The next move isn't a bigger push. It's letting yourself feel where the life you're performing and the life you'd actually choose pull apart.",
+       move: "This month, catch yourself once a day doing something purely because it's expected. Don't change it yet — just name it." },
+  2: { label: "Draining", short: "the old path is costing more than it returns",
+       tension: "You can still force it, and forcing it is exactly what's wearing you down.",
+       means: "The fatigue you feel isn't weakness — it's honest feedback. Something you've been carrying has become heavier than it's worth, even if you can't yet name what.",
+       next: "Next comes naming it: not 'I need more discipline' but 'this specific thing isn't mine.'",
+       move: "This month, notice what you feel lighter after — and what you brace yourself for. The pattern in that is the thread to pull." },
+  3: { label: "Questioning", short: "you can feel something is off, but it isn't fully named",
+       tension: "You're past pretending everything's fine, and not yet sure what the truth underneath is.",
+       means: "You're at the threshold most people never cross — admitting the doubt out loud to yourself. The narrative is cracking; that's not a breakdown, it's the beginning of clarity.",
+       next: "Next is precision: moving from 'something's wrong' to naming exactly which parts of your life were never actually yours.",
+       move: "This month, finish this sentence honestly, on paper: 'The part of my life I've stopped believing in is ___.'" },
+  4: { label: "Breaking Point", short: "you've named the thing, and can't fully un-see it",
+       tension: "You've admitted the life isn't yours — which is a relief and a disturbance at the same time.",
+       means: "You've said the quiet thing out loud. Most people spend years avoiding this exact moment. It's uncomfortable because it's real, and it's where lasting change actually starts.",
+       next: "Next is a decision — not a plan, a decision — to live from what you now know, even before the path is clear.",
+       move: "This month, make one small choice that your old, performed self wouldn't have made. Let it be evidence." },
+  5: { label: "Returning", short: "you've decided, and you're building the structure to hold it",
+       tension: "You know the direction; the work now is making a life that can actually carry it.",
+       means: "You've chosen honesty over comfort, even with the path still forming. This is the stage where the right structure and the right reflection compound fastest.",
+       next: "Next is consolidation — turning a decision into a life that runs on it, not just intends it.",
+       move: "This month, build one durable structure (a boundary, a practice, a relationship) around the choice you've made." },
+  6: { label: "Building", short: "you're constructing a life around what's actually yours",
+       tension: "The hardest part is behind you; the question now is whether what you're building matches the full size of what's in you.",
+       means: "You're past the breaking and the deciding. You're constructing. The risk at this stage isn't collapse — it's settling, building something good that's still a little smaller than you're capable of.",
+       next: "Next is refinement and reach — making sure the life you're building is honest all the way up, not just safe and sincere.",
+       move: "This month, find the one place you're playing slightly small 'to be realistic,' and test what happens if you don't." },
+};
+
+// Per-area reading: what a wide gap here tends to look like, and the first honest shift.
+const AREA_READ = {
+  career:       { looks: "work that quietly runs your days without ever feeling like yours", shift: "name the one part of your work you'd keep if money were no object — and the part you're only tolerating." },
+  relationships:{ looks: "being present in body but not fully in truth with someone close", shift: "say one true thing you've been carefully managing around." },
+  friendships:  { looks: "people around you, and a quiet sense of going unmet by them", shift: "reach for one person you can be completely unedited with this week." },
+  family:       { looks: "slipping into old roles that no longer fit who you've become", shift: "notice where you perform the version of yourself your family still expects." },
+  health:       { looks: "a body you negotiate with rather than actually inhabit", shift: "pick the one basic you keep abandoning, and protect it for a week." },
+  fitness:      { looks: "energy that doesn't match the life you're trying to live", shift: "move daily in a way you'd genuinely choose, not as punishment." },
+  attractiveness:{ looks: "a gap between how you present and how you feel underneath it", shift: "tend to one thing that's for you, not for being seen." },
+  money:        { looks: "numbers quietly driving decisions you wouldn't otherwise make", shift: "separate what you actually need from what you're trying to prove." },
+  adventure:    { looks: "a life that's safe, ordered, and quietly under-lived", shift: "put one genuinely alive thing on the calendar, soon." },
+  spirituality: { looks: "competence without much sense of why any of it matters", shift: "make space for one question bigger than your to-do list." },
+  lifestyle:    { looks: "surroundings shaped by default rather than by intention", shift: "change one thing in your daily environment to match who you're becoming." },
 };
 
 function numeric(value, fallback = 0) {
@@ -55,15 +89,16 @@ function topFocusAreas(wheel) {
 }
 
 function authenticityStage(answers) {
-  const stage = Math.max(numeric(answers.path_signal, 3), numeric(answers.decision_signal, 1));
-  return { stage: Math.min(stage, 6), ...(AUTH_INSIGHT[Math.min(stage, 6)] || AUTH_INSIGHT[3]) };
+  const stage = Math.min(Math.max(numeric(answers.path_signal, 3), numeric(answers.decision_signal, 1)), 6);
+  return { stage, ...(AUTH_INSIGHT[stage] || AUTH_INSIGHT[3]) };
 }
 
 function buyerStage(answers) {
   const score = Math.round((numeric(answers.previous_attempts, 1) + numeric(answers.help_openness, 1)
     + numeric(answers.change_timeline, 1) + numeric(answers.investment_readiness, 1)) / 4);
   const labels = { 1: "Problem aware", 2: "Learning", 3: "Trying to solve it yourself", 4: "Considering help", 5: "Ready to invest" };
-  return { stage: Math.min(Math.max(score, 1), 5), label: labels[Math.min(Math.max(score, 1), 5)], score };
+  const s = Math.min(Math.max(score, 1), 5);
+  return { stage: s, label: labels[s], score };
 }
 
 function rebelFactor(answers) {
@@ -74,18 +109,27 @@ function rebelFactor(answers) {
 }
 
 function fulfilmentScore(wheel) {
-  const avg = wheel.reduce((s, a) => s + a.fulfillment, 0) / wheel.length; // 1..10
+  const avg = wheel.reduce((s, a) => s + a.fulfillment, 0) / wheel.length;
   const pct = Math.round(avg * 10);
   const tier = pct < 35 ? "Quietly depleted" : pct < 55 ? "Holding it together"
     : pct < 70 ? "Capable but unfulfilled" : pct < 85 ? "Coming into alignment" : "Largely aligned";
   return { pct, tier };
 }
 
-function focusLine(area) {
-  if (area.gap >= 4 && area.urgency >= 7) return "The widest, most urgent gap in your wheel — it matters deeply to you and currently gives back the least.";
-  if (area.gap >= 4) return "One of the widest gaps between how much this matters to you and how fulfilled it feels right now.";
-  if (area.urgency >= 8) return "Not your lowest score, but the one you flagged as most urgent to address.";
-  return "A meaningful gap between its importance to you and where it currently sits.";
+function wheelShape(wheel) {
+  const top = [...wheel].sort((a, b) => b.fulfillment - a.fulfillment)[0];
+  const bottom = [...wheel].sort((a, b) => a.fulfillment - b.fulfillment)[0];
+  return { top, bottom };
+}
+
+function combinationRead(stage, buyer, rebel) {
+  const rebelPhrase = rebel.score >= 4
+    ? "You think bigger than the life you're currently living, and you've little patience for a borrowed script."
+    : "You're still weighing how far you're willing to step outside the familiar — which is its own honest question.";
+  const buyerPhrase = buyer.stage >= 4
+    ? "And you're at the point where you can feel that an outside perspective would move things; you're past trying to think your way out alone."
+    : "And for now you're mostly working this out on your own, which is exactly right for where you are.";
+  return `${rebelPhrase} At the ${stage.label} stage, ${stage.short}. ${buyerPhrase}`;
 }
 
 function calculateResult(answers) {
@@ -95,15 +139,10 @@ function calculateResult(answers) {
   const buyer = buyerStage(answers);
   const rebel = rebelFactor(answers);
   const score = fulfilmentScore(wheel);
-
-  // Loosened gate: any 2 of 3 high signals routes to the diagnostic conversation.
+  const shape = wheelShape(wheel);
   const signals = [authenticity.stage >= 4, buyer.stage >= 4, rebel.score >= 4].filter(Boolean).length;
   const highFit = signals >= 2;
-
-  return {
-    wheel, focusAreas, authenticity, buyer, rebel, score,
-    route: highFit ? "diagnostic" : "nurture",
-  };
+  return { wheel, focusAreas, authenticity, buyer, rebel, score, shape, route: highFit ? "diagnostic" : "nurture" };
 }
 
 /* ---------- Wheel of Life radar (inline SVG) ---------- */
@@ -111,11 +150,9 @@ function renderWheel(wheel) {
   const size = 320, c = size / 2, R = 120, n = wheel.length;
   const ang = (i) => (Math.PI * 2 * i) / n - Math.PI / 2;
   const pt = (i, r) => [c + Math.cos(ang(i)) * r, c + Math.sin(ang(i)) * r];
-
   let rings = "";
   [0.25, 0.5, 0.75, 1].forEach((f) => {
-    const d = wheel.map((_, i) => pt(i, R * f).map((v) => v.toFixed(1)).join(",")).join(" ");
-    rings += `<polygon points="${d}" fill="none" stroke="var(--hair)" stroke-width="1"/>`;
+    rings += `<polygon points="${wheel.map((_, i) => pt(i, R * f).map((v) => v.toFixed(1)).join(",")).join(" ")}" fill="none" stroke="var(--hair)" stroke-width="1"/>`;
   });
   let axes = "", labels = "";
   wheel.forEach((a, i) => {
@@ -127,7 +164,6 @@ function renderWheel(wheel) {
   });
   const poly = wheel.map((a, i) => pt(i, R * (a.fulfillment / 10)).map((v) => v.toFixed(1)).join(",")).join(" ");
   const dots = wheel.map((a, i) => { const [x, y] = pt(i, R * (a.fulfillment / 10)); return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.6" fill="var(--ink)"/>`; }).join("");
-
   return `<svg viewBox="-72 -4 ${size + 144} ${size + 8}" class="wheel-svg" role="img" aria-label="Your Wheel of Life">
     ${rings}${axes}
     <polygon points="${poly}" fill="rgba(28,26,20,.12)" stroke="var(--ink)" stroke-width="1.5"/>
@@ -140,30 +176,43 @@ function renderResult(result, emailState = "pending") {
   if (!el) return;
   const a = result.authenticity;
 
-  const focusList = result.focusAreas.map((f) => `
+  const focusList = result.focusAreas.map((f) => {
+    const read = AREA_READ[f.key] || {};
+    return `
     <li>
       <strong>${f.label}</strong>
       <span class="nums">fulfilment ${f.fulfillment}/10 · importance ${f.importance}/10 · urgency ${f.urgency}/10</span>
-      <span>${focusLine(f)}</span>
-    </li>`).join("");
+      <p class="read">${read.looks ? `It can look like ${read.looks}.` : ""} <em>First shift —</em> ${read.shift || ""}</p>
+    </li>`;
+  }).join("");
+
+  const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : "");
+  const monthMove = cap((a.move || "").replace(/^this month,\s*/i, ""));
+  const roadmap = [
+    `<li><span class="step sc">This week</span><p>Start with <strong>${result.focusAreas[0]?.label}</strong> — ${(AREA_READ[result.focusAreas[0]?.key] || {}).shift || ""}</p></li>`,
+    `<li><span class="step sc">This month</span><p>${monthMove}</p></li>`,
+    `<li><span class="step sc">When you're ready</span><p>Bring your map to a private conversation, and we read it together — what it's showing, and the one thread worth pulling first.</p></li>`,
+  ].join("");
 
   const emailCopy = {
-    pending: "Sending your full snapshot…",
-    sent: "A copy of your snapshot is on its way to your inbox.",
-    skipped: "Your result is ready here. (Email delivery isn't configured in this preview.)",
-    warning: "Your result is ready here. We couldn't confirm the email — check back shortly.",
+    pending: "Sending your Authenticity Map to your inbox…",
+    sent: "A copy of your Authenticity Map is on its way to your inbox.",
+    skipped: "Your map is ready here. (Email delivery isn't configured in this preview.)",
+    warning: "Your map is ready here. We couldn't confirm the email — check back shortly.",
   }[emailState] || "";
 
   const nextStep = result.route === "diagnostic"
-    ? `<p>Your answers suggest you're at a point where an outside perspective tends to help most. The next step is a private diagnostic conversation — a continuation of this assessment, not a sales call. In 30 minutes we'd look at your widest gap (${result.focusAreas[0]?.label}), the pattern underneath it, and whether working together makes sense — or whether you're better placed to do this on your own right now.</p>`
-    : `<p>You can absolutely keep moving on your own from here — start with your most urgent area (${result.focusAreas[0]?.label}) and the one honest change it's asking for. If at some point you'd like a clearer reflection from the outside, the door is open. No pressure, no pitch.</p>`;
+    ? `<p>Your answers suggest you're at a point where an outside perspective tends to help most. The next step is a private conversation — a continuation of this map, not a sales call. In thirty minutes we'd read it together: your widest gap (${result.focusAreas[0]?.label}), the pattern underneath it, and whether working together makes sense — or whether you're better placed to do this on your own right now.</p>
+       <a class="btn" href="${CALENDLY}"><span>Read your map with Daniel</span><span class="arrow" aria-hidden="true">→</span></a>`
+    : `<p>You can absolutely keep moving on your own from here — your map above is enough to start. If at some point you'd like a clearer reflection from the outside, the door is open, with no pressure and no pitch.</p>
+       <a class="btn secondary-btn" href="${CALENDLY}"><span>Book a conversation when you're ready</span><span class="arrow" aria-hidden="true">→</span></a>`;
 
   el.hidden = false;
   el.innerHTML = `
-    <div class="result-panel">
-      <span class="eyebrow"><span class="dot"></span>Your snapshot</span>
+    <div class="result-panel" id="authenticity-map">
+      <span class="eyebrow"><span class="dot"></span>Your Authenticity Map</span>
       <h2>${a.label}</h2>
-      <p class="lede">${a.summary}</p>
+      <p class="lede tension">${a.tension}</p>
 
       <div class="result-score">
         <div class="score-num">${result.score.pct}<span>/100</span></div>
@@ -173,27 +222,39 @@ function renderResult(result, emailState = "pending") {
       <div class="result-block">
         <span class="label">Your Wheel of Life</span>
         <div class="wheel-wrap">${renderWheel(result.wheel)}</div>
+        <p class="wheel-read">Your wheel is strongest in <strong>${result.shape.top.label}</strong> — the part of life currently feeding you — and thinnest in <strong>${result.shape.bottom.label}</strong>, where most of the friction is leaking from.</p>
       </div>
 
       <div class="result-block">
         <span class="label">Where life is asking for attention</span>
-        <ol class="result-list">${focusList}</ol>
+        <ol class="result-list deep">${focusList}</ol>
       </div>
 
       <div class="result-block">
-        <span class="label">What this means for you</span>
+        <span class="label">Where you are</span>
         <p>${a.means}</p>
+        <p class="next-stage"><em>What's next —</em> ${a.next}</p>
+      </div>
+
+      <div class="result-block">
+        <span class="label">What this combination is telling us</span>
+        <p>${combinationRead(a, result.buyer, result.rebel)}</p>
+      </div>
+
+      <div class="result-block">
+        <span class="label">Your next 30 days</span>
+        <ol class="roadmap">${roadmap}</ol>
       </div>
 
       <div class="result-block next">
         <span class="label">Your next step</span>
         ${nextStep}
-        ${result.route === "diagnostic"
-          ? `<a class="btn" href="${CALENDLY}"><span>Book your private conversation</span><span class="arrow" aria-hidden="true">→</span></a>`
-          : `<a class="btn secondary-btn" href="${CALENDLY}"><span>Book a conversation when you're ready</span><span class="arrow" aria-hidden="true">→</span></a>`}
       </div>
 
-      <p class="form-note"><span class="dot"></span>${emailCopy}</p>
+      <div class="result-actions no-print">
+        <button type="button" class="ghost-btn sc" onclick="window.print()">Save / print your map</button>
+        <p class="form-note"><span class="dot"></span>${emailCopy}</p>
+      </div>
     </div>`;
 }
 
@@ -229,14 +290,11 @@ async function submitAssessment(form, submitButton) {
   const result = calculateResult(answers);
   renderResult(result, "pending");
   document.getElementById("assessment-result")?.scrollIntoView({ behavior: "smooth", block: "start" });
-
   submitButton.disabled = true;
   submitButton.classList.add("is-loading");
   try {
     const response = await fetch("/api/assessment-submit", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(answers),
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(answers),
     });
     const data = await response.json().catch(() => ({}));
     if (data.emailWarning) renderResult(result, "warning");

@@ -104,7 +104,7 @@ function resultEmailHtml(name, result) {
   return `
     <div style="font-family: Georgia, serif; color: #15140f; line-height: 1.6;">
       <p>Hi ${escapeHtml(name || "there")},</p>
-      <p>Your assessment snapshot is ready.</p>
+      <p>Your Authenticity Map is ready — here is the short version. The full map, with your Wheel of Life and your next steps, is on the page you just came from.</p>
       <h2 style="font-family: Georgia, serif;">${escapeHtml(result.authenticity.label)}</h2>
       <p>${escapeHtml(result.authenticity.summary)}</p>
       <p><strong>Your current focus areas:</strong></p>
@@ -192,7 +192,7 @@ exports.handler = async (event) => {
       from,
       to: [answers.email],
       reply_to: replyTo,
-      subject: "Your assessment snapshot",
+      subject: "Your Authenticity Map",
       html: resultEmailHtml(answers.name, result),
       tags: [{ name: "source", value: "assessment" }],
     });

@@ -160,7 +160,7 @@ function renderResult(result, emailState = "pending") {
       </div>
       <p class="form-note"><span class="dot"></span>${emailCopy}</p>
       <p>
-        <a class="btn btn-primary" href="https://calendly.com/danieltiwari/intro-call">
+        <a class="btn btn-primary" href="https://calendly.com/reece-localleader/30min">
           <span>Book your intro call</span>
           <span class="arrow" aria-hidden="true">→</span>
         </a>

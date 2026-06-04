@@ -109,7 +109,7 @@ function resultEmailHtml(name, result) {
       <ol>${focus}</ol>
       <p>${escapeHtml(result.cta)}</p>
       <p>If this surfaced something important, you can book a private introductory call here:<br>
-      <a href="https://calendly.com/danieltiwari/intro-call">https://calendly.com/danieltiwari/intro-call</a></p>
+      <a href="https://calendly.com/reece-localleader/30min">https://calendly.com/reece-localleader/30min</a></p>
       <p>Daniel Tiwari</p>
     </div>
   `;

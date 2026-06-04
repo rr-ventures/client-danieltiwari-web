@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>Nurture Sequence Preview — Daniel Tiwari</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<style>
+  :root{
+    --g-red:#c5221f; --g-blue:#1a73e8; --g-text:#202124; --g-grey:#5f6368;
+    --g-line:#e8eaed; --g-bg:#f6f8fc; --g-hover:#f2f6fc; --g-sel:#fde9e7; --accent:#15140f;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Google Sans",Roboto,Arial,Helvetica,sans-serif;color:var(--g-text);background:var(--g-bg);-webkit-font-smoothing:antialiased}
+  a{color:inherit}
+
+  /* top brand strip */
+  .topbar{background:#fff;border-bottom:1px solid var(--g-line);padding:.85rem 1.4rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
+  .topbar .mark{font-family:Georgia,serif;font-size:1.05rem;letter-spacing:.04em;color:var(--accent)}
+  .topbar .tag{font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;color:var(--g-grey);border:1px solid var(--g-line);border-radius:20px;padding:.25rem .7rem}
+  .topbar .spacer{flex:1}
+  .note{font-size:.78rem;color:var(--g-grey)}
+
+  /* personalise + branch controls */
+  .controls{background:#fff;border-bottom:1px solid var(--g-line);padding:.7rem 1.4rem;display:flex;align-items:center;gap:1.2rem;flex-wrap:wrap}
+  .controls .field{display:flex;align-items:center;gap:.4rem;font-size:.82rem;color:var(--g-grey)}
+  .controls input,.controls select{font:inherit;font-size:.82rem;padding:.35rem .5rem;border:1px solid var(--g-line);border-radius:6px;color:var(--g-text);background:#fff}
+  .controls input{width:7rem}
+  .tabs{display:flex;gap:.4rem;margin-left:auto}
+  .tab{border:1px solid var(--g-line);background:#fff;border-radius:20px;padding:.4rem 1rem;font-size:.82rem;cursor:pointer;color:var(--g-grey)}
+  .tab.active{background:var(--accent);color:#f3efe6;border-color:var(--accent)}
+  .branch-desc{font-size:.78rem;color:var(--g-grey);padding:.5rem 1.4rem;background:#fff;border-bottom:1px solid var(--g-line)}
+
+  /* gmail two-pane */
+  .client{display:grid;grid-template-columns:minmax(280px,380px) 1fr;height:calc(100vh - 150px);background:#fff}
+  .list{border-right:1px solid var(--g-line);overflow-y:auto}
+  .row{display:flex;gap:.75rem;align-items:flex-start;padding:.8rem 1rem;border-bottom:1px solid var(--g-line);cursor:pointer}
+  .row:hover{background:var(--g-hover)}
+  .row.sel{background:var(--g-sel)}
+  .av{flex:none;width:34px;height:34px;border-radius:50%;background:#3c4043;color:#fff;display:flex;align-items:center;justify-content:center;font-size:.95rem;font-family:Georgia,serif}
+  .row .meta{flex:1;min-width:0}
+  .row .l1{display:flex;justify-content:space-between;gap:.6rem}
+  .row .from{font-weight:600;font-size:.88rem}
+  .row.unread .from{font-weight:700}
+  .row .day{font-size:.7rem;color:var(--g-grey);white-space:nowrap}
+  .row .subj{font-size:.85rem;font-weight:600;margin:.1rem 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .row.unread .subj{font-weight:700}
+  .row .snip{font-size:.8rem;color:var(--g-grey);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  /* reading pane */
+  .reader{overflow-y:auto;padding:1.6rem 2rem 4rem}
+  .reader .subject{font-size:1.4rem;font-weight:400;margin-bottom:1.2rem;color:var(--g-text)}
+  .reader .hdr{display:flex;gap:.8rem;align-items:center;border-bottom:1px solid var(--g-line);padding-bottom:1rem;margin-bottom:1.4rem}
+  .reader .hdr .av{width:40px;height:40px}
+  .reader .hdr .who{font-size:.9rem}
+  .reader .hdr .who b{font-weight:600}
+  .reader .hdr .who .to{color:var(--g-grey);font-size:.8rem}
+  .reader .hdr .when{margin-left:auto;font-size:.78rem;color:var(--g-grey)}
+  .reader .body{font-size:.96rem;line-height:1.65;color:#3c4043;max-width:42rem}
+  .reader .body p{margin:0 0 1rem}
+  .reader .cta{display:inline-block;background:var(--accent);color:#f3efe6;text-decoration:none;padding:.7rem 1.4rem;border-radius:4px;font-size:.85rem;letter-spacing:.04em;margin:.4rem 0 1rem;font-family:Georgia,serif}
+  .reader .replyhint{margin-top:1.4rem;color:var(--g-grey);font-size:.82rem;border-top:1px solid var(--g-line);padding-top:1rem}
+  .mf{color:var(--g-blue);background:rgba(26,115,232,.08);border-radius:3px;padding:0 2px}
+
+  @media(max-width:820px){
+    .client{grid-template-columns:1fr;height:auto}
+    .list{max-height:42vh;border-right:0;border-bottom:1px solid var(--g-line)}
+    .reader{padding:1.2rem 1.1rem 3rem}
+  }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="mark">Daniel Tiwari</span>
+  <span class="tag">Lead Nurture — Inbox Preview</span>
+  <span class="spacer"></span>
+  <span class="note">Internal preview · how the post-quiz emails land in a prospect's inbox · not public</span>
+</div>
+
+<div class="controls">
+  <span class="field">Preview as:
+    <input id="pf-name" type="text" value="James" aria-label="First name">
+  </span>
+  <span class="field">Top area:
+    <select id="pf-area">
+      <option>Career</option><option>Relationships</option><option>Money</option>
+      <option>Meaning</option><option>Health</option><option>Vitality</option><option>Adventure</option>
+    </select>
+  </span>
+  <span class="field">Stage:
+    <select id="pf-stage">
+      <option>Conditioned</option><option>Draining</option><option selected>Questioning</option>
+      <option>Breaking Point</option><option>Returning</option><option>Building</option>
+    </select>
+  </span>
+  <span class="tabs">
+    <button class="tab active" data-branch="A">Branch A · Diagnostic</button>
+    <button class="tab" data-branch="B">Branch B · Nurture</button>
+  </span>
+</div>
+<div class="branch-desc" id="branch-desc"></div>
+
+<div class="client">
+  <div class="list" id="list"></div>
+  <div class="reader" id="reader"></div>
+</div>
+
+<script>
+const CTA = "https://calendly.com/reece-localleader/30min";
+const SEQ = {
+  A: { name:"Diagnostic", desc:"High-fit leads · 6 emails over 12 days · goal: book the private conversation.", emails:[
+    {day:"Day 0", time:"9:02 AM", subject:"Your snapshot, {{first_name}} — and the pattern underneath it", body:[
+      "{{first_name}},",
+      "You just did something most people avoid for years. You looked.",
+      "Your snapshot puts you around {{authenticity_stage}}, and the area asking loudest for your attention is {{top_focus_area}}. Notice it probably isn't really about {{top_focus_area}} itself. It rarely is — that area is just where the deeper thing surfaces first.",
+      "Sit with the result for a day. Don't fix anything yet.",
+      "Over the next couple of weeks I'll send a few short notes — not a campaign, just the thinking that tends to help people standing where you are. At the end, if it feels right, there's a quiet door you can walk through.",
+      "For now: which line in your result was hardest to read? Reply and tell me. I read these myself.",
+      "— Daniel" ]},
+    {day:"Day 1", time:"7:40 AM", subject:"I almost didn't write this one", body:[
+      "{{first_name}},",
+      "For most of my twenties I was certain that if I just performed a little harder, the life I'd built would finally start to feel like mine.",
+      "It never did. Not because I lacked discipline — because I was running someone else's definition of a good life and calling it my own.",
+      "The cost wasn't dramatic. It was quiet. Years that looked fine from the outside and felt hollow from the inside.",
+      "What changed it wasn't a new strategy. It was getting honest about which parts of my life I'd never actually chosen.",
+      "That's the work I do now. Not motivation. Not hacks. Just the slow business of finding out what's actually yours.",
+      "— Daniel" ]},
+    {day:"Day 3", time:"8:15 AM", subject:"The thing more discipline won't fix", cta:true, body:[
+      "{{first_name}},",
+      "Here's what I notice in people who land where you did.",
+      "You're not short on capability. You can grit your teeth and force almost anything. That's exactly the trap — the harder you can push, the longer you can keep a misaligned life running before it breaks.",
+      "At {{authenticity_stage}}, the work usually isn't another push. It's removing the interference — the inherited expectations, the borrowed definition of success.",
+      "That's hard to do alone, because the thing in the way is usually invisible to the person carrying it.",
+      "If you'd like an outside look at yours, this is the door I mentioned. Thirty minutes, no pitch — a continuation of the assessment you already started.",
+      "— Daniel" ]},
+    {day:"Day 5", time:"7:55 AM", subject:"What changes when the real thing gets named", cta:true, body:[
+      "{{first_name}},",
+      "Someone I worked with had everything on paper — the business, the relationship, the freedom most people are still chasing. And a persistent sense that none of it was his.",
+      "We didn't add anything. We took things away. The shoulds. The version of himself he'd been performing since he was nineteen.",
+      "What surprised him wasn't the clarity. It was the relief — how much energy he'd spent holding up a life he didn't actually want.",
+      "I'm not promising you his outcome; your pattern is your own. But the mechanism is the same: name what isn't yours, and a lot of the struggle stops being necessary.",
+      "If you want to look at yours together, the door's still open.",
+      "— Daniel" ]},
+    {day:"Day 8", time:"8:30 AM", subject:"Why most coaching doesn't work", cta:true, body:[
+      "{{first_name}},",
+      "Most coaching solves the wrong layer. It works on motivation and productivity — the surface. But if the life underneath is borrowed, a better strategy just helps you climb the wrong mountain faster.",
+      "I work one layer down: identity. Who you've been performing, and who's underneath it. It's slower, more honest, and more demanding than a typical coaching relationship.",
+      "It's also why I take on only a handful of people at a time, over six months, one to one. This isn't a programme. It's a private relationship with your actual life as the subject.",
+      "If that's the kind of work you're looking for, let's talk.",
+      "— Daniel" ]},
+    {day:"Day 12", time:"9:10 AM", subject:"Before this thread goes quiet", cta:true, body:[
+      "{{first_name}},",
+      "This is the last of these notes.",
+      "If you've been meaning to book the conversation, here's the link one more time. If you haven't, that's genuine information too — maybe the timing's wrong, maybe the fit isn't there. Both are fine.",
+      "I keep the number of people I work with deliberately small — not as a tactic, but because this work doesn't scale without losing what makes it work.",
+      "Either way, I'll keep writing occasionally. Stay if it's useful. And if you ever want to look at what's standing in front of your potential, you know where I am.",
+      "— Daniel" ]}
+  ]},
+  B: { name:"Nurture", desc:"Everyone else (the majority) · 7 emails over 21 days · belief-build, be useful, booking link only near the end.", emails:[
+    {day:"Day 0", time:"9:02 AM", subject:"Your snapshot, {{first_name}} — read this part first", body:[
+      "{{first_name}},",
+      "Your snapshot puts you around {{authenticity_stage}}, with {{top_focus_area}} asking loudest for your attention.",
+      "Read this part first: wherever you landed is a location on a map, not a verdict. Most people spend years at the earlier stages without ever naming them. You just named yours. That's the part that matters.",
+      "I'll send you a few short notes over the coming weeks — useful on their own, no strings.",
+      "To start: what surprised you most in your result? Reply and tell me. I read every one.",
+      "— Daniel" ]},
+    {day:"Day 3", time:"7:48 AM", subject:"The mistake most people make at {{authenticity_stage}}", body:[
+      "{{first_name}},",
+      "When people start sensing that something's off, the instinct is to think their way out of it. More books. More frameworks. More analysis.",
+      "Understandable — and usually the wrong move. You can't out-think a life you haven't been honest about. Insight isn't the bottleneck. Honesty is.",
+      "The quieter move is to stop asking “what should I do?” and start asking “what here was never actually mine to begin with?”",
+      "That single question tends to do more than a year of strategising. Sit with it this week.",
+      "— Daniel" ]},
+    {day:"Day 6", time:"8:05 AM", subject:"One thing to try this week", body:[
+      "{{first_name}},",
+      "Your result flagged {{top_focus_area}} as the area asking loudest right now. Here's a small experiment.",
+      "For one week, every time you make a decision in that area, pause and ask: am I choosing this, or performing it? Choosing means it would still feel right with nobody watching. Performing means it's for an audience — even an imagined one.",
+      "Don't try to change anything. Just notice the ratio.",
+      "Most people are startled by how much of their life turns out to be performance. That noticing is the first honest step.",
+      "Tell me what you find, if you like.",
+      "— Daniel" ]},
+    {day:"Day 9", time:"7:42 AM", subject:"What I wish I'd known at your stage", body:[
+      "{{first_name}},",
+      "What I wish someone had told me earlier: the discomfort you feel isn't a malfunction. It's the most honest part of you, trying to get your attention.",
+      "For years I treated that signal as weakness — something to push through. So I pushed, built more of a life that wasn't mine, and wondered why the ache didn't go.",
+      "The ache was the point. It was the only part of me still telling the truth.",
+      "If something in you has been quietly insisting that this isn't it — that's not you being ungrateful. That's the part worth listening to.",
+      "— Daniel" ]},
+    {day:"Day 13", time:"8:20 AM", subject:"Why I only work with a handful of people", body:[
+      "{{first_name}},",
+      "I should tell you what I actually do, in case it's ever relevant.",
+      "I take on a small number of people, one to one, over six months. It isn't a course. It's a private relationship with your real life as the subject — direct, demanding, and honest in a way most of us rarely get with anyone.",
+      "I keep it small because this work doesn't scale without losing what makes it work.",
+      "I'm not pitching you. You may be years from this, or it may never be your path, and both are fine. I just don't want it to be a mystery if the moment ever comes.",
+      "If you're ever curious, just reply.",
+      "— Daniel" ]},
+    {day:"Day 17", time:"8:00 AM", subject:"How someone like you started moving", cta:true, body:[
+      "{{first_name}},",
+      "Someone who took this same assessment landed almost exactly where you did — capable, accomplished, and quietly certain something was off.",
+      "Nothing in his life was broken. That was the hard part. No obvious problem to point to, just a life that fit like a borrowed coat.",
+      "What moved him wasn't a breakthrough. It was permission — to admit the coat was borrowed, and to start, slowly, building one that fit.",
+      "If you've read this far through these notes, some part of you is probably ready to do the same.",
+      "When you want an outside look at your own pattern, there's a private conversation waiting. No pressure, no pitch.",
+      "— Daniel" ]},
+    {day:"Day 21", time:"9:05 AM", subject:"Where this goes next", cta:true, body:[
+      "{{first_name}},",
+      "This is the last of the welcome notes — but not the last you'll hear from me. I'll keep writing occasionally. Stay as long as it's useful.",
+      "Two things before I go quiet for a while.",
+      "One: wherever you are with {{top_focus_area}}, the most honest move is usually the smallest one you've been avoiding. Start there.",
+      "Two: if you'd ever like a clearer reflection than you can get on your own, the door's open — a private conversation, whenever the timing's right, not before.",
+      "Glad you're here, {{first_name}}.",
+      "— Daniel" ]}
+  ]}
+};
+
+let branch = "A", idx = 0;
+const $ = (s) => document.querySelector(s);
+function fields(){ return {
+  first_name: $("#pf-name").value.trim() || "there",
+  top_focus_area: $("#pf-area").value,
+  authenticity_stage: $("#pf-stage").value
+};}
+function fill(text, hl){
+  const f = fields();
+  return text.replace(/\{\{(first_name|top_focus_area|authenticity_stage)\}\}/g, (_,k)=>
+    hl ? `<span class="mf">${f[k]}</span>` : f[k]);
+}
+function snippet(em){ return fill(em.body[1] || em.body[0], false).replace(/<[^>]+>/g,''); }
+
+function renderList(){
+  const seq = SEQ[branch];
+  $("#branch-desc").textContent = seq.desc;
+  $("#list").innerHTML = seq.emails.map((em,i)=>`
+    <div class="row ${i===idx?'sel':''} ${i>=idx?'unread':''}" data-i="${i}">
+      <div class="av">D</div>
+      <div class="meta">
+        <div class="l1"><span class="from">Daniel Tiwari</span><span class="day">${em.day}</span></div>
+        <div class="subj">${fill(em.subject,false)}</div>
+        <div class="snip">${snippet(em)}</div>
+      </div>
+    </div>`).join("");
+  $("#list").querySelectorAll(".row").forEach(r=>r.onclick=()=>{ idx=+r.dataset.i; renderAll(); });
+}
+function renderReader(){
+  const em = SEQ[branch].emails[idx];
+  const f = fields();
+  const bodyHtml = em.body.map(p=>`<p>${fill(p,true)}</p>`).join("")
+    + (em.cta ? `<a class="cta" href="${CTA}" target="_blank" rel="noopener">Book a private conversation</a>` : "");
+  $("#reader").innerHTML = `
+    <div class="subject">${fill(em.subject,true)}</div>
+    <div class="hdr">
+      <div class="av">D</div>
+      <div class="who"><b>Daniel Tiwari</b> &lt;hello@send.danieltiwari.com&gt;<br>
+        <span class="to">to ${f.first_name}</span></div>
+      <div class="when">${em.day} · ${em.time}</div>
+    </div>
+    <div class="body">${bodyHtml}</div>
+    <div class="replyhint">↩ Reply &nbsp;·&nbsp; Early emails invite a reply on purpose — replies are the strongest interest signal and move the lead to the warm list.</div>`;
+}
+function renderAll(){ renderList(); renderReader(); }
+
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
+  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+  t.classList.add("active"); branch=t.dataset.branch; idx=0; renderAll();
+});
+["pf-name","pf-area","pf-stage"].forEach(id=>$("#"+id).addEventListener("input", renderAll));
+renderAll();
+</script>
+</body>
+</html>

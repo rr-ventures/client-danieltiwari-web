@@ -1,6 +1,7 @@
 # Build / deploy
 .netlify/
 .playwright-mcp/
+.agent-memory/
 
 # Verification screenshots (session artifacts, not production)
 /*.png

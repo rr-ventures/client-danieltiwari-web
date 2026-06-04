@@ -1,6 +1,14 @@
 [build]
   publish = "."
 
+[functions]
+  directory = "netlify/functions"
+
+[[redirects]]
+  from = "/api/assessment-submit"
+  to = "/.netlify/functions/assessment-submit"
+  status = 200
+
 [[headers]]
   for = "/*"
   [headers.values]

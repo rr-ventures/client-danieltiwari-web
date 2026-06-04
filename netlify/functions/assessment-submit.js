@@ -83,7 +83,9 @@ function calculateResult(answers) {
   const authenticity = authenticityStage(answers);
   const buyer = buyerStage(answers);
   const rebel = rebelFactor(answers);
-  const highFit = authenticity.stage >= 4 && buyer.stage >= 4 && rebel.score >= 4;
+  // Loosened gate: any 2 of 3 high signals routes to the diagnostic conversation.
+  const signals = [authenticity.stage >= 4, buyer.stage >= 4, rebel.score >= 4].filter(Boolean).length;
+  const highFit = signals >= 2;
 
   return {
     focusAreas,
@@ -92,8 +94,8 @@ function calculateResult(answers) {
     rebel,
     route: highFit ? "diagnostic" : "nurture",
     cta: highFit
-      ? "The next step is a private diagnostic conversation."
-      : "The next step is to sit with the pattern and keep following the thread.",
+      ? "The next step is a private diagnostic conversation — a continuation of this assessment, not a sales call."
+      : "You can keep moving on your own from here. If you'd like a clearer reflection from the outside, the door is open.",
   };
 }
 

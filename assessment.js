@@ -4,13 +4,30 @@ const AREAS = [
   ["friendships", "Friendships"],
   ["family", "Family"],
   ["health", "Health"],
-  ["fitness", "Vitality / Fitness"],
+  ["fitness", "Vitality"],
   ["attractiveness", "Attractiveness"],
-  ["money", "Money / Finances"],
-  ["adventure", "Adventure / Fun"],
-  ["spirituality", "Spirituality / Meaning"],
-  ["lifestyle", "Lifestyle / Surroundings"],
+  ["money", "Money"],
+  ["adventure", "Adventure"],
+  ["spirituality", "Meaning"],
+  ["lifestyle", "Lifestyle"],
 ];
+
+const CALENDLY = "https://calendly.com/reece-localleader/30min";
+
+const AUTH_INSIGHT = {
+  1: { label: "Conditioned", summary: "Part of you still expects the current path to deliver.",
+       means: "You're still largely inside the story you were handed — which is the most common place to begin. The work ahead isn't fixing you; it's noticing where that story quietly stops fitting." },
+  2: { label: "Draining", summary: "The old path is starting to cost more than it gives back.",
+       means: "The fatigue isn't weakness — it's information. Something you've been carrying is heavier than it's worth, even if you can't yet name what it is." },
+  3: { label: "Questioning", summary: "You can feel something is off, even if the whole pattern isn't named yet.",
+       means: "You're at the threshold most people never cross: admitting the doubt. The next move isn't a bigger push — it's getting honest about what, specifically, isn't yours." },
+  4: { label: "Breaking Point", summary: "The false path has been named. Relief and discomfort often arrive together here.",
+       means: "You've said the quiet thing out loud to yourself. It's uncomfortable, and it's also the real beginning — most lasting change starts at exactly this point." },
+  5: { label: "Returning", summary: "You've started backing what is true, even if the direction is still forming.",
+       means: "You've made the decision; now it's about building the structure that holds it. This is where good guidance compounds the fastest." },
+  6: { label: "Building", summary: "You're constructing a life around what feels more authentic.",
+       means: "You're past the hardest part. The work now is refinement and momentum — making sure the life you're building matches the force of what's actually in you." },
+};
 
 function numeric(value, fallback = 0) {
   const parsed = Number(value);
@@ -18,79 +35,166 @@ function numeric(value, fallback = 0) {
 }
 
 function collectAnswers(form) {
-  const formData = new FormData(form);
-  return Object.fromEntries(formData.entries());
+  return Object.fromEntries(new FormData(form).entries());
 }
 
-function topFocusAreas(answers) {
-  return AREAS.map(([key, label]) => {
-    const fulfillment = numeric(answers[`fulfillment_${key}`], 5);
-    const importance = numeric(answers[`importance_${key}`], 5);
-    const urgency = numeric(answers[`urgency_${key}`], 5);
-    const score = (11 - fulfillment) + importance + urgency;
-    return { key, label, fulfillment, importance, urgency, score };
-  })
+function wheelData(answers) {
+  return AREAS.map(([key, label]) => ({
+    key, label,
+    fulfillment: numeric(answers[`fulfillment_${key}`], 5),
+    importance: numeric(answers[`importance_${key}`], 5),
+    urgency: numeric(answers[`urgency_${key}`], 5),
+  }));
+}
+
+function topFocusAreas(wheel) {
+  return wheel
+    .map((a) => ({ ...a, gap: a.importance - a.fulfillment, score: (11 - a.fulfillment) + a.importance + a.urgency }))
     .sort((a, b) => b.score - a.score)
     .slice(0, 3);
 }
 
 function authenticityStage(answers) {
-  const path = numeric(answers.path_signal, 3);
-  const decision = numeric(answers.decision_signal, 1);
-  const stage = Math.max(path, decision);
-
-  if (stage <= 1) return { stage: 1, label: "Conditioned", summary: "Part of you still expects the current path to deliver." };
-  if (stage === 2) return { stage: 2, label: "Draining", summary: "The old path is starting to cost more than it gives back." };
-  if (stage === 3) return { stage: 3, label: "Questioning", summary: "You can feel that something is off, even if the whole pattern is not yet named." };
-  if (stage === 4) return { stage: 4, label: "Breaking Point", summary: "The false path has been named. This is often where relief and discomfort arrive together." };
-  if (stage === 5) return { stage: 5, label: "Returning", summary: "You have started backing what is true, even if the new direction is still forming." };
-  return { stage: 6, label: "Building", summary: "You are already constructing life around what feels more authentic." };
+  const stage = Math.max(numeric(answers.path_signal, 3), numeric(answers.decision_signal, 1));
+  return { stage: Math.min(stage, 6), ...(AUTH_INSIGHT[Math.min(stage, 6)] || AUTH_INSIGHT[3]) };
 }
 
 function buyerStage(answers) {
-  const attempts = numeric(answers.previous_attempts, 1);
-  const openness = numeric(answers.help_openness, 1);
-  const urgency = numeric(answers.change_timeline, 1);
-  const investment = numeric(answers.investment_readiness, 1);
-  const score = Math.round((attempts + openness + urgency + investment) / 4);
-
-  if (score <= 1) return { stage: 1, label: "Problem aware", score };
-  if (score === 2) return { stage: 2, label: "Learning", score };
-  if (score === 3) return { stage: 3, label: "Trying to solve it yourself", score };
-  if (score === 4) return { stage: 4, label: "Considering help", score };
-  return { stage: 5, label: "Ready to invest", score };
+  const score = Math.round((numeric(answers.previous_attempts, 1) + numeric(answers.help_openness, 1)
+    + numeric(answers.change_timeline, 1) + numeric(answers.investment_readiness, 1)) / 4);
+  const labels = { 1: "Problem aware", 2: "Learning", 3: "Trying to solve it yourself", 4: "Considering help", 5: "Ready to invest" };
+  return { stage: Math.min(Math.max(score, 1), 5), label: labels[Math.min(Math.max(score, 1), 5)], score };
 }
 
 function rebelFactor(answers) {
-  const vision = numeric(answers.vision_scale, 3);
-  const truth = numeric(answers.truth_directness, 3);
-  const conformity = numeric(answers.conformity_signal, 3);
-  const ambition = numeric(answers.potential_signal, 3);
-  const score = Math.round((vision + truth + conformity + ambition) / 4);
+  const score = Math.round((numeric(answers.vision_scale, 3) + numeric(answers.truth_directness, 3)
+    + numeric(answers.conformity_signal, 3) + numeric(answers.potential_signal, 3)) / 4);
+  const label = score <= 2 ? "Low" : score === 3 ? "Moderate" : score === 4 ? "Strong" : "Very strong";
+  return { label, score };
+}
 
-  if (score <= 2) return { label: "Low", score };
-  if (score === 3) return { label: "Moderate", score };
-  if (score === 4) return { label: "Strong", score };
-  return { label: "Very strong", score };
+function fulfilmentScore(wheel) {
+  const avg = wheel.reduce((s, a) => s + a.fulfillment, 0) / wheel.length; // 1..10
+  const pct = Math.round(avg * 10);
+  const tier = pct < 35 ? "Quietly depleted" : pct < 55 ? "Holding it together"
+    : pct < 70 ? "Capable but unfulfilled" : pct < 85 ? "Coming into alignment" : "Largely aligned";
+  return { pct, tier };
+}
+
+function focusLine(area) {
+  if (area.gap >= 4 && area.urgency >= 7) return "The widest, most urgent gap in your wheel — it matters deeply to you and currently gives back the least.";
+  if (area.gap >= 4) return "One of the widest gaps between how much this matters to you and how fulfilled it feels right now.";
+  if (area.urgency >= 8) return "Not your lowest score, but the one you flagged as most urgent to address.";
+  return "A meaningful gap between its importance to you and where it currently sits.";
 }
 
 function calculateResult(answers) {
-  const focusAreas = topFocusAreas(answers);
+  const wheel = wheelData(answers);
+  const focusAreas = topFocusAreas(wheel);
   const authenticity = authenticityStage(answers);
   const buyer = buyerStage(answers);
   const rebel = rebelFactor(answers);
-  const highFit = authenticity.stage >= 4 && buyer.stage >= 4 && rebel.score >= 4;
+  const score = fulfilmentScore(wheel);
+
+  // Loosened gate: any 2 of 3 high signals routes to the diagnostic conversation.
+  const signals = [authenticity.stage >= 4, buyer.stage >= 4, rebel.score >= 4].filter(Boolean).length;
+  const highFit = signals >= 2;
 
   return {
-    focusAreas,
-    authenticity,
-    buyer,
-    rebel,
+    wheel, focusAreas, authenticity, buyer, rebel, score,
     route: highFit ? "diagnostic" : "nurture",
-    cta: highFit
-      ? "The next step is a private diagnostic conversation."
-      : "The next step is to sit with the pattern and keep following the thread.",
   };
+}
+
+/* ---------- Wheel of Life radar (inline SVG) ---------- */
+function renderWheel(wheel) {
+  const size = 320, c = size / 2, R = 120, n = wheel.length;
+  const ang = (i) => (Math.PI * 2 * i) / n - Math.PI / 2;
+  const pt = (i, r) => [c + Math.cos(ang(i)) * r, c + Math.sin(ang(i)) * r];
+
+  let rings = "";
+  [0.25, 0.5, 0.75, 1].forEach((f) => {
+    const d = wheel.map((_, i) => pt(i, R * f).map((v) => v.toFixed(1)).join(",")).join(" ");
+    rings += `<polygon points="${d}" fill="none" stroke="var(--hair)" stroke-width="1"/>`;
+  });
+  let axes = "", labels = "";
+  wheel.forEach((a, i) => {
+    const [x, y] = pt(i, R);
+    axes += `<line x1="${c}" y1="${c}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="var(--hair)" stroke-width="1"/>`;
+    const [lx, ly] = pt(i, R + 22);
+    const anchor = Math.abs(lx - c) < 8 ? "middle" : lx < c ? "end" : "start";
+    labels += `<text x="${lx.toFixed(1)}" y="${(ly + 3).toFixed(1)}" text-anchor="${anchor}" font-size="10" fill="var(--muted)" font-family="Alegreya SC, serif" letter-spacing="0.04em">${a.label}</text>`;
+  });
+  const poly = wheel.map((a, i) => pt(i, R * (a.fulfillment / 10)).map((v) => v.toFixed(1)).join(",")).join(" ");
+  const dots = wheel.map((a, i) => { const [x, y] = pt(i, R * (a.fulfillment / 10)); return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.6" fill="var(--ink)"/>`; }).join("");
+
+  return `<svg viewBox="-72 -4 ${size + 144} ${size + 8}" class="wheel-svg" role="img" aria-label="Your Wheel of Life">
+    ${rings}${axes}
+    <polygon points="${poly}" fill="rgba(28,26,20,.12)" stroke="var(--ink)" stroke-width="1.5"/>
+    ${dots}${labels}
+  </svg>`;
+}
+
+function renderResult(result, emailState = "pending") {
+  const el = document.getElementById("assessment-result");
+  if (!el) return;
+  const a = result.authenticity;
+
+  const focusList = result.focusAreas.map((f) => `
+    <li>
+      <strong>${f.label}</strong>
+      <span class="nums">fulfilment ${f.fulfillment}/10 · importance ${f.importance}/10 · urgency ${f.urgency}/10</span>
+      <span>${focusLine(f)}</span>
+    </li>`).join("");
+
+  const emailCopy = {
+    pending: "Sending your full snapshot…",
+    sent: "A copy of your snapshot is on its way to your inbox.",
+    skipped: "Your result is ready here. (Email delivery isn't configured in this preview.)",
+    warning: "Your result is ready here. We couldn't confirm the email — check back shortly.",
+  }[emailState] || "";
+
+  const nextStep = result.route === "diagnostic"
+    ? `<p>Your answers suggest you're at a point where an outside perspective tends to help most. The next step is a private diagnostic conversation — a continuation of this assessment, not a sales call. In 30 minutes we'd look at your widest gap (${result.focusAreas[0]?.label}), the pattern underneath it, and whether working together makes sense — or whether you're better placed to do this on your own right now.</p>`
+    : `<p>You can absolutely keep moving on your own from here — start with your most urgent area (${result.focusAreas[0]?.label}) and the one honest change it's asking for. If at some point you'd like a clearer reflection from the outside, the door is open. No pressure, no pitch.</p>`;
+
+  el.hidden = false;
+  el.innerHTML = `
+    <div class="result-panel">
+      <span class="eyebrow"><span class="dot"></span>Your snapshot</span>
+      <h2>${a.label}</h2>
+      <p class="lede">${a.summary}</p>
+
+      <div class="result-score">
+        <div class="score-num">${result.score.pct}<span>/100</span></div>
+        <div class="score-meta"><strong>${result.score.tier}</strong><span>Overall life fulfilment, across the eleven areas you rated.</span></div>
+      </div>
+
+      <div class="result-block">
+        <span class="label">Your Wheel of Life</span>
+        <div class="wheel-wrap">${renderWheel(result.wheel)}</div>
+      </div>
+
+      <div class="result-block">
+        <span class="label">Where life is asking for attention</span>
+        <ol class="result-list">${focusList}</ol>
+      </div>
+
+      <div class="result-block">
+        <span class="label">What this means for you</span>
+        <p>${a.means}</p>
+      </div>
+
+      <div class="result-block next">
+        <span class="label">Your next step</span>
+        ${nextStep}
+        ${result.route === "diagnostic"
+          ? `<a class="btn" href="${CALENDLY}"><span>Book your private conversation</span><span class="arrow" aria-hidden="true">→</span></a>`
+          : `<a class="btn secondary-btn" href="${CALENDLY}"><span>Book a conversation when you're ready</span><span class="arrow" aria-hidden="true">→</span></a>`}
+      </div>
+
+      <p class="form-note"><span class="dot"></span>${emailCopy}</p>
+    </div>`;
 }
 
 function updateRangeOutput(input) {
@@ -101,7 +205,6 @@ function updateRangeOutput(input) {
 function renderFocusRows() {
   const mount = document.getElementById("wheel-rows");
   if (!mount) return;
-
   mount.innerHTML = AREAS.map(([key, label], index) => `
     <div class="scale-row">
       <div class="scale-area">
@@ -110,63 +213,15 @@ function renderFocusRows() {
       </div>
       ${["fulfillment", "importance", "urgency"].map((type) => `
         <label class="scale-control">
-          <span>${type}</span>
+          <span>${type === "fulfillment" ? "fulfilment" : type}</span>
           <input type="range" min="1" max="10" value="${type === "fulfillment" ? "5" : "7"}" name="${type}_${key}" aria-label="${label} ${type}" required>
           <output>${type === "fulfillment" ? "5" : "7"}</output>
-        </label>
-      `).join("")}
-    </div>
-  `).join("");
-
+        </label>`).join("")}
+    </div>`).join("");
   mount.querySelectorAll('input[type="range"]').forEach((input) => {
     updateRangeOutput(input);
     input.addEventListener("input", () => updateRangeOutput(input));
   });
-}
-
-function renderResult(result, emailState = "pending") {
-  const resultEl = document.getElementById("assessment-result");
-  if (!resultEl) return;
-
-  const focusList = result.focusAreas.map((area) => `
-    <li>
-      <strong>${area.label}</strong>
-      <span>Low fulfilment, high importance, and high urgency make this one of the strongest signals in your result.</span>
-    </li>
-  `).join("");
-
-  const emailCopy = {
-    pending: "Sending your snapshot...",
-    sent: "Your snapshot has been sent by email.",
-    skipped: "Your result is ready here. Email delivery is not configured in this preview.",
-    warning: "Your result is ready here. Email delivery could not be confirmed.",
-  }[emailState] || "";
-
-  resultEl.hidden = false;
-  resultEl.innerHTML = `
-    <div class="result-panel">
-      <span class="eyebrow"><span class="dot"></span>Your snapshot</span>
-      <h2>${result.authenticity.label}</h2>
-      <p class="lede">${result.authenticity.summary}</p>
-      <div class="result-grid">
-        <div>
-          <span class="label">Current focus</span>
-          <ol class="result-list">${focusList}</ol>
-        </div>
-        <aside class="pull">
-          <p class="quote">${result.cta}</p>
-          <span class="quote-attr">${result.route === "diagnostic" ? "Private diagnostic recommended" : "Nurture path recommended"}</span>
-        </aside>
-      </div>
-      <p class="form-note"><span class="dot"></span>${emailCopy}</p>
-      <p>
-        <a class="btn btn-primary" href="https://calendly.com/reece-localleader/30min">
-          <span>Book your intro call</span>
-          <span class="arrow" aria-hidden="true">→</span>
-        </a>
-      </p>
-    </div>
-  `;
 }
 
 async function submitAssessment(form, submitButton) {
@@ -177,7 +232,6 @@ async function submitAssessment(form, submitButton) {
 
   submitButton.disabled = true;
   submitButton.classList.add("is-loading");
-
   try {
     const response = await fetch("/api/assessment-submit", {
       method: "POST",
@@ -185,7 +239,6 @@ async function submitAssessment(form, submitButton) {
       body: JSON.stringify(answers),
     });
     const data = await response.json().catch(() => ({}));
-
     if (data.emailWarning) renderResult(result, "warning");
     else if (data.emailResults?.some((item) => item?.skipped)) renderResult(result, "skipped");
     else if (response.ok) renderResult(result, "sent");
@@ -199,12 +252,6 @@ async function submitAssessment(form, submitButton) {
 }
 
 renderFocusRows();
-
-document.querySelectorAll('input[type="range"]').forEach((input) => {
-  updateRangeOutput(input);
-  input.addEventListener("input", () => updateRangeOutput(input));
-});
-
 const form = document.getElementById("assessment-form");
 if (form) {
   form.addEventListener("submit", (event) => {

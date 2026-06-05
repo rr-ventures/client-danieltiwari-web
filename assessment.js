@@ -60,7 +60,7 @@ async function submitAssessment(form, submitButton) {
     });
     const data = await response.json().catch(() => ({}));
     if (data.emailWarning) renderResult(result, "warning");
-    else if (data.emailResults?.some((item) => item?.skipped)) renderResult(result, "skipped");
+    else if (data.emailSkipped) renderResult(result, "skipped");
     else if (response.ok) renderResult(result, "sent");
     else renderResult(result, "warning");
     revealShareLink(data.resultUrl);

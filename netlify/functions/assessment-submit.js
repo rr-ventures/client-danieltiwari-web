@@ -1,5 +1,16 @@
 const { getStore } = require("@netlify/blobs");
 const crypto = require("node:crypto");
+const { buildBranch } = require("../lib/sequence");
+
+// In TEST_MODE the whole sequence (both branches) is dripped to one inbox,
+// spaced evenly so ~13 emails arrive across ~20 minutes (not an instant blast)
+// — protects the sending domain's reputation per the locked test plan.
+const TEST_DRIP_SECONDS = Number(process.env.TEST_DRIP_SECONDS || 95);
+
+function firstNameOf(answers) {
+  const n = String(answers.first_name || answers.name || "").trim();
+  return n ? n.split(/\s+/)[0] : "";
+}
 
 const AREAS = [
   ["career", "Career"],
@@ -124,24 +135,6 @@ function calculateResult(answers) {
   };
 }
 
-// Email 1 = the result-link email. Kept light (one primary link, low HTML
-// weight) for deliverability; the full map lives on the hosted page.
-function resultEmailHtml(name, result, resultUrl) {
-  const link = escapeHtml(resultUrl || "https://danieltiwari.com/");
-  return `
-    <div style="font-family: Georgia, serif; color: #15140f; line-height: 1.6; max-width: 30rem;">
-      <p>Hi ${escapeHtml(name || "there")},</p>
-      <p>Your Authenticity Map is ready.</p>
-      <p>It's a quiet, honest snapshot of where you are right now — your Wheel of Life, the areas asking for attention, and the one thread worth pulling first. I've given it a private home so you can return to it any time:</p>
-      <p style="margin: 1.4rem 0;">
-        <a href="${link}" style="font-family: Georgia, serif; font-size: 1.05rem; color: #15140f; border-bottom: 1px solid #15140f; text-decoration: none;">Open your Authenticity Map &rarr;</a>
-      </p>
-      <p>Read it when you have a few unhurried minutes. There's no rush, and nothing to do with it yet — just see what it shows you.</p>
-      <p>— Daniel</p>
-    </div>
-  `;
-}
-
 function notifyEmailHtml(answers, result) {
   const rows = Object.entries(answers)
     .filter(([key]) => !key.startsWith("fulfillment_") && !key.startsWith("importance_") && !key.startsWith("urgency_"))
@@ -219,38 +212,66 @@ exports.handler = async (event) => {
     storeWarning = `result store failed: ${error.message}`;
   }
 
+  // ---- recipients (TEST_MODE overrides every recipient to one inbox) ----
+  const TEST_MODE = /^(1|true|yes)$/i.test(String(process.env.TEST_MODE || ""));
+  const TEST_EMAIL = process.env.TEST_EMAIL || "reece.j.rainer@gmail.com";
   const from = process.env.RESEND_FROM_EMAIL || "Daniel Tiwari <onboarding@resend.dev>";
-  const notifyTo = process.env.DAN_NOTIFY_EMAIL || process.env.NOTIFY_EMAIL || "email@danieltiwari.com";
-  const replyTo = process.env.DAN_REPLY_TO_EMAIL || notifyTo;
+  const notifyTo = TEST_MODE ? TEST_EMAIL : (process.env.NOTIFY_TO || process.env.DAN_NOTIFY_EMAIL || "email@danieltiwari.com");
+  const leadTo = TEST_MODE ? TEST_EMAIL : answers.email;
+  const bccTo = !TEST_MODE && process.env.BCC_TO ? [process.env.BCC_TO] : undefined;
+  const replyTo = process.env.DAN_REPLY_TO_EMAIL || (TEST_MODE ? TEST_EMAIL : "email@danieltiwari.com");
+  const bookUrl = process.env.BOOK_URL || "https://calendly.com/reece-localleader/30min";
 
-  try {
-    const leadEmail = sendResendEmail({
+  // ---- build the sequence emails (Dan's voice) with merge fields ----
+  const mergeFields = {
+    first_name: firstNameOf(answers),
+    top_focus_area: result.focusAreas[0]?.label || "",
+    authenticity_stage: result.authenticity.label,
+    map_url: resultUrl,
+    book_url: bookUrl,
+  };
+  // Production: only the lead's branch. TEST_MODE: the whole program (A then B)
+  // so Reece sees everything regardless of branch.
+  const sequence = TEST_MODE
+    ? [...buildBranch("diagnostic", mergeFields), ...buildBranch("nurture", mergeFields)]
+    : buildBranch(result.route, mergeFields);
+
+  // ---- schedule every email. Day-0 sends now; the rest carry scheduled_at. ----
+  // TEST_MODE compresses the cadence to ~TEST_DRIP_SECONDS spacing (index-based);
+  // production uses the real per-email day offsets.
+  const now = Date.now();
+  const sends = sequence.map((email, index) => {
+    const delayMs = TEST_MODE ? index * TEST_DRIP_SECONDS * 1000 : email.day * 24 * 60 * 60 * 1000;
+    const payload = {
       from,
-      to: [answers.email],
+      to: [leadTo],
       reply_to: replyTo,
-      subject: "Your Authenticity Map",
-      html: resultEmailHtml(answers.name, result, resultUrl),
-      tags: [{ name: "source", value: "assessment" }],
-    });
-
-    const notifyEmail = sendResendEmail({
-      from,
-      to: [notifyTo],
-      reply_to: answers.email,
-      subject: `New assessment lead: ${answers.name || answers.email}`,
-      html: `${notifyEmailHtml(answers, result)}<p style="font-family:Georgia,serif"><strong>Result page:</strong> <a href="${escapeHtml(resultUrl)}">${escapeHtml(resultUrl)}</a></p>`,
-      tags: [{ name: "source", value: "assessment_notify" }],
-    });
-
-    const emailResults = await Promise.all([leadEmail, notifyEmail]);
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ ok: true, id, resultUrl, result, emailResults, storeWarning }),
+      subject: email.subject,
+      html: email.html,
+      tags: [{ name: "source", value: "assessment_sequence" }],
     };
-  } catch (error) {
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ ok: true, id, resultUrl, result, emailWarning: error.message, storeWarning }),
-    };
-  }
+    if (bccTo) payload.bcc = bccTo;
+    if (delayMs > 0) payload.scheduled_at = new Date(now + delayMs).toISOString();
+    return sendResendEmail(payload).catch((err) => ({ error: err.message, subject: email.subject }));
+  });
+
+  const notifyEmail = sendResendEmail({
+    from,
+    to: [notifyTo],
+    reply_to: TEST_MODE ? replyTo : answers.email,
+    subject: `New assessment lead: ${answers.name || answers.email}`,
+    html: `${notifyEmailHtml(answers, result)}<p style="font-family:Georgia,serif"><strong>Result page:</strong> <a href="${escapeHtml(resultUrl)}">${escapeHtml(resultUrl)}</a></p>`,
+    tags: [{ name: "source", value: "assessment_notify" }],
+  }).catch((err) => ({ error: err.message }));
+
+  const emailResults = await Promise.all([...sends, notifyEmail]);
+  const emailWarning = emailResults.find((r) => r && r.error)?.error;
+  const emailSkipped = emailResults.length > 0 && emailResults.every((r) => r && r.skipped);
+  return {
+    statusCode: 200,
+    body: JSON.stringify({
+      ok: true, id, resultUrl, result, storeWarning,
+      testMode: TEST_MODE, scheduled: sequence.length, emailWarning, emailSkipped,
+    }),
+  };
 };

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Your Authenticity Map — Daniel Tiwari</title>
+<meta name="description" content="Your private Authenticity Map.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#efe9dd">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alegreya+SC:wght@400;500;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/site.css">
+<style>
+  .result-page{max-width:48rem;margin:0 auto;padding:0 2rem 12vh}
+  .result-intro{text-align:center;padding-top:9rem;margin-bottom:1rem}
+  .result-intro .eyebrow{justify-content:center;margin-bottom:1.4rem}
+  .result-intro h1{font-family:var(--display);font-weight:500;font-size:clamp(2.1rem,4.4vw,3.2rem);line-height:1.08}
+  .result-intro p{color:var(--muted);max-width:32rem;margin:1rem auto 0}
+  .result-state{text-align:center;padding:10rem 0;color:var(--muted)}
+  .result-state h1{font-family:var(--display);font-weight:500;font-size:2rem;color:var(--ink);margin-bottom:1rem}
+  .result-state a{color:var(--ink);border-bottom:1px solid var(--ink);text-decoration:none}
+  .result-foot{text-align:center;padding:0 2rem 6rem;color:var(--muted);font-family:var(--sc);letter-spacing:.04em;font-size:.86rem}
+  .result-foot a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--hair)}
+</style>
+</head>
+<body>
+<a class="skip" href="#assessment-result">Skip to your map</a>
+
+<header class="bar" id="bar">
+  <a class="name sc" href="/">Daniel Tiwari</a>
+  <a class="cta mini sc" href="/assessment.html">Take the assessment</a>
+</header>
+
+<main class="result-page">
+  <div id="result-loading" class="result-state">
+    <p>Opening your map…</p>
+  </div>
+
+  <div id="result-error" class="result-state" hidden>
+    <h1>This map couldn't be found</h1>
+    <p>The link may be incomplete or it may have expired.<br>You can always <a href="/assessment.html">take the assessment again</a> for a fresh map.</p>
+  </div>
+
+  <div id="result-intro" class="result-intro" hidden></div>
+  <section id="assessment-result" class="assessment-result" hidden aria-live="polite"></section>
+</main>
+
+<footer class="result-foot">
+  <p>A private reflection from <a href="/">Daniel Tiwari</a> · <a href="mailto:email@danieltiwari.com">email@danieltiwari.com</a></p>
+</footer>
+
+<script src="/assessment-core.js" defer></script>
+<script defer>
+  function getId() {
+    const m = location.pathname.match(/\/r\/([A-Za-z0-9_-]{6,32})\/?$/);
+    if (m) return m[1];
+    return new URLSearchParams(location.search).get("id") || "";
+  }
+  function firstName(answers) {
+    const n = (answers.first_name || answers.name || "").trim();
+    return n ? n.split(/\s+/)[0] : "";
+  }
+  function show(id) { const el = document.getElementById(id); if (el) el.hidden = false; }
+  function hide(id) { const el = document.getElementById(id); if (el) el.hidden = true; }
+
+  async function load() {
+    const id = getId();
+    if (!id) { hide("result-loading"); show("result-error"); return; }
+    try {
+      const res = await fetch(`/api/result-data?id=${encodeURIComponent(id)}`);
+      if (!res.ok) throw new Error(String(res.status));
+      const data = await res.json();
+      const answers = data.answers || {};
+      const result = calculateResult(answers);
+      hide("result-loading");
+
+      const intro = document.getElementById("result-intro");
+      const fn = firstName(answers);
+      intro.innerHTML = `
+        <span class="eyebrow"><span class="dot"></span>Your saved map</span>
+        <h1>${fn ? `${fn}, here is your map.` : "Here is your map."}</h1>
+        <p>Take it in slowly. Nothing here needs fixing today — it's simply an honest look at where you are.</p>`;
+      show("result-intro");
+
+      renderResult(result, "viewed");
+      document.title = `${result.authenticity.label} — Your Authenticity Map`;
+    } catch (err) {
+      hide("result-loading");
+      show("result-error");
+    }
+  }
+
+  if (document.readyState !== "loading") setTimeout(load, 0);
+  else document.addEventListener("DOMContentLoaded", () => setTimeout(load, 0));
+
+  const bar = document.getElementById("bar");
+  const onScroll = () => bar.classList.toggle("scrolled", scrollY > 8);
+  addEventListener("scroll", onScroll, { passive: true }); onScroll();
+</script>
+</body>
+</html>

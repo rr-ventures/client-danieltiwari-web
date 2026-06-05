@@ -1,3 +1,6 @@
+const { getStore } = require("@netlify/blobs");
+const crypto = require("node:crypto");
+
 const AREAS = [
   ["career", "Career"],
   ["relationships", "Relationships"],
@@ -11,6 +14,28 @@ const AREAS = [
   ["spirituality", "Spirituality / Meaning"],
   ["lifestyle", "Lifestyle / Surroundings"],
 ];
+
+// Short, URL-safe, unguessable id for the hosted result page.
+function shortId() {
+  return crypto.randomBytes(9).toString("base64url"); // 12 chars
+}
+
+function siteBaseUrl(event) {
+  const fromEnv = process.env.URL || process.env.DEPLOY_PRIME_URL;
+  if (fromEnv) return fromEnv.replace(/\/$/, "");
+  const host = event.headers["x-forwarded-host"] || event.headers.host;
+  return host ? `https://${host}` : "https://danieltiwari.com";
+}
+
+// Persist the raw answers so the hosted result page can recompute the full
+// Authenticity Map with the SAME core logic the live quiz uses.
+async function storeResult(id, answers) {
+  const store = getStore("assessment-results");
+  await store.setJSON(id, {
+    answers,
+    createdAt: new Date().toISOString(),
+  });
+}
 
 function escapeHtml(value) {
   return String(value || "")
@@ -99,20 +124,20 @@ function calculateResult(answers) {
   };
 }
 
-function resultEmailHtml(name, result) {
-  const focus = result.focusAreas.map((area) => `<li>${escapeHtml(area.label)}</li>`).join("");
+// Email 1 = the result-link email. Kept light (one primary link, low HTML
+// weight) for deliverability; the full map lives on the hosted page.
+function resultEmailHtml(name, result, resultUrl) {
+  const link = escapeHtml(resultUrl || "https://danieltiwari.com/");
   return `
-    <div style="font-family: Georgia, serif; color: #15140f; line-height: 1.6;">
+    <div style="font-family: Georgia, serif; color: #15140f; line-height: 1.6; max-width: 30rem;">
       <p>Hi ${escapeHtml(name || "there")},</p>
-      <p>Your Authenticity Map is ready — here is the short version. The full map, with your Wheel of Life and your next steps, is on the page you just came from.</p>
-      <h2 style="font-family: Georgia, serif;">${escapeHtml(result.authenticity.label)}</h2>
-      <p>${escapeHtml(result.authenticity.summary)}</p>
-      <p><strong>Your current focus areas:</strong></p>
-      <ol>${focus}</ol>
-      <p>${escapeHtml(result.cta)}</p>
-      <p>If this surfaced something important, you can book a private introductory call here:<br>
-      <a href="https://calendly.com/reece-localleader/30min">https://calendly.com/reece-localleader/30min</a></p>
-      <p>Daniel Tiwari</p>
+      <p>Your Authenticity Map is ready.</p>
+      <p>It's a quiet, honest snapshot of where you are right now — your Wheel of Life, the areas asking for attention, and the one thread worth pulling first. I've given it a private home so you can return to it any time:</p>
+      <p style="margin: 1.4rem 0;">
+        <a href="${link}" style="font-family: Georgia, serif; font-size: 1.05rem; color: #15140f; border-bottom: 1px solid #15140f; text-decoration: none;">Open your Authenticity Map &rarr;</a>
+      </p>
+      <p>Read it when you have a few unhurried minutes. There's no rush, and nothing to do with it yet — just see what it shows you.</p>
+      <p>— Daniel</p>
     </div>
   `;
 }
@@ -183,6 +208,17 @@ exports.handler = async (event) => {
   }
 
   const result = calculateResult(answers);
+
+  // Persist the result and mint its shareable link (the email carries this).
+  const id = shortId();
+  const resultUrl = `${siteBaseUrl(event)}/r/${id}`;
+  let storeWarning;
+  try {
+    await storeResult(id, answers);
+  } catch (error) {
+    storeWarning = `result store failed: ${error.message}`;
+  }
+
   const from = process.env.RESEND_FROM_EMAIL || "Daniel Tiwari <onboarding@resend.dev>";
   const notifyTo = process.env.DAN_NOTIFY_EMAIL || process.env.NOTIFY_EMAIL || "email@danieltiwari.com";
   const replyTo = process.env.DAN_REPLY_TO_EMAIL || notifyTo;
@@ -193,7 +229,7 @@ exports.handler = async (event) => {
       to: [answers.email],
       reply_to: replyTo,
       subject: "Your Authenticity Map",
-      html: resultEmailHtml(answers.name, result),
+      html: resultEmailHtml(answers.name, result, resultUrl),
       tags: [{ name: "source", value: "assessment" }],
     });
 
@@ -202,19 +238,19 @@ exports.handler = async (event) => {
       to: [notifyTo],
       reply_to: answers.email,
       subject: `New assessment lead: ${answers.name || answers.email}`,
-      html: notifyEmailHtml(answers, result),
+      html: `${notifyEmailHtml(answers, result)}<p style="font-family:Georgia,serif"><strong>Result page:</strong> <a href="${escapeHtml(resultUrl)}">${escapeHtml(resultUrl)}</a></p>`,
       tags: [{ name: "source", value: "assessment_notify" }],
     });
 
     const emailResults = await Promise.all([leadEmail, notifyEmail]);
     return {
       statusCode: 200,
-      body: JSON.stringify({ ok: true, result, emailResults }),
+      body: JSON.stringify({ ok: true, id, resultUrl, result, emailResults, storeWarning }),
     };
   } catch (error) {
     return {
       statusCode: 200,
-      body: JSON.stringify({ ok: true, result, emailWarning: error.message }),
+      body: JSON.stringify({ ok: true, id, resultUrl, result, emailWarning: error.message, storeWarning }),
     };
   }
 };

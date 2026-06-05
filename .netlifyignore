@@ -1,0 +1,8 @@
+node_modules
+.git
+.netlify
+.playwright-mcp
+.agent-memory
+.claude
+docs
+*.png

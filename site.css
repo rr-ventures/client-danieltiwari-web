@@ -31,7 +31,7 @@ body{
   color:var(--ink);
   font-family:var(--body);
   font-weight:300;
-  font-size:1.18rem;
+  font-size:1.28rem;
   line-height:1.75;
   -webkit-font-smoothing:antialiased;
   text-rendering:optimizeLegibility;
@@ -74,24 +74,24 @@ section.tall{min-height:100vh;display:flex;align-items:center}
 
 /* ---- type scale ---- */
 .display{font-family:var(--display);font-weight:500;line-height:1.06;letter-spacing:.005em}
-h1.display{font-size:clamp(2.7rem,6.2vw,5.1rem)}
-h2.display{font-size:clamp(2.1rem,4.6vw,3.6rem);line-height:1.1}
-.lede{font-size:clamp(1.22rem,1.9vw,1.5rem);line-height:1.7;font-weight:300}
+h1.display{font-size:clamp(3rem,6.6vw,5.6rem)}
+h2.display{font-size:clamp(2.4rem,5vw,4rem);line-height:1.1}
+.lede{font-size:clamp(1.35rem,2.1vw,1.65rem);line-height:1.7;font-weight:300}
 .muted{color:var(--muted)}
 
 /* ---- buttons ---- */
 .cta{
   display:inline-flex;align-items:center;gap:.6rem;
-  font-family:var(--sc);font-weight:600;letter-spacing:.16em;font-size:.96rem;
+  font-family:var(--sc);font-weight:600;letter-spacing:.16em;font-size:1.12rem;
   text-decoration:none;cursor:pointer;
-  padding:1.15rem 2.8rem;border-radius:2px;border:1px solid var(--ink);
+  padding:1.3rem 3.1rem;border-radius:2px;border:1px solid var(--ink);
   background:var(--ink);color:var(--bg);
   transition:transform .25s ease,background .3s ease,color .3s ease,border-color .3s ease,box-shadow .3s ease;
 }
 .cta:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(28,26,20,.18)}
 .cta.secondary{background:transparent;color:var(--ink);border-color:rgba(28,26,20,.4)}
 .cta.secondary:hover{border-color:var(--ink);background:rgba(28,26,20,.04);box-shadow:none}
-.cta.mini{padding:.62rem 1.3rem;font-size:.78rem;letter-spacing:.14em}
+.cta.mini{padding:.62rem 1.3rem;font-size:.9rem;letter-spacing:.14em}
 .cta .arrow{transition:transform .25s ease}
 .cta:hover .arrow{transform:translateX(3px)}
 /* on dark bands the buttons invert */

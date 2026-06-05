@@ -2,6 +2,7 @@
 .netlify/
 .playwright-mcp/
 .agent-memory/
+node_modules/
 
 # Verification screenshots (session artifacts, not production)
 /*.png

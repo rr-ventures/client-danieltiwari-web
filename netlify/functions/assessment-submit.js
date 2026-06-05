@@ -1,6 +1,6 @@
-const { getStore } = require("@netlify/blobs");
 const crypto = require("node:crypto");
 const { buildBranch } = require("../lib/sequence");
+const { resultsStore } = require("../lib/blobs");
 
 // In TEST_MODE the whole sequence (both branches) is dripped to one inbox,
 // spaced evenly so ~13 emails arrive across ~20 minutes (not an instant blast)
@@ -41,7 +41,7 @@ function siteBaseUrl(event) {
 // Persist the raw answers so the hosted result page can recompute the full
 // Authenticity Map with the SAME core logic the live quiz uses.
 async function storeResult(id, answers) {
-  const store = getStore("assessment-results");
+  const store = resultsStore();
   await store.setJSON(id, {
     answers,
     createdAt: new Date().toISOString(),

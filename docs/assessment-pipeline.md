@@ -38,6 +38,13 @@ voice pass). Email bodies live in `netlify/lib/sequence.js`.
 | `BOOK_URL` | Booking link used in the sequence + result CTA. | Reece's Calendly placeholder |
 | `BCC_TO` | Optional prod BCC (e.g. Reece while bedding in). | none |
 | `DAN_REPLY_TO_EMAIL` | Reply-to override. | `email@danieltiwari.com` (prod) |
+| `BLOBS_SITE_ID` / `BLOBS_TOKEN` | Explicit Netlify Blobs config. **Required for manual `netlify deploy` CLI deploys** (the auto-injected Blobs context only exists on git/Netlify-built deploys). Set to the site id + a Netlify token. Can be removed once the site deploys via git. | auto-config |
+
+> **Current prod state (2026-06-05):** deployed manually via CLI to danieltiwari.com with
+> `TEST_MODE=true`, `BLOBS_SITE_ID`, `BLOBS_TOKEN`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL`,
+> `DAN_NOTIFY_EMAIL` all set. `/v1` `/v2` `/v3` are live (noindexed) for the homepage pick.
+> Because this was a manual CLI deploy (not git), the live site is ahead of `main` until the
+> branch is merged + a git build runs (at which point `BLOBS_*` can be dropped).
 
 ## Reece's 20-minute test
 

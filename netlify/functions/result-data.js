@@ -1,4 +1,4 @@
-const { getStore } = require("@netlify/blobs");
+const { resultsStore } = require("../lib/blobs");
 
 // GET /api/result-data?id=<id>
 // Returns the stored answers for a hosted Authenticity Map so result.html can
@@ -14,7 +14,7 @@ exports.handler = async (event) => {
   }
 
   try {
-    const store = getStore("assessment-results");
+    const store = resultsStore();
     const record = await store.get(id, { type: "json" });
     if (!record) {
       return { statusCode: 404, body: JSON.stringify({ error: "Not found" }) };

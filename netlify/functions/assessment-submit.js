@@ -220,7 +220,7 @@ exports.handler = async (event) => {
   const leadTo = TEST_MODE ? TEST_EMAIL : answers.email;
   const bccTo = !TEST_MODE && process.env.BCC_TO ? [process.env.BCC_TO] : undefined;
   const replyTo = process.env.DAN_REPLY_TO_EMAIL || (TEST_MODE ? TEST_EMAIL : "email@danieltiwari.com");
-  const bookUrl = process.env.BOOK_URL || "https://calendly.com/reece-localleader/30min";
+  const bookUrl = process.env.BOOK_URL || "https://cal.eu/danieltiwari/connect";
 
   // ---- build the sequence emails (Dan's voice) with merge fields ----
   const mergeFields = {

@@ -20,7 +20,7 @@ const AREAS = [
   ["lifestyle", "Lifestyle"],
 ];
 
-const CALENDLY = "https://calendly.com/reece-localleader/30min";
+const CALENDLY = "https://cal.eu/danieltiwari/connect";
 
 // Per-stage reading: a literary diagnosis, what the stage is, what's next, and a 30-day move.
 const AUTH_INSIGHT = {

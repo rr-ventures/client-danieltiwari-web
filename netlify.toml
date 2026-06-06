@@ -9,6 +9,17 @@
   to = "/.netlify/functions/assessment-submit"
   status = 200
 
+[[redirects]]
+  from = "/api/result-data"
+  to = "/.netlify/functions/result-data"
+  status = 200
+
+# Hosted Authenticity Map — short shareable id, rendered client-side by result.html.
+[[redirects]]
+  from = "/r/*"
+  to = "/result.html"
+  status = 200
+
 # Old V2 pages folded into the single-page direction — send them home.
 [[redirects]]
   from = "/about.html"

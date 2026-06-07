@@ -3,215 +3,311 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Daniel Tiwari, Coaching for extraordinary individuals</title>
-<meta name="description" content="Long-term private coaching for ambitious individuals who want to live extraordinary lives. Begin with a free, private self-assessment.">
+<title>Daniel Tiwari — Private Coaching</title>
+<meta name="description" content="Private coaching for ambitious individuals who are done living a life that isn't fully theirs.">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="canonical" href="https://danieltiwari.com/">
-<meta name="theme-color" content="#0d0f12">
-<meta property="og:title" content="Daniel Tiwari, Coaching">
-<meta property="og:description" content="You've built a life that looks right. It just isn't yours.">
+<meta name="theme-color" content="#0c0c0c">
+<meta property="og:title" content="Daniel Tiwari — Private Coaching">
+<meta property="og:description" content="Most people spend their lives optimizing a version of themselves they never chose.">
 <meta property="og:type" content="website">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Alegreya+SC:wght@400;500;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,300&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Spectral+SC:wght@300;400;500;600&family=Spectral:ital,wght@0,300;0,400;1,300;1,400&family=Alegreya+SC:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/site.css">
 <style>
-  /* ============================================================
-     V3, "Threshold"  ·  Alan-Watts / meditative, cool-dark register
-     Austere, spacious, blue-hour stillness. Cool slate accents.
-     ============================================================ */
   :root{
-    --bg:#0d0f12; --ink:#dfe3e6; --muted:#828b92; --hair:#1d2228; --bg-2:#11151a;
-    --accent:#8aa2b2;
+    --bg:#0c0c0c;
+    --bg2:#111111;
+    --ink:#e8e4dc;
+    --muted:#888480;
+    --hair:#222222;
+    --accent:#a0a0a0;
+    --display:"Spectral SC", Georgia, serif;
+    --body:"Spectral", Georgia, serif;
+    --sc:"Alegreya SC", serif;
+    --measure:38rem;
   }
-  body{background:var(--bg);color:var(--ink)}
-  section{background:var(--bg);padding:clamp(6rem,15vh,13rem) 0}
-  .alt{background:var(--bg-2)}
-  .dark{background:#080a0c}
-  .section-head{color:var(--accent);letter-spacing:.4em;opacity:.85}
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--ink);font-family:var(--body);font-weight:300;line-height:1.75;-webkit-font-smoothing:antialiased}
+  a{color:inherit;text-decoration:none}
+  section{padding:clamp(6rem,14vh,12rem) 2rem}
+  .wrap{max-width:var(--measure);margin:0 auto}
+  .wrap.wide{max-width:58rem}
+  .center{text-align:center}
+
+  /* type */
+  h1,h2{font-family:var(--display);font-weight:400;line-height:1.1;letter-spacing:.01em}
+  h1{font-size:clamp(2.6rem,5.5vw,4.4rem)}
+  h2{font-size:clamp(2rem,4vw,3.2rem)}
+  .sc{font-family:var(--sc);font-weight:500;letter-spacing:.1em}
+  .label{font-family:var(--sc);font-size:.72rem;letter-spacing:.35em;color:var(--accent);margin-bottom:1.4rem;opacity:.9}
+  .lede{font-size:clamp(1.1rem,1.8vw,1.3rem);line-height:1.8;color:#b8b4ac}
   .muted{color:var(--muted)}
-  .hairline{height:1px;background:var(--hair);max-width:7rem;margin:0 auto}
-  /* cinematic hero, austere, text lower-third */
-  .hero-video{position:relative;min-height:100vh;display:flex;align-items:flex-end;justify-content:center;text-align:center;overflow:hidden;padding-bottom:clamp(5rem,12vh,9rem)}
-  .hero-video video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;filter:saturate(.85)}
-  .hero-video .scrim{position:absolute;inset:0;z-index:1;background:linear-gradient(180deg, rgba(13,15,18,.34) 0%, rgba(13,15,18,.20) 38%, rgba(13,15,18,.82) 100%)}
-  .hero-video .wrap{position:relative;z-index:2;max-width:50rem}
-  .hero-video .display{color:#eef1f3;font-weight:400;text-shadow:0 2px 40px rgba(0,0,0,.6)}
-  .hero-video .subhead{color:#c4ccd2;max-width:34rem;margin:1.9rem auto 0;text-shadow:0 1px 24px rgba(0,0,0,.65)}
-  .hero-video .cta-note{color:#9aa3aa;text-shadow:0 1px 14px rgba(0,0,0,.65)}
-  .hero-video .rule{width:1px;height:3.4rem;background:linear-gradient(180deg,transparent,var(--accent));margin:0 auto 1.8rem;opacity:.8}
-  /* CTAs on dark, outline-led, austere */
-  .cta{background:transparent;color:#eef1f3;border-color:rgba(238,241,243,.55)}
-  .cta:hover{background:rgba(238,241,243,.08);border-color:#eef1f3}
-  .cta.secondary{background:transparent;color:var(--accent);border-color:rgba(138,162,178,.45)}
-  .cta.secondary:hover{border-color:var(--accent);background:rgba(138,162,178,.08)}
-  .hero-video .cta{backdrop-filter:blur(2px)}
-  header.bar{color:#dfe3e6}
-  header.bar.scrolled{background:rgba(13,15,18,.86);box-shadow:0 1px 0 var(--hair)}
-  header.bar .cta.mini{background:transparent;color:#dfe3e6;border-color:rgba(223,227,230,.5)}
-  /* portrait */
-  .portrait{position:relative}
-  .portrait img{border-radius:2px;filter:brightness(.92) contrast(1.04) saturate(.9)}
-  .portrait::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 58%,rgba(8,10,12,.55));border-radius:2px}
-  .figure-grid{align-items:center}
-  .fit-col h3{color:var(--accent)}
-  .fit-col li::before{color:var(--accent)}
-  .fit-col.not li::before{color:var(--muted)}
-  /* the meditative quote band */
-  .meditation{min-height:84vh;display:flex;align-items:center;justify-content:center;text-align:center;position:relative;background:#080a0c}
-  .meditation .q{font-family:var(--display);font-style:italic;font-weight:400;font-size:clamp(1.7rem,3.4vw,2.8rem);line-height:1.55;max-width:40rem;color:#eef1f3}
-  .meditation .cite{margin-top:2.2rem;font-family:var(--sc);letter-spacing:.3em;font-size:.78rem;color:var(--accent)}
-  .statement .sub{color:var(--muted)}
-  .news input[type=email]{color:#dfe3e6;border-color:var(--hair)}
-  footer.foot{background:#080a0c;color:var(--muted)}
-  footer.foot .name{color:var(--accent)}
+
+  /* header */
+  header{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;justify-content:space-between;align-items:center;padding:1.4rem 2.4rem 1.4rem calc(2rem + 2.4rem);transition:background .3s ease}
+  header.scrolled{background:rgba(12,12,12,.92);border-bottom:1px solid var(--hair)}
+  .header-name{font-family:var(--sc);font-size:.88rem;letter-spacing:.18em;color:var(--ink)}
+  .header-cta{font-family:var(--sc);font-size:.72rem;letter-spacing:.18em;color:var(--bg);background:var(--ink);border:1px solid var(--ink);padding:.55rem 1.2rem;border-radius:2px;transition:background .2s,border-color .2s,color .2s}
+  .header-cta:hover{background:#fff;border-color:#fff;color:var(--bg)}
+
+  /* hero */
+  .hero{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .hero::before{content:"";position:absolute;top:0;bottom:0;left:30%;right:-30%;background-image:url('/assets/hero-marble.png');background-size:cover;background-position:left center;filter:saturate(.7);z-index:0}
+  .hero-bg{display:none}
+  .hero-scrim{position:absolute;inset:0;z-index:1;background:linear-gradient(to right,#0c0c0c 28%,rgba(12,12,12,.65) 50%)}
+  .hero-inner{position:relative;z-index:2;max-width:52rem;padding:0 2.4rem;margin:0 auto;width:100%;text-align:center}
+  .hero h1{color:#eae6de;margin-bottom:2rem;font-size:clamp(1.6rem,2.8vw,2.4rem);font-weight:400;line-height:1.35;max-width:36rem;margin-left:auto;margin-right:auto}
+  .hero .lede{max-width:34rem;margin-bottom:3rem;margin-left:auto;margin-right:auto}
+  .hero-actions{display:flex;gap:1rem;align-items:center;flex-wrap:nowrap;justify-content:center}
+  .hero-actions .or{font-family:var(--sc);font-size:.72rem;letter-spacing:.2em;color:var(--muted);flex-shrink:0}
+  @media(max-width:640px){
+    .hero-actions{flex-direction:column;align-items:flex-start;flex-wrap:wrap}
+    .hero-actions .btn{width:100%;text-align:center}
+  }
+
+  /* buttons */
+  .btn{display:inline-block;font-family:var(--sc);font-size:.8rem;font-weight:500;letter-spacing:.18em;padding:1.1rem 2.6rem;border:1px solid;border-radius:2px;transition:background .2s,color .2s,border-color .2s;cursor:pointer;text-decoration:none}
+  .btn-primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+  .btn-primary:hover{background:#fff;border-color:#fff}
+  .btn-ghost{background:transparent;color:var(--ink);border-color:rgba(232,228,220,.3)}
+  .btn-ghost:hover{border-color:var(--ink)}
+
+  /* problem */
+  .problem{background:var(--bg2)}
+  .problem-quote{font-family:var(--body);font-style:italic;font-size:clamp(1.4rem,2.6vw,2rem);line-height:1.6;color:#eae6de;font-weight:300;max-width:36rem}
+  .problem-cite{display:block;margin-top:1rem;font-size:.7rem;letter-spacing:.3em;color:var(--accent)}
+  .problem-body{margin-top:3.5rem}
+  .problem-body p{font-size:clamp(1.05rem,1.7vw,1.25rem);line-height:1.85;color:#c8c4bc;max-width:34rem}
+  .problem-body p+p{margin-top:1.4rem}
+  .problem-body p:last-child{color:#c8c4bc}
+
+  /* divider */
+  .rule{height:1px;background:var(--hair);max-width:4rem;margin:0 auto}
+
+  /* intro */
+  .intro{background:var(--bg)}
+  .intro-grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(3rem,8vw,7rem);align-items:center;max-width:58rem;margin:0 auto}
+  .intro-portrait{position:relative;aspect-ratio:1/1;border-radius:50%;overflow:hidden;isolation:isolate}
+  .intro-portrait img{width:100%;height:200%;object-fit:cover;object-position:center top}
+  .intro-portrait::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 45%,rgba(12,12,12,.6) 75%,#0c0c0c 100%);pointer-events:none}
+  .intro-text .label{display:block}
+  .intro-text h2{margin-bottom:1.4rem}
+  .intro-text p{color:#b0aca4;line-height:1.85}
+  .intro-text p+p{margin-top:1.4rem}
+  .intro-text p:last-child{margin-top:2rem}
+  @media(max-width:720px){
+    .intro-grid{grid-template-columns:1fr;gap:2.5rem}
+    .intro-portrait{max-width:18rem;margin:0 auto}
+  }
+
+  /* quote */
+  .quote-section{background:var(--bg2);padding:clamp(7rem,16vh,14rem) 2rem;text-align:center}
+  .quote-section blockquote{font-family:var(--body);font-style:italic;font-size:clamp(1.3rem,2.4vw,1.9rem);line-height:1.7;color:#d8d4cc;max-width:52rem;margin:0 auto;font-weight:300}
+  .quote-section cite{display:block;margin-top:2rem;font-family:var(--sc);font-size:.7rem;letter-spacing:.3em;color:var(--accent);font-style:normal}
+
+  /* who */
+  .who{background:var(--bg2)}
+  .who-grid{display:grid;grid-template-columns:1fr 1fr;gap:4rem;max-width:56rem;margin:3rem auto 0}
+  .who-col h3{font-family:var(--sc);font-size:.78rem;letter-spacing:.25em;color:var(--accent);margin-bottom:1.6rem}
+  .who-col ul{list-style:none}
+  .who-col li{padding:.55rem 0;border-bottom:1px solid var(--hair);color:#b0aca4;font-size:1rem;line-height:1.6}
+  .who-col li:last-child{border-bottom:none}
+  @media(max-width:640px){.who-grid{grid-template-columns:1fr;gap:2.5rem}}
+
+  /* how */
+  .how{background:var(--bg);text-align:center}
+  .how h2{margin-bottom:1.4rem}
+  .how p{color:#b0aca4;max-width:32rem;margin:0 auto 3rem}
+
+  /* how list */
+  .how-list{list-style:none;margin:1.6rem auto 2.4rem;max-width:24rem;text-align:center}
+  .how-list li{padding:.6rem 0;border-bottom:1px solid var(--hair);color:#b0aca4;font-size:1rem}
+  .how-list li:last-child{border-bottom:none}
+
+  /* cta section */
+  .cta-section{background:var(--bg2);text-align:center}
+  .cta-section h2{margin-bottom:1rem;color:#eae6de}
+  .cta-section .lede{margin:0 auto 2.8rem;max-width:30rem}
+
+  /* newsletter */
+  .newsletter{background:var(--bg);text-align:center}
+  .newsletter .label{display:block;margin-bottom:1rem}
+  .newsletter h2{margin-bottom:.8rem}
+  .newsletter p{color:var(--muted);margin-bottom:2.4rem;font-size:1rem}
+  .newsletter form{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;max-width:37rem;margin:0 auto}
+  .newsletter input[type=email],.newsletter button{grid-column:1/-1}
+  .newsletter input[type=email],.newsletter input[type=text]{background:transparent;border:1px solid var(--hair);color:var(--ink);padding:.9rem 1.4rem;font-family:var(--body);font-size:.95rem;border-radius:2px;width:100%;outline:none;transition:border-color .2s}
+  .newsletter input[type=email]:focus,.newsletter input[type=text]:focus{border-color:var(--accent)}
+  .newsletter input::placeholder{color:var(--muted)}
+
+  /* footer */
+  footer{background:#080808;padding:4rem 2rem;text-align:center}
+  footer .foot-name{font-family:var(--sc);letter-spacing:.2em;font-size:.78rem;color:var(--accent);margin-bottom:1rem}
+  footer .foot-links{font-family:var(--sc);font-size:.68rem;letter-spacing:.15em;color:var(--muted)}
+  footer .foot-links a{margin:0 .8rem;transition:color .2s}
+  footer .foot-links a:hover{color:var(--ink)}
+  footer .hairline{height:1px;background:var(--hair);max-width:3rem;margin:0 auto 1.6rem}
+
+  /* reveal */
+  .rise{opacity:0;transform:translateY(18px);transition:opacity .9s ease,transform .9s ease}
+  .rise.in{opacity:1;transform:none}
+  @media(prefers-reduced-motion:reduce){.rise{opacity:1;transform:none;transition:none}}
 </style>
 </head>
 <body>
-<a class="skip" href="#work">Skip to content</a>
 
-<!-- NOTE: "Book a private conversation" CTAs use Reece's Calendly as a placeholder. Swap to Dan's Cal.com link before final handover. -->
-<header class="bar" id="bar">
-  <a class="name sc" href="#top">Daniel Tiwari</a>
-  <a class="cta mini sc" href="/assessment.html">Take the assessment</a>
+<header id="bar">
+  <a class="header-name" href="#top">Daniel Tiwari</a>
+  <a class="header-cta sc" href="/assessment.html">Self-Assessment</a>
 </header>
 
 <a id="top"></a>
 
-<!-- 1 · hero (meditative video, "Threshold", text in lower third) -->
-<section class="hero-video">
-  <video autoplay muted loop playsinline preload="auto" poster="/assets/video/hero-threshold-poster.jpg">
-    <source src="/assets/video/hero-threshold-720.mp4" type="video/mp4" media="(max-width:820px)">
-    <source src="/assets/video/hero-threshold-1080.mp4" type="video/mp4">
-  </video>
-  <div class="scrim" aria-hidden="true"></div>
+<!-- Hero -->
+<section class="hero">
+  <img src="/assets/hero-marble.png" alt="" aria-hidden="true" class="hero-bg">
+  <div class="hero-scrim" aria-hidden="true"></div>
+  <div class="hero-inner rise">
+    <h1>Most people are wasting their lives trying to be someone they're not, rather than excelling as who they are.</h1>
+    <p class="lede">Private coaching for the renegades of mainstream society.</p>
+    <div class="hero-actions">
+      <a class="btn btn-primary sc" href="/assessment.html">Self-Assessment</a>
+      <span class="or">or</span>
+      <a class="btn btn-ghost sc" href="https://cal.eu/danieltiwari/connect" target="_blank" rel="noopener noreferrer">Book a conversation</a>
+    </div>
+  </div>
+</section>
+
+<!-- Intro / The Work -->
+<!-- Problem section -->
+<section class="problem">
   <div class="wrap rise">
-    <div class="rule" aria-hidden="true"></div>
-    <h1 class="display">Being human is the only game in town. Why not play to win?</h1>
-    <p class="lede subhead">I help ambitious individuals turn their unique potential into a life that is genuinely enjoyable, fulfilling, and meaningful, despite the struggles that go with being human.</p>
-    <div class="cta-row hero-cta" style="justify-content:center">
-      <a class="cta sc" href="/assessment.html">Take the free assessment</a>
-      <a class="cta secondary sc" href="https://cal.eu/danieltiwari/connect" target="_blank" rel="noopener noreferrer">Book a private conversation</a>
-    </div>
-    <p class="cta-note">A short, private self-reflection to get a clear look at where you actually are.</p>
-  </div>
-</section>
-
-<!-- 2 · photo + positioning -->
-<section class="alt" id="work">
-  <div class="figure-grid rise">
-    <div class="portrait">
-      <img src="/assets/dan/dan-portrait-headup-hd.jpg" alt="Daniel Tiwari" width="804" height="654" loading="lazy">
-    </div>
-    <div class="figure-copy">
-      <div class="section-head">The work</div>
-      <h2 class="display">For extraordinary individuals who want to live extraordinary lives.</h2>
-      <p>I offer long-term coaching relationships, one on one, for people committed to living life on their own terms, and unwilling to settle for less.</p>
-      <p>I am a thinker before I am a coach. The work is direct, private, and honest. If you want theory you can actually live, you are in the right place.</p>
+    <blockquote class="problem-quote">"It's no measure of health to be well-adjusted to a profoundly sick society."</blockquote>
+    <cite class="problem-cite sc">Krishnamurti</cite>
+    <div class="problem-body">
+      <p>We live in an extremely limiting culture. If you're unfulfilled and performing far beneath your potential, that's no surprise.</p>
+      <p>Growing up, you trusted that authorities would teach you how to lead a truly fulfilling and successful life. A fallacy you are now waking up from.</p>
+      <p>The resulting feeling of alienation and frustration doesn't mean you're defective. You've just outgrown that environment.</p>
     </div>
   </div>
 </section>
 
-<!-- 3 · the reframe -->
-<section class="dark center statement wide-state">
-  <div class="wrap rise">
-    <div class="section-head">The premise</div>
-    <h2 class="display">Performance = Potential &minus; Interference</h2>
-    <p class="sub">You are not short on potential. Something is standing in front of it. The work is removing what's in the way.</p>
+<section class="intro" id="work">
+  <div class="intro-grid">
+    <div class="intro-portrait rise">
+      <img src="/assets/dan/pic.jpg" alt="Daniel Tiwari" loading="lazy">
+    </div>
+    <div class="intro-text rise">
+      <h2>Daniel Tiwari</h2>
+      <p>Having received that same upbringing myself, it took me almost three decades before I even started tasting fulfillment in life. Three decades I won't be getting back.</p>
+      <p>But it was those three decades that transformed me into the person I myself would have needed back then.</p>
+      <p>Now my work is turning the unique potential of ambitious individuals like you into a fulfilling and meaningful life, despite the struggles that naturally go along with being human.</p>
+    </div>
   </div>
 </section>
 
-<!-- 4 · for you / not for you (Dan's own words) -->
-<section>
-  <div class="wrap wide center rise" style="margin-bottom:3.5rem">
-    <div class="section-head">Honest from the start</div>
-    <h2 class="display">Who this is for.</h2>
+<!-- Who It's For -->
+<section class="who center" id="who">
+  <div class="wrap wide rise">
+    <div class="label">Honest from the start</div>
+    <h2>Who this is for.</h2>
   </div>
-  <div class="fit-grid rise">
-    <div class="fit-col for">
-      <h3 class="sc">This is for you if</h3>
+  <div class="who-grid rise">
+    <div class="who-col">
+      <h3>This is for you if</h3>
       <ul>
-        <li>You honour authenticity, trust, and integrity.</li>
+        <li>You honor authenticity, trust, and integrity.</li>
         <li>You're committed to living life on your own terms, and won't settle for less.</li>
         <li>You accept full authority, ownership, and responsibility over your life.</li>
         <li>You prefer truth over comforting lies.</li>
-        <li>You value yourself, your life, and your time, and know you are your greatest asset.</li>
+        <li>You value yourself, your life, and your time.</li>
       </ul>
     </div>
-    <div class="fit-col not">
-      <h3 class="sc">I'm probably not for you if</h3>
+    <div class="who-col">
+      <h3>This isn't for you if</h3>
       <ul>
         <li>You're looking for someone to coddle, motivate, or validate you.</li>
-        <li>You want a superficial, short-term "quick fix".</li>
+        <li>You want a superficial, short-term quick fix.</li>
         <li>You give up when things get uncomfortable.</li>
-        <li>You take constructive criticism personally.</li>
+        <li>You're not open to being challenged.</li>
         <li>You're unwilling to be honest with yourself, or with me.</li>
       </ul>
     </div>
   </div>
 </section>
 
-<!-- 5 · meditative pause (Alan Watts) -->
-<section class="meditation">
+<!-- How It Works -->
+<section class="how" id="how">
   <div class="wrap rise">
-    <p class="q">"The only way to make sense out of change is to plunge into it, move with it, and join the dance."</p>
-    <p class="cite sc">Alan Watts</p>
+    <h2>How I operate</h2>
+<ul class="how-list">
+      <li>Coaching agreements start at 6 months</li>
+      <li>Weekly 90-minute video calls, fixed timeslot</li>
+      <li>Call recordings included</li>
+      <li>Chat availability in between</li>
+      <li>Conducted in English or German</li>
+      <li>No playing small</li>
+    </ul>
+    <a class="btn btn-ghost sc" href="https://cal.eu/danieltiwari/connect" target="_blank" rel="noopener noreferrer">Book a conversation</a>
   </div>
 </section>
 
-<!-- 6 · the assessment / the mirror, primary conversion -->
-<section class="dark center statement" id="assessment">
+<!-- CTA -->
+<section class="cta-section" id="assessment">
   <div class="wrap rise">
-    <div class="section-head">The first step</div>
-    <h2 class="display">Most people never get an honest look at themselves.</h2>
-    <p class="sub">A short, private self-assessment. No advice, no pitch, just a clear reflection of where you actually are, and what is keeping you there.</p>
-    <div class="cta-row hero-cta center" style="justify-content:center">
-      <a class="cta sc" href="/assessment.html">Take the free assessment</a>
-    </div>
+    <div class="label">The first step</div>
+    <h2>Most people never take an honest look at themselves.</h2>
+    <p class="lede">A short self-assessment I put together to generate a clear reflection of where you actually are.</p>
+    <a class="btn btn-primary sc" href="/assessment.html">Self-Assessment</a>
   </div>
 </section>
 
-<!-- 7 · working together -->
-<section class="alt center">
+<!-- Newsletter -->
+<section class="newsletter">
   <div class="wrap rise">
-    <div class="section-head">Working together</div>
-    <h2 class="display">A small number of people. Six months. One to one.</h2>
-    <p class="lede muted" style="max-width:34rem;margin:1.6rem auto 0">I take on eight to ten people at a time, over months rather than weeks. The work is demanding and entirely private. Entry is a private diagnostic conversation, never a sales call.</p>
-    <div class="cta-row hero-cta" style="justify-content:center">
-      <a class="cta secondary sc" href="https://cal.eu/danieltiwari/connect" target="_blank" rel="noopener noreferrer">Book a private conversation</a>
-    </div>
-  </div>
-</section>
-
-<!-- 8 · newsletter -->
-<section class="dark center">
-  <div class="wrap news rise">
-    <div class="section-head">Letters, occasionally</div>
-    <h2 class="display">Worth reading, now and then.</h2>
-    <p class="sub">Occasional writing on identity, freedom, and building a life that is actually yours. No noise, no funnel.</p>
+    <span class="label">Newsletter</span>
+    <h2>I don't write much, but when I do, it's worth reading.</h2>
+    <p>Occasional writing on identity, freedom, and building a life that is actually yours.</p>
     <form name="newsletter" method="POST" data-netlify="true" netlify-honeypot="bot-field" action="/?subscribed=1">
       <input type="hidden" name="form-name" value="newsletter">
       <p hidden><label>Don't fill this in: <input name="bot-field"></label></p>
-      <input type="email" name="email" required placeholder="you@example.com" aria-label="Email address">
-      <button type="submit" class="cta sc">Subscribe</button>
+      <input type="text" name="first-name" required placeholder="First name" aria-label="First name">
+      <input type="text" name="last-name" required placeholder="Last name" aria-label="Last name">
+      <input type="email" name="email" required placeholder="your@email.com" aria-label="Email address">
+      <button type="submit" class="btn btn-primary sc">Subscribe</button>
     </form>
-    <p class="news-note">One click to unsubscribe, always.</p>
   </div>
 </section>
 
-<footer class="foot">
+<!-- Quote -->
+<div class="quote-section">
+  <blockquote class="rise">
+    "When a stream or a bubbling spring flows out from the mountains, it is doing its thing. And if a thirsty traveler helps himself, well that's fine. When a bird sings, it doesn't sing for the advancement of music, but if somebody stops to listen and is delighted, that's fine. And so, I talk in the same spirit."
+  </blockquote>
+  <cite class="rise sc">Alan Watts</cite>
+</div>
+
+<footer>
   <div class="hairline"></div>
-  <div class="name sc">Daniel Tiwari</div>
-  <div class="mail"><a href="mailto:email@danieltiwari.com">email@danieltiwari.com</a></div>
-  <div class="links"><a class="sc" href="#">Site Notice</a><a class="sc" href="#">Privacy</a></div>
+  <div class="foot-name">Daniel Tiwari</div>
+  <div class="foot-links">
+    <a href="mailto:email@danieltiwari.com">email@danieltiwari.com</a>
+    <a href="/site-notice.html" target="_blank" rel="noopener noreferrer">Site Notice</a>
+    <a href="/privacy.html" target="_blank" rel="noopener noreferrer">Privacy</a>
+  </div>
 </footer>
 
 <script>
-  const io=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}})},{threshold:.16});
-  document.querySelectorAll('.rise').forEach(el=>io.observe(el));
-  const bar=document.getElementById('bar');
-  const onScroll=()=>{bar.classList.toggle('scrolled',scrollY>8)};
-  addEventListener('scroll',onScroll,{passive:true});onScroll();
+  const io = new IntersectionObserver((es) => {
+    es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, { threshold: .14 });
+  document.querySelectorAll('.rise').forEach(el => io.observe(el));
+  const bar = document.getElementById('bar');
+  window.addEventListener('scroll', () => bar.classList.toggle('scrolled', scrollY > 8), { passive: true });
 </script>
 </body>
 </html>

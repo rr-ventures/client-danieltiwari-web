@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "description": "Daniel Tiwari coaching site — static pages + Netlify Functions (assessment + hosted result via Netlify Blobs).",
+  "scripts": {
+    "build": "node scripts/build-static-site.mjs"
+  },
   "dependencies": {
     "@netlify/blobs": "^8.1.0"
   }

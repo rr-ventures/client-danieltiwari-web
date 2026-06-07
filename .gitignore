@@ -1,5 +1,6 @@
 # Build / deploy
 .netlify/
+/dist/
 .playwright-mcp/
 .agent-memory/
 node_modules/

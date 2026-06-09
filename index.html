@@ -88,8 +88,8 @@
 
   /* problem */
   .problem{background:var(--bg2)}
-  .problem-quote{font-family:'Spectral SC',Georgia,serif;font-style:normal;font-size:clamp(1.4rem,2.6vw,2rem);line-height:1.6;color:#eae6de;font-weight:300;max-width:36rem;text-align:center;margin-left:auto;margin-right:auto}
-  .problem-cite{display:block;margin-top:1rem;font-size:.7rem;letter-spacing:.3em;color:var(--accent);text-align:center}
+  .problem-quote{font-family:var(--body);font-style:italic;font-size:clamp(1.3rem,2.4vw,1.9rem);line-height:1.7;color:#d8d4cc;font-weight:300;max-width:36rem;text-align:center;margin-left:auto;margin-right:auto}
+  .problem-cite{display:block;margin-top:1rem;font-size:.7rem;letter-spacing:.3em;color:var(--accent);text-align:center;font-style:normal}
   .problem-body{margin-top:3.5rem;max-width:34rem;margin-left:auto;margin-right:auto}
   .problem-body p{font-size:clamp(1.05rem,1.7vw,1.25rem);line-height:1.85;color:#c8c4bc;max-width:34rem}
   .problem-body p+p{margin-top:1.4rem}
@@ -128,7 +128,7 @@
   .who-col li:last-child{border-bottom:none}
   @media(max-width:640px){.who-grid{grid-template-columns:1fr;gap:2.5rem}}
   /* testimonials */
-  .testimonials{background:var(--bg2)}
+  .testimonials{background:var(--bg2);overflow-anchor:none}
   .testi-wrap{max-width:44rem;margin:3rem auto 0}
   .testi-track{overflow:hidden;position:relative}
   .testi-slide{display:none}
@@ -162,6 +162,8 @@
   .newsletter .label{display:block;margin-bottom:1rem}
   .newsletter h2{margin-bottom:2.4rem}
   .newsletter p{color:var(--muted);margin-bottom:2.4rem;font-size:1rem}
+  .newsletter-quote{font-family:var(--body);font-style:italic;font-size:clamp(1.1rem,1.8vw,1.4rem);line-height:1.8;color:#d8d4cc;font-weight:300;max-width:44rem;margin:0 auto 1.2rem}
+  .newsletter-cite{display:block;font-size:.7rem;letter-spacing:.3em;color:var(--accent);margin-bottom:2.4rem;font-style:normal}
   .newsletter form{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;max-width:37rem;margin:0 auto}
   .newsletter input[type=email],.newsletter button{grid-column:1/-1}
   .newsletter input[type=email],.newsletter input[type=text]{background:transparent;border:1px solid var(--hair);color:var(--ink);padding:.9rem 1.4rem;font-family:var(--body);font-size:.95rem;border-radius:2px;width:100%;outline:none;transition:border-color .2s}
@@ -191,6 +193,7 @@
     <a href="#work">Me</a>
     <a href="#who">You</a>
     <a href="#how">How</a>
+    <a href="#testimonials">Voices</a>
     <a href="#assessment">Assessment</a>
     <a href="#newsletter">Newsletter</a>
   </nav>
@@ -246,14 +249,6 @@
   </div>
 </section>
 
-<!-- Quote -->
-<div class="quote-section">
-  <blockquote class="rise">
-    "When a stream or a bubbling spring flows out from the mountains, it is doing its thing. And if a thirsty traveler helps himself, well that's fine. When a bird sings, it doesn't sing for the advancement of music, but if somebody stops to listen and is delighted, that's fine. And so, I talk in the same spirit."
-  </blockquote>
-  <cite class="rise sc">Alan Watts</cite>
-</div>
-
 <!-- Who It's For -->
 <section class="who center" id="who">
   <div class="wrap wide rise">
@@ -281,6 +276,23 @@
         <li>You're unwilling to be honest with yourself, or with me.</li>
       </ul>
     </div>
+  </div>
+</section>
+
+<!-- How It Works -->
+<section class="how" id="how">
+  <div class="wrap rise">
+    <h2>How I operate</h2>
+    <p>Commit to you, and I will too.</p>
+<ul class="how-list">
+      <li>Coaching agreements start at 6 months</li>
+      <li>Weekly 90-minute video calls, fixed timeslot</li>
+      <li>Call recordings included</li>
+      <li>Chat availability in between</li>
+      <li>Conducted in English or German</li>
+      <li>No playing small</li>
+    </ul>
+    <a class="btn btn-ghost sc" href="https://cal.eu/danieltiwari/connect" target="_blank" rel="noopener noreferrer">Book a conversation</a>
   </div>
 </section>
 
@@ -355,29 +367,12 @@
   </div>
 </section>
 
-<!-- How It Works -->
-<section class="how" id="how">
-  <div class="wrap rise">
-    <h2>How I operate</h2>
-    <p>Commit to you, and I will too.</p>
-<ul class="how-list">
-      <li>Coaching agreements start at 6 months</li>
-      <li>Weekly 90-minute video calls, fixed timeslot</li>
-      <li>Call recordings included</li>
-      <li>Chat availability in between</li>
-      <li>Conducted in English or German</li>
-      <li>No playing small</li>
-    </ul>
-    <a class="btn btn-ghost sc" href="https://cal.eu/danieltiwari/connect" target="_blank" rel="noopener noreferrer">Book a conversation</a>
-  </div>
-</section>
-
 <!-- CTA -->
 <section class="cta-section" id="assessment">
   <div class="wrap rise">
     <div class="label">The first step</div>
     <h2>Most people never take an honest look at themselves.</h2>
-    <p class="lede">This is a short self-assessment I put together to generate a clear reflection of where you actually are in life.</p>
+    <p class="lede">This is a short self-assessment I created to generate a clear reflection of where you actually are in life.</p>
     <a class="btn btn-primary sc" href="/assessment.html">Self-Assessment</a>
   </div>
 </section>
@@ -386,7 +381,9 @@
 <section class="newsletter" id="newsletter">
   <div class="wrap rise">
     <span class="label">Newsletter</span>
-    <h2>Only words worth writing.</h2>
+    <h2>Words Worth Writing.</h2>
+    <blockquote class="newsletter-quote">"When a stream or a bubbling spring flows out from the mountains, it is doing its thing. And if a thirsty traveler helps himself, well that's fine. When a bird sings, it doesn't sing for the advancement of music, but if somebody stops to listen and is delighted, that's fine. And so, I talk in the same spirit."</blockquote>
+    <cite class="newsletter-cite sc">Alan Watts</cite>
     <form name="newsletter" method="POST" data-netlify="true" netlify-honeypot="bot-field" action="/?subscribed=1">
       <input type="hidden" name="form-name" value="newsletter">
       <p hidden><label>Don't fill this in: <input name="bot-field"></label></p>
@@ -434,7 +431,7 @@
     const outgoing = slides[current];
     const incoming = slides[next];
 
-    // Lock track height so it doesn't collapse during transition
+    // Lock height during transition so track doesn't collapse
     track.style.height = track.offsetHeight + 'px';
 
     // Position outgoing absolutely so incoming can render alongside it
@@ -460,7 +457,7 @@
       outgoing.style.cssText = '';
       incoming.style.transition = '';
       incoming.style.transform = '';
-      track.style.height = '';
+      track.style.height = incoming.offsetHeight + 'px';
       current = next;
       animating = false;
     }, 470);
@@ -476,18 +473,18 @@
     fixedNext.classList.toggle('visible', entry.isIntersecting);
   }, {rootMargin: '-48% 0px -48% 0px', threshold: 0});
   testiObserver.observe(testiSection);
-  let touchStartX = 0;
-  track.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, {passive:true});
-  track.addEventListener('touchend', e => {
-    const diff = touchStartX - e.changedTouches[0].clientX;
-    if (Math.abs(diff) > 50) showSlide(current + (diff > 0 ? 1 : -1), diff > 0 ? 1 : -1);
-  }, {passive:true});
   if (window.matchMedia('(hover: hover)').matches) {
     const testiWrap = document.querySelector('.testi-wrap');
     let timer = setInterval(() => showSlide(current + 1, 1), 5000);
     testiWrap.addEventListener('mouseenter', () => clearInterval(timer));
     testiWrap.addEventListener('mouseleave', () => { timer = setInterval(() => showSlide(current + 1, 1), 5000); });
   }
+  let touchStartX = 0;
+  track.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, {passive:true});
+  track.addEventListener('touchend', e => {
+    const diff = touchStartX - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) showSlide(current + (diff > 0 ? 1 : -1), diff > 0 ? 1 : -1);
+  }, {passive:true});
 </script>
 </body>
 </html>

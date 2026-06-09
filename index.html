@@ -127,9 +127,23 @@
   .who-col li{padding:.55rem 0;border-bottom:1px solid var(--hair);color:#b0aca4;font-size:1.2rem;line-height:1.6}
   .who-col li:last-child{border-bottom:none}
   @media(max-width:640px){.who-grid{grid-template-columns:1fr;gap:2.5rem}}
+  /* testimonials */
+  .testimonials{background:var(--bg2)}
+  .testi-wrap{max-width:44rem;margin:3rem auto 0}
+  .testi-track{overflow:hidden;position:relative}
+  .testi-slide{display:none}
+  .testi-slide.active{display:block}
+  .testi-quote{font-family:var(--body);font-size:clamp(1rem,1.5vw,1.1rem);line-height:1.9;color:#c8c4bc;text-align:left}
+  .testi-quote p+p{margin-top:1.2rem}
+  .testi-fixed-btn{position:fixed;top:50%;transform:translateY(-50%);z-index:50;background:rgba(12,12,12,.75);border:1px solid var(--hair);color:var(--accent);font-family:var(--sc);font-size:.75rem;letter-spacing:.2em;padding:.7rem 1rem;border-radius:2px;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .4s,border-color .2s,color .2s;backdrop-filter:blur(4px)}
+  .testi-fixed-btn.visible{opacity:1;pointer-events:auto}
+  .testi-fixed-btn:hover{border-color:var(--accent);color:var(--ink)}
+  #testi-fixed-prev{left:1.5rem}
+  #testi-fixed-next{right:1.5rem}
+  @media(max-width:640px){#testi-fixed-prev{left:.4rem}#testi-fixed-next{right:.4rem}.testi-wrap{padding:0 2rem}}
 
   /* how */
-  .how{background:var(--bg2);text-align:center}
+  .how{background:var(--bg);text-align:center}
   .how h2{margin-bottom:1.4rem}
   .how p{color:#b0aca4;max-width:32rem;margin:0 auto 3rem}
 
@@ -139,12 +153,12 @@
   .how-list li:last-child{border-bottom:none}
 
   /* cta section */
-  .cta-section{background:var(--bg);text-align:center}
+  .cta-section{background:var(--bg2);text-align:center}
   .cta-section h2{margin-bottom:1rem;color:#eae6de}
   .cta-section .lede{margin:0 auto 2.8rem;max-width:30rem}
 
   /* newsletter */
-  .newsletter{background:var(--bg2);text-align:center}
+  .newsletter{background:var(--bg);text-align:center}
   .newsletter .label{display:block;margin-bottom:1rem}
   .newsletter h2{margin-bottom:2.4rem}
   .newsletter p{color:var(--muted);margin-bottom:2.4rem;font-size:1rem}
@@ -270,6 +284,77 @@
   </div>
 </section>
 
+<!-- Testimonials -->
+<section class="testimonials" id="testimonials">
+  <div class="wrap center rise">
+    <div class="label">In their words</div>
+    <h2>What clients say.</h2>
+  </div>
+  <div class="testi-wrap rise">
+    <div class="testi-track">
+
+      <div class="testi-slide">
+        <blockquote class="testi-quote">
+          <p>When I first started working with Daniel, I was facing several internal & external challenges. Daniel really helped me unpack & address these challenges, one by one. He provided clarity & insight which helped me understand myself better & accept who I am.</p>
+          <p>What I truly appreciate about Daniel is his dedication & the depth of insight he brings to every session. Whether the issue was something surface-level or more deeply rooted, Daniel's ability to quickly understand the situation & guide me through it was very valuable. His knowledge & expertise made me feel supported every step of the way. He didn't just offer solutions but instead gave me the tools to uncover my own answers.</p>
+          <p>I'm also incredibly grateful for the safe space Daniel held for me. It was very important to me to work with someone I felt comfortable with. He challenged me a lot & confronted me with myself, but that truly provided the growth I was able to achieve. I also appreciated that I could always reach out to him between calls, & he would provide thorough, thoughtful responses. This ongoing support was a huge contribution to my growth.</p>
+          <p>Looking back on the work we've done together, I feel a sense of gratitude for the transformation I've experienced. Daniel has helped me make significant progress internally, which then shifted my actions externally. I now approach life with greater awareness of myself, confidence & authenticity.</p>
+        </blockquote>
+      </div>
+
+      <div class="testi-slide">
+        <blockquote class="testi-quote">
+          <p>One of the main benefits I got from working with Daniel is that I finally felt understood. It felt like I had nobody in my life that I could share my thoughts, fears, and insecurities with. Daniel was somebody I could trust, who I knew wouldn't judge me, and I knew would only offer me positive and constructive feedback, even if it sounded harsh at first. He always chose to understand where I was coming from, and then wherever he saw a limiting belief, he shed light on it.</p>
+          <p>A lot of the times the things that drive us are just things we picked up as children, and we internalize these beliefs and don't even know they are there for us to question them. The processes behind why I was sabotaging myself were oblivious to me until Daniel pointed them out. By making me aware of the things that were driving my behavior, Daniel helped me understand why I do what I do, which enabled me to make the decision of whether I want to continue life that way or not.</p>
+          <p>I had also for my whole life lived under the pressure of becoming someone who I thought I was supposed to be. Someone who I was not. For the first time I am able to accept and embrace myself for who I am.</p>
+          <p>If you're thinking about working with Daniel, absolutely go for it! This guy will challenge you in a positive way and get you to see where your unknown unknowns are. He helps you shed light on the dark parts of your personality where we're often afraid to go. With someone like Daniel on your side, you're cutting down your journey to freedom significantly. I cannot stress enough how good Daniel is as a coach and just how much of an impact this guy has made in my life.</p>
+        </blockquote>
+      </div>
+
+      <div class="testi-slide">
+        <blockquote class="testi-quote">
+          <p>Daniel helped me gain clarity during a turning point in my life. I had practically had all the opportunities but still felt lost — both personally and professionally.</p>
+          <p>The initial calls allowed me to assess my current state and establish a clear starting point, which was already immensely helpful. As our sessions continued, I gained incredibly valuable insights that completely changed my perspective. I finally understood why my previous approaches weren't working and was able to significantly reduce the endless analyzing and overthinking.</p>
+          <p>Daniel supported me in uncovering aspects of myself that I was previously unaware of and in understanding myself as a whole (including my apparent contradictions). I could also finally see the common thread in my initially disconnected interests and talents, which provided enormous clarity regarding my professional abilities.</p>
+          <p>I've never met anyone with such a keen ability to pinpoint the essence of a problem in a clear, structured way. Rather than simply providing answers, he guided me to discover my own, enabling genuine change and acceptance.</p>
+          <p>His unconditional honesty and compassionate nature were essential in helping me recognize my blind spots and develop a way of living that feels true to myself and much freer.</p>
+        </blockquote>
+      </div>
+
+      <div class="testi-slide">
+        <blockquote class="testi-quote">
+          <p>I am writing to wholeheartedly recommend working with Daniel.</p>
+          <p>My experience working with him has been profound, as he guided me through shifts in my mindset, perspective, & overall approach to life.</p>
+          <p>Daniel has a unique ability to help people break free from limiting beliefs, reframe challenges, & step into new possibilities. He has helped me release old patterns that were keeping me stuck in life.</p>
+          <p>Daniel's coaching style is both compassionate & empowering, creating a safe space for insights & aha-moments. Since working with him, I have gained a clearer understanding of my thought patterns, & cultivated a greater sense of self-trust & confidence. I now approach life with more openness & ease.</p>
+          <p>His guidance has been instrumental to my journey, & I highly recommend him to anyone looking to expand their mindset, overcome obstacles, & create a life aligned with their true potential. If you are considering working with Daniel, I can confidently say that it will be one of the most insightful times of your life.</p>
+        </blockquote>
+      </div>
+
+      <div class="testi-slide">
+        <blockquote class="testi-quote">
+          <p>I reached out to you at a very low ebb in my life.</p>
+          <p>I was burnt out, overwhelmed & very lost.</p>
+          <p>I saw a post you did on social media and felt like I should reach out about your coaching, and boy, was I glad I did.</p>
+          <p>Your expertise, the space you held, and your genuine care gave me the necessary support that allowed me to make significant progress. In fact, it was from working with you for the 3 months that really helped me understand myself & my life at a much deeper level.</p>
+          <p>I owe you a lot and will forever be grateful for how much you changed my life. You're very good at what you do.</p>
+        </blockquote>
+      </div>
+
+      <div class="testi-slide">
+        <blockquote class="testi-quote">
+          <p>I had some immensely powerful shifts during my coaching sessions with Daniel.</p>
+          <p>He brought real depth to every session and had a rare ability to make complex ideas immediately understandable and applicable to real life.</p>
+          <p>We delved deep into my mindset of what was holding me back in all kinds of different areas of my life, from how I related to my marriage, over being 'too busy', all the way up to how my ultimate fear was that of death.</p>
+          <p>By blowing what I perceived about my 'problems' out the water, I was able to see the lies I'd been telling myself all along, enabling me to make different choices about how I think and feel, and lead my life in a more empowering way and with more freedom!</p>
+        </blockquote>
+      </div>
+
+    </div>
+    </div>
+  </div>
+</section>
+
 <!-- How It Works -->
 <section class="how" id="how">
   <div class="wrap rise">
@@ -313,6 +398,9 @@
   </div>
 </section>
 
+<button class="testi-fixed-btn" id="testi-fixed-prev" aria-label="Previous testimonial">←</button>
+<button class="testi-fixed-btn" id="testi-fixed-next" aria-label="Next testimonial">→</button>
+
 <footer>
   <div class="hairline"></div>
   <div class="foot-name">Daniel Tiwari</div>
@@ -330,6 +418,76 @@
   document.querySelectorAll('.rise').forEach(el => io.observe(el));
   const bar = document.getElementById('bar');
   window.addEventListener('scroll', () => bar.classList.toggle('scrolled', scrollY > 8), { passive: true });
+
+  // Testimonial carousel
+  const slides = document.querySelectorAll('.testi-slide');
+  const track = document.querySelector('.testi-track');
+  let current = 0;
+  let animating = false;
+  slides[0].classList.add('active');
+
+  function showSlide(next, dir) {
+    if (animating) return;
+    next = (next + slides.length) % slides.length;
+    if (next === current) return;
+    animating = true;
+    const outgoing = slides[current];
+    const incoming = slides[next];
+
+    // Lock track height so it doesn't collapse during transition
+    track.style.height = track.offsetHeight + 'px';
+
+    // Position outgoing absolutely so incoming can render alongside it
+    outgoing.style.position = 'absolute';
+    outgoing.style.top = '0';
+    outgoing.style.left = '0';
+    outgoing.style.width = '100%';
+
+    // Place incoming off-screen
+    incoming.style.transform = dir > 0 ? 'translateX(100%)' : 'translateX(-100%)';
+    incoming.classList.add('active');
+
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const dur = '0.45s';
+      outgoing.style.transition = `transform ${dur} ease`;
+      outgoing.style.transform = dir > 0 ? 'translateX(-100%)' : 'translateX(100%)';
+      incoming.style.transition = `transform ${dur} ease`;
+      incoming.style.transform = 'translateX(0)';
+    }));
+
+    setTimeout(() => {
+      outgoing.classList.remove('active');
+      outgoing.style.cssText = '';
+      incoming.style.transition = '';
+      incoming.style.transform = '';
+      track.style.height = '';
+      current = next;
+      animating = false;
+    }, 470);
+  }
+
+  const fixedPrev = document.getElementById('testi-fixed-prev');
+  const fixedNext = document.getElementById('testi-fixed-next');
+  const testiSection = document.querySelector('.testimonials');
+  fixedPrev.addEventListener('click', () => showSlide(current - 1, -1));
+  fixedNext.addEventListener('click', () => showSlide(current + 1, 1));
+  const testiObserver = new IntersectionObserver(([entry]) => {
+    fixedPrev.classList.toggle('visible', entry.isIntersecting);
+    fixedNext.classList.toggle('visible', entry.isIntersecting);
+  }, {rootMargin: '-48% 0px -48% 0px', threshold: 0});
+  testiObserver.observe(testiSection);
+  let touchStartX = 0;
+  track.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, {passive:true});
+  track.addEventListener('touchend', e => {
+    const diff = touchStartX - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) showSlide(current + (diff > 0 ? 1 : -1), diff > 0 ? 1 : -1);
+  }, {passive:true});
+  if (window.matchMedia('(hover: hover)').matches) {
+    const testiWrap = document.querySelector('.testi-wrap');
+    let timer = setInterval(() => showSlide(current + 1, 1), 5000);
+    testiWrap.addEventListener('mouseenter', () => clearInterval(timer));
+    testiWrap.addEventListener('mouseleave', () => { timer = setInterval(() => showSlide(current + 1, 1), 5000); });
+  }
 </script>
 </body>
 </html>

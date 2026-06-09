@@ -51,8 +51,12 @@
   header{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;justify-content:space-between;align-items:center;padding:1.4rem 2.4rem 1.4rem calc(2rem + 2.4rem);transition:background .3s ease}
   header.scrolled{background:rgba(12,12,12,.92);border-bottom:1px solid var(--hair)}
   .header-name{font-family:var(--sc);font-size:.88rem;letter-spacing:.18em;color:var(--ink)}
+  .header-nav{display:flex;align-items:center;gap:2rem}
+  .header-link{font-family:var(--sc);font-size:.74rem;letter-spacing:.18em;color:var(--accent);transition:color .2s}
+  .header-link:hover{color:var(--ink)}
   .header-cta{font-family:var(--sc);font-size:.72rem;letter-spacing:.18em;color:var(--bg);background:var(--ink);border:1px solid var(--ink);padding:.55rem 1.2rem;border-radius:2px;transition:background .2s,border-color .2s,color .2s}
   .header-cta:hover{background:#fff;border-color:#fff;color:var(--bg)}
+  @media (max-width:680px){.header-nav{gap:1rem}.header-link{display:none}}
 
   /* hero */
   .hero{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden}
@@ -162,7 +166,11 @@
 
 <header id="bar">
   <a class="header-name" href="#top">Daniel Tiwari</a>
-  <a class="header-cta sc" href="/assessment.html">Self-Assessment</a>
+  <nav class="header-nav">
+    <a class="header-link sc" href="#work">The Work</a>
+    <a class="header-link sc" href="#who">Who It's For</a>
+    <a class="header-cta sc" href="/assessment.html">Self-Assessment</a>
+  </nav>
 </header>
 
 <a id="top"></a>

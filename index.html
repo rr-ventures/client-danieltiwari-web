@@ -60,7 +60,9 @@
 
   /* hero */
   .hero{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden}
-  .hero::before{content:"";position:absolute;top:0;bottom:0;left:30%;right:-30%;background-image:url('/assets/hero-marble.png');background-size:cover;background-position:left center;filter:saturate(.7);z-index:0}
+  .hero::before{content:"";position:absolute;top:0;bottom:0;left:30%;right:-30%;background-image:url('/assets/video/dan-hero-statue-poster.jpg');background-size:cover;background-position:left center;filter:saturate(.7);z-index:0}
+  .hero-video{position:absolute;top:0;bottom:0;left:30%;right:-30%;height:100%;object-fit:cover;object-position:left center;filter:saturate(.7);z-index:0}
+  @media (prefers-reduced-motion:reduce){.hero-video{display:none}}
   .hero-bg{display:none}
   .hero-scrim{position:absolute;inset:0;z-index:1;background:linear-gradient(to right,#0c0c0c 25%,rgba(12,12,12,.996) 28%,rgba(12,12,12,.990) 30%,rgba(12,12,12,.982) 32%,rgba(12,12,12,.971) 34%,rgba(12,12,12,.958) 36%,rgba(12,12,12,.941) 38%,rgba(12,12,12,.924) 40%,rgba(12,12,12,.907) 42%,rgba(12,12,12,.888) 44%,rgba(12,12,12,.869) 46%,rgba(12,12,12,.851) 48%,rgba(12,12,12,.825) 50%,rgba(12,12,12,.799) 52%,rgba(12,12,12,.783) 54%,rgba(12,12,12,.763) 56%,rgba(12,12,12,.744) 58%,rgba(12,12,12,.726) 60%,rgba(12,12,12,.709) 62%,rgba(12,12,12,.693) 64%,rgba(12,12,12,.680) 66%,rgba(12,12,12,.669) 68%,rgba(12,12,12,.660) 70%,rgba(12,12,12,.653) 72%,rgba(12,12,12,.650) 75%)}
   .hero-inner{position:relative;z-index:2;max-width:52rem;padding:0 2.4rem;margin:0 auto;width:100%;text-align:center}
@@ -178,7 +180,11 @@
 
 <!-- Hero -->
 <section class="hero">
-  <img src="/assets/hero-marble.png" alt="" aria-hidden="true" class="hero-bg">
+  <img src="/assets/video/dan-hero-statue-poster.jpg" alt="" aria-hidden="true" class="hero-bg">
+  <video class="hero-video" autoplay muted loop playsinline preload="auto" poster="/assets/video/dan-hero-statue-poster.jpg" aria-hidden="true">
+    <source src="/assets/video/dan-hero-statue.webm" type="video/webm">
+    <source src="/assets/video/dan-hero-statue.mp4" type="video/mp4">
+  </video>
   <div class="hero-scrim" aria-hidden="true"></div>
   <div class="hero-inner rise">
     <h1>Most people are wasting their lives trying to be someone they're not, rather than excelling as who they are.</h1>

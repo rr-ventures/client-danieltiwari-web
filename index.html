@@ -473,7 +473,7 @@
     fixedNext.classList.toggle('visible', entry.isIntersecting);
   }, {rootMargin: '-48% 0px -48% 0px', threshold: 0});
   testiObserver.observe(testiSection);
-  if (window.matchMedia('(hover: hover)').matches) {
+  if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
     const testiWrap = document.querySelector('.testi-wrap');
     let timer = setInterval(() => showSlide(current + 1, 1), 5000);
     testiWrap.addEventListener('mouseenter', () => clearInterval(timer));

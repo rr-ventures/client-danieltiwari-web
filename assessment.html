@@ -88,6 +88,18 @@
   footer .links{margin-top:1rem;display:flex;justify-content:center;gap:2rem;font-family:var(--sc);font-size:.68rem;letter-spacing:.15em;color:var(--muted)}
   footer .hairline{height:1px;background:var(--hair);max-width:3rem;margin:0 auto 1.6rem}
 
+  /* multi-step */
+  .assessment-section{display:none}
+  .assessment-section.active{display:block}
+  .step-progress{display:flex;justify-content:space-between;align-items:center;margin-bottom:3rem;padding-bottom:2rem;border-bottom:1px solid var(--hair)}
+  .step-label{font-family:var(--sc);font-size:.68rem;letter-spacing:.2em;color:var(--muted)}
+  .step-dots{display:flex;gap:.5rem}
+  .step-dot{width:.35rem;height:.35rem;border-radius:50%;background:var(--hair);transition:background .3s}
+  .step-dot.active{background:var(--ink)}
+  .form-nav{display:flex;gap:1rem;justify-content:center;align-items:center;padding-top:2rem;border-top:1px solid var(--hair)}
+  .btn-ghost{background:transparent;color:var(--muted);border-color:var(--hair)}
+  .btn-ghost:hover{color:var(--ink);border-color:var(--ink)}
+
   /* reveal */
   .obs-fade,.rise{opacity:0;transform:translateY(18px);transition:opacity .9s ease,transform .9s ease}
   .obs-fade.is-in,.rise.in,.rise.is-in{opacity:1;transform:none}
@@ -106,52 +118,28 @@
 <main id="main">
   <!-- hero -->
   <section class="hero assess-hero stage">
-    <div class="wrap rise">
-      <p class="eyebrow"><span class="dot"></span>Private self-assessment</p>
-      <h1 class="display">Where are you<br>really stuck?</h1>
-      <p class="lede" style="max-width:32rem;margin:0 auto">A short diagnostic that maps the visible problem, the deeper pattern underneath it, and whether private coaching is the right next step.</p>
+    <div class="wrap">
+      <p class="eyebrow">Personal self-assessment</p>
+      <h1 class="display">Taking an honest look</h1>
+      <p class="lede" style="max-width:32rem;margin:0 auto">I created this assessment for you to gain insight over yourself and your life.</p>
       <p class="meta sc">10–15 minutes</p>
     </div>
   </section>
 
   <div class="assessment-wrap">
-    <div class="assessment-intro obs-fade">
-      <p class="eyebrow"><span class="dot"></span>The point</p>
-      <h2 class="sc">Not a personality quiz.</h2>
-      <p class="lede">The goal is to surface where life is asking for more honesty: the area costing you the most, the pattern keeping it in place, and the seriousness of your desire to change it.</p>
+
+    <div class="step-progress">
+      <span class="step-label" id="step-label">1 of 4</span>
+      <div class="step-dots" id="step-dots">
+        <span class="step-dot"></span>
+        <span class="step-dot"></span>
+        <span class="step-dot"></span>
+        <span class="step-dot"></span>
+      </div>
     </div>
 
-    <form id="assessment-form" class="obs-fade" aria-label="Daniel Tiwari self-assessment">
-      <!-- 01 · you -->
-      <section class="assessment-section">
-        <div class="assessment-section-head">
-          <span class="num">01</span>
-          <div>
-            <h2>You.</h2>
-            <p>Enough context to send your result and understand the life you are assessing.</p>
-          </div>
-        </div>
-        <div class="question-grid">
-          <div class="field">
-            <label for="name"><span class="num">01</span> Name</label>
-            <input id="name" name="name" type="text" required autocomplete="name" placeholder="First and last">
-          </div>
-          <div class="field">
-            <label for="email"><span class="num">02</span> Email</label>
-            <input id="email" name="email" type="email" required autocomplete="email" placeholder="you@example.com">
-          </div>
-          <div class="field">
-            <label for="age"><span class="num">03</span> Age</label>
-            <input id="age" name="age" type="number" min="16" max="100" required placeholder="Your age">
-          </div>
-          <div class="field">
-            <label for="work_status"><span class="num">04</span> Work / life context</label>
-            <input id="work_status" name="work_status" type="text" placeholder="Founder, employed, studying, between things…">
-          </div>
-        </div>
-      </section>
-
-      <!-- 02 · the wheel -->
+    <form id="assessment-form" aria-label="Daniel Tiwari self-assessment">
+      <!-- 01 · the wheel -->
       <section class="assessment-section">
         <div class="assessment-section-head">
           <span class="num">02</span>
@@ -309,13 +297,34 @@
         </div>
       </section>
 
-      <div class="form-submit">
-        <button type="submit" class="btn btn-primary">
-          <span>Show my snapshot</span>
-          <span class="arrow" aria-hidden="true">→</span>
-        </button>
-        <p class="form-note"><span class="dot"></span>Your result appears immediately, and a copy is sent to your email.</p>
+      <!-- 04 · you -->
+      <section class="assessment-section">
+        <div class="question-grid">
+          <div class="field">
+            <label for="name"><span class="num">01</span> Name</label>
+            <input id="name" name="name" type="text" required autocomplete="name" placeholder="First and last">
+          </div>
+          <div class="field">
+            <label for="email"><span class="num">02</span> Email</label>
+            <input id="email" name="email" type="email" required autocomplete="email" placeholder="you@example.com">
+          </div>
+          <div class="field">
+            <label for="age"><span class="num">03</span> Age</label>
+            <input id="age" name="age" type="number" min="16" max="100" required placeholder="Your age">
+          </div>
+          <div class="field">
+            <label for="work_status"><span class="num">04</span> Work / life context</label>
+            <input id="work_status" name="work_status" type="text" placeholder="Founder, employed, studying, between things…">
+          </div>
+        </div>
+      </section>
+
+      <div class="form-nav">
+        <button type="button" class="btn btn-ghost" id="btn-back" hidden>← Back</button>
+        <button type="button" class="btn btn-primary" id="btn-next">Next →</button>
+        <button type="submit" class="btn btn-primary" id="btn-submit" hidden>Show my snapshot →</button>
       </div>
+      <p class="form-note" id="form-note" hidden><span class="dot"></span>Your result appears immediately, and a copy is sent to your email.</p>
     </form>
 
     <section id="assessment-result" class="assessment-result" hidden aria-live="polite"></section>
@@ -337,6 +346,40 @@
     const io=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('is-in');io.unobserve(e.target)}})},{threshold:.14});
     document.querySelectorAll('.obs-fade,.rise').forEach(el=>io.observe(el));
   }else{document.querySelectorAll('.obs-fade,.rise').forEach(el=>el.classList.add('is-in','in'))}
+
+  (function(){
+    const sections=Array.from(document.querySelectorAll('#assessment-form .assessment-section'));
+    const stepLabel=document.getElementById('step-label');
+    const stepDots=document.querySelectorAll('.step-dot');
+    const btnBack=document.getElementById('btn-back');
+    const btnNext=document.getElementById('btn-next');
+    const btnSubmit=document.getElementById('btn-submit');
+    const formNote=document.getElementById('form-note');
+    const wrap=document.querySelector('.assessment-wrap');
+    const total=sections.length;
+    let current=0;
+
+    function showStep(n){
+      sections.forEach((s,i)=>s.classList.toggle('active',i===n));
+      stepLabel.textContent=`${n+1} of ${total}`;
+      stepDots.forEach((d,i)=>d.classList.toggle('active',i===n));
+      btnBack.hidden=n===0;
+      btnNext.hidden=n===total-1;
+      btnSubmit.hidden=n!==total-1;
+      formNote.hidden=n!==total-1;
+      wrap.scrollIntoView({behavior:'smooth',block:'start'});
+    }
+
+    function validateStep(n){
+      const fields=sections[n].querySelectorAll('input[required],select[required],textarea[required]');
+      for(const f of fields){if(!f.reportValidity())return false;}
+      return true;
+    }
+
+    btnNext.addEventListener('click',()=>{if(validateStep(current)){current++;showStep(current);}});
+    btnBack.addEventListener('click',()=>{current--;showStep(current);});
+    showStep(0);
+  })();
 </script>
 <script src="/assessment-core.js" defer></script>
 <script src="/assessment.js" defer></script>

@@ -39,6 +39,18 @@
   status = 301
   force = true
 
+# Assessment under construction — redirect to coming-soon page until ready to go live.
+[[redirects]]
+  from = "/assessment.html"
+  to = "/assessment-coming-soon.html"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/api/assessment-notify"
+  to = "/.netlify/functions/assessment-notify"
+  status = 200
+
 # Working/scratch files — never publicly reachable.
 [[redirects]]
   from = "/style-picker.html"

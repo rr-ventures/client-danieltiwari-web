@@ -1,11 +1,7 @@
 const crypto = require("node:crypto");
 const { buildBranch } = require("../lib/sequence");
-const { resultsStore } = require("../lib/blobs");
-
-// In TEST_MODE the whole sequence (both branches) is dripped to one inbox,
-// spaced evenly so ~13 emails arrive across ~20 minutes (not an instant blast)
-// — protects the sending domain's reputation per the locked test plan.
-const TEST_DRIP_SECONDS = Number(process.env.TEST_DRIP_SECONDS || 95);
+const { resultsStore, dripStore } = require("../lib/blobs");
+const { sendResendEmail, mailConfig } = require("../lib/send");
 
 function firstNameOf(answers) {
   const n = String(answers.first_name || answers.name || "").trim();
@@ -160,26 +156,6 @@ function notifyEmailHtml(answers, result) {
   `;
 }
 
-async function sendResendEmail(payload) {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) return { skipped: true, reason: "RESEND_API_KEY missing" };
-
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
-
-  const body = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(body.message || body.error?.message || `Resend failed with ${response.status}`);
-  }
-  return body;
-}
-
 exports.handler = async (event) => {
   if (event.httpMethod === "OPTIONS") {
     return { statusCode: 204, headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "Content-Type" } };
@@ -212,17 +188,14 @@ exports.handler = async (event) => {
     storeWarning = `result store failed: ${error.message}`;
   }
 
-  // ---- recipients (TEST_MODE overrides every recipient to one inbox) ----
+  // ---- recipients (TEST_MODE overrides the lead recipient to one inbox) ----
   const TEST_MODE = /^(1|true|yes)$/i.test(String(process.env.TEST_MODE || ""));
   const TEST_EMAIL = process.env.TEST_EMAIL || "reece.j.rainer@gmail.com";
-  const from = process.env.RESEND_FROM_EMAIL || "Daniel Tiwari <onboarding@resend.dev>";
+  const { from, replyTo, bookUrl } = mailConfig();
   const notifyTo = TEST_MODE ? TEST_EMAIL : (process.env.NOTIFY_TO || process.env.DAN_NOTIFY_EMAIL || "email@danieltiwari.com");
   const leadTo = TEST_MODE ? TEST_EMAIL : answers.email;
-  const bccTo = !TEST_MODE && process.env.BCC_TO ? [process.env.BCC_TO] : undefined;
-  const replyTo = process.env.DAN_REPLY_TO_EMAIL || (TEST_MODE ? TEST_EMAIL : "email@danieltiwari.com");
-  const bookUrl = process.env.BOOK_URL || "https://cal.eu/danieltiwari/connect";
 
-  // ---- build the sequence emails (Dan's voice) with merge fields ----
+  // ---- merge fields carried through the whole sequence ----
   const mergeFields = {
     first_name: firstNameOf(answers),
     top_focus_area: result.focusAreas[0]?.label || "",
@@ -230,30 +203,39 @@ exports.handler = async (event) => {
     map_url: resultUrl,
     book_url: bookUrl,
   };
-  // Production: only the lead's branch. TEST_MODE: the whole program (A then B)
-  // so Reece sees everything regardless of branch.
-  const sequence = TEST_MODE
-    ? [...buildBranch("diagnostic", mergeFields), ...buildBranch("nurture", mergeFields)]
-    : buildBranch(result.route, mergeFields);
 
-  // ---- schedule every email. Day-0 sends now; the rest carry scheduled_at. ----
-  // TEST_MODE compresses the cadence to ~TEST_DRIP_SECONDS spacing (index-based);
-  // production uses the real per-email day offsets.
-  const now = Date.now();
-  const sends = sequence.map((email, index) => {
-    const delayMs = TEST_MODE ? index * TEST_DRIP_SECONDS * 1000 : email.day * 24 * 60 * 60 * 1000;
-    const payload = {
-      from,
-      to: [leadTo],
-      reply_to: replyTo,
-      subject: email.subject,
-      html: email.html,
-      tags: [{ name: "source", value: "assessment_sequence" }],
-    };
-    if (bccTo) payload.bcc = bccTo;
-    if (delayMs > 0) payload.scheduled_at = new Date(now + delayMs).toISOString();
-    return sendResendEmail(payload).catch((err) => ({ error: err.message, subject: email.subject }));
-  });
+  // ---- Model B: send ONLY the day-0 email now; record the lead so the daily
+  // nurture-drip function can send each later email from the CURRENT repo copy.
+  const sequence = buildBranch(result.route, mergeFields);
+  const dayZero = sequence.find((e) => e.day === 0) || sequence[0];
+
+  const dayZeroSend = sendResendEmail({
+    from,
+    to: [leadTo],
+    reply_to: replyTo,
+    subject: dayZero.subject,
+    html: dayZero.html,
+    tags: [{ name: "source", value: "assessment_sequence" }],
+  }).catch((err) => ({ error: err.message, subject: dayZero.subject }));
+
+  // persist drip progress (day 0 marked sent). The drip store holds the lead's
+  // real email so subsequent emails reach them; in TEST_MODE we store TEST_EMAIL.
+  let dripWarning;
+  const writeDrip = (async () => {
+    try {
+      await dripStore().setJSON(id, {
+        email: leadTo,
+        branch: result.route,
+        name: answers.name || "",
+        mergeFields,
+        startedAt: new Date().toISOString(),
+        sentDays: [dayZero.day],
+        done: sequence.length === 1,
+      });
+    } catch (error) {
+      dripWarning = `drip store failed: ${error.message}`;
+    }
+  })();
 
   const notifyEmail = sendResendEmail({
     from,
@@ -264,14 +246,16 @@ exports.handler = async (event) => {
     tags: [{ name: "source", value: "assessment_notify" }],
   }).catch((err) => ({ error: err.message }));
 
-  const emailResults = await Promise.all([...sends, notifyEmail]);
+  const [dayZeroResult, notifyResult] = await Promise.all([dayZeroSend, notifyEmail, writeDrip]);
+  const emailResults = [dayZeroResult, notifyResult];
   const emailWarning = emailResults.find((r) => r && r.error)?.error;
-  const emailSkipped = emailResults.length > 0 && emailResults.every((r) => r && r.skipped);
+  const emailSkipped = emailResults.every((r) => r && r.skipped);
   return {
     statusCode: 200,
     body: JSON.stringify({
-      ok: true, id, resultUrl, result, storeWarning,
-      testMode: TEST_MODE, scheduled: sequence.length, emailWarning, emailSkipped,
+      ok: true, id, resultUrl, result, storeWarning, dripWarning,
+      testMode: TEST_MODE, branch: result.route, enrolled: sequence.length,
+      emailWarning, emailSkipped,
     }),
   };
 };

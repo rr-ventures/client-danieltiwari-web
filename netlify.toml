@@ -5,6 +5,11 @@
 [functions]
   directory = "netlify/functions"
 
+# Daily nurture drip (Model B): sends each enrolled lead's next due email from
+# the current repo copy. Runs at 00:00 UTC.
+[functions."nurture-drip"]
+  schedule = "@daily"
+
 [[redirects]]
   from = "/api/assessment-submit"
   to = "/.netlify/functions/assessment-submit"

@@ -12,4 +12,16 @@ function resultsStore() {
     : getStore("assessment-results");
 }
 
-module.exports = { resultsStore };
+// Per-lead nurture progress (Model B daily drip). One blob per lead:
+// { email, branch, mergeFields, name, startedAt, sentDays: [int], done }.
+// The scheduled nurture-drip function reads these to send each lead's next
+// due email from the CURRENT copy, so repo edits reach everyone still in-flight.
+function dripStore() {
+  const siteID = process.env.BLOBS_SITE_ID;
+  const token = process.env.BLOBS_TOKEN;
+  return siteID && token
+    ? getStore({ name: "nurture-drip", siteID, token })
+    : getStore("nurture-drip");
+}
+
+module.exports = { resultsStore, dripStore };

@@ -10,7 +10,8 @@ const { gh, REPO } = require("./github-edit");
 
 const MODEL = process.env.AGENT_MODEL || "anthropic/claude-sonnet-4.6";
 const MAX_STEPS = Number(process.env.AGENT_MAX_STEPS || 30);
-const MAX_FILE_BYTES = 220 * 1024;
+const MAX_FILE_BYTES = 600 * 1024;
+const TOOL_RESULT_MAX = 700 * 1024; // must exceed MAX_FILE_BYTES so a full read isn't truncated
 
 const TOOLS = [
   { type: "function", function: {
@@ -18,8 +19,12 @@ const TOOLS = [
     description: "Read a UTF-8 text file from the repo at its current state on main (or your own staged version if you already edited it this turn).",
     parameters: { type: "object", properties: { path: { type: "string", description: "repo-relative path, e.g. content/emails/branch-a/01-welcome.md" } }, required: ["path"] } } },
   { type: "function", function: {
+    name: "edit_file",
+    description: "PREFERRED way to change an existing file: replace one exact snippet with new text (like a find-and-replace). old_string must match the file EXACTLY (including whitespace) and be UNIQUE — include enough surrounding lines to make it unique. Use this for almost all edits; it's safe on large files. Staged, not committed.",
+    parameters: { type: "object", properties: { path: { type: "string" }, old_string: { type: "string", description: "exact existing text to replace (unique in the file)" }, new_string: { type: "string", description: "the replacement text" } }, required: ["path", "old_string", "new_string"] } } },
+  { type: "function", function: {
     name: "write_file",
-    description: "Create or overwrite a text file with its FULL new contents. The change is staged for approval, not committed. Always read_file first unless creating a brand-new file.",
+    description: "Create a NEW file, or fully overwrite a small file, with its complete contents. For changing part of an existing file, use edit_file instead. Staged, not committed.",
     parameters: { type: "object", properties: { path: { type: "string" }, content: { type: "string", description: "the complete new file contents" } }, required: ["path", "content"] } } },
   { type: "function", function: {
     name: "delete_file",
@@ -136,6 +141,23 @@ async function runAgent({ text, history }) {
           if (name === "read_file") {
             const c = await current(args.path);
             result = c == null ? `ERROR: ${args.path} not found` : c;
+          } else if (name === "edit_file") {
+            const cur = await current(args.path);
+            if (cur == null) {
+              result = `ERROR: ${args.path} not found. Use write_file to create a new file.`;
+            } else {
+              const oldS = String(args.old_string);
+              const n = oldS ? cur.split(oldS).length - 1 : 0;
+              if (n === 0) result = `ERROR: old_string not found in ${args.path}. read_file and copy the exact text (including whitespace).`;
+              else if (n > 1) result = `ERROR: old_string appears ${n} times in ${args.path}. Add more surrounding lines so it is unique.`;
+              else {
+                await capture(args.path);
+                // de-dash only the inserted text, so edits stay minimal and don't
+                // rewrite unrelated pre-existing content elsewhere in the file.
+                staged.set(args.path, { content: cur.replace(oldS, deDash(String(args.new_string))) });
+                result = `OK, staged edit to ${args.path}.`;
+              }
+            }
           } else if (name === "write_file") {
             await capture(args.path);
             const content = deDash(String(args.content));
@@ -151,7 +173,7 @@ async function runAgent({ text, history }) {
         } catch (e) {
           result = `ERROR: ${e.message}`;
         }
-        messages.push({ role: "tool", tool_call_id: tc.id, content: String(result).slice(0, 14000) });
+        messages.push({ role: "tool", tool_call_id: tc.id, content: String(result).slice(0, TOOL_RESULT_MAX) });
       }
       continue;
     }

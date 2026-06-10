@@ -1,33 +1,49 @@
 // Commit a multi-file changeset atomically via the GitHub Git Data API (one
 // commit for the whole approved change), plus a compact line-diff renderer for
 // the approval message. Used by the Telegram agent's approval flow.
-const { gh, REPO } = require("./github-edit");
+const { gh, REPOS, splitRepoPath } = require("./github-edit");
 
-// changes: [{ path, before|null, after|null }]. after==null => delete.
-async function commitChangeset(changes, message, branch = "main") {
-  const ref = await gh("GET", `/repos/${REPO}/git/ref/heads/${branch}`);
+// Commit one repo's files (paths here are repo-RELATIVE, no prefix).
+async function commitToRepo(repo, items, message, branch = "main") {
+  const ref = await gh("GET", `/repos/${repo}/git/ref/heads/${branch}`);
   const baseCommitSha = ref.object.sha;
-  const baseCommit = await gh("GET", `/repos/${REPO}/git/commits/${baseCommitSha}`);
+  const baseCommit = await gh("GET", `/repos/${repo}/git/commits/${baseCommitSha}`);
   const baseTreeSha = baseCommit.tree.sha;
 
   const tree = [];
-  for (const c of changes) {
+  for (const c of items) {
     if (c.after == null) {
-      tree.push({ path: c.path, mode: "100644", type: "blob", sha: null }); // delete
+      tree.push({ path: c.rel, mode: "100644", type: "blob", sha: null }); // delete
     } else {
-      const blob = await gh("POST", `/repos/${REPO}/git/blobs`, {
+      const blob = await gh("POST", `/repos/${repo}/git/blobs`, {
         content: Buffer.from(c.after, "utf8").toString("base64"), encoding: "base64",
       });
-      tree.push({ path: c.path, mode: "100644", type: "blob", sha: blob.sha });
+      tree.push({ path: c.rel, mode: "100644", type: "blob", sha: blob.sha });
     }
   }
 
-  const newTree = await gh("POST", `/repos/${REPO}/git/trees`, { base_tree: baseTreeSha, tree });
-  const commit = await gh("POST", `/repos/${REPO}/git/commits`, {
+  const newTree = await gh("POST", `/repos/${repo}/git/trees`, { base_tree: baseTreeSha, tree });
+  const commit = await gh("POST", `/repos/${repo}/git/commits`, {
     message, tree: newTree.sha, parents: [baseCommitSha],
   });
-  await gh("PATCH", `/repos/${REPO}/git/refs/heads/${branch}`, { sha: commit.sha });
+  await gh("PATCH", `/repos/${repo}/git/refs/heads/${branch}`, { sha: commit.sha });
   return commit.sha;
+}
+
+// changes: [{ path (web/.. or db/..), before|null, after|null }]. Groups by repo
+// and makes one commit per repo touched. Returns [{ key, repo, sha }].
+async function commitChangeset(changes, message) {
+  const groups = {};
+  for (const c of changes) {
+    const { key, repo, rel } = splitRepoPath(c.path);
+    (groups[key] ||= { repo, items: [] }).items.push({ rel, after: c.after });
+  }
+  const results = [];
+  for (const key of Object.keys(groups)) {
+    const sha = await commitToRepo(groups[key].repo, groups[key].items, message);
+    results.push({ key, repo: groups[key].repo, sha });
+  }
+  return results;
 }
 
 // Minimal LCS line diff -> array of "+ "/"- " lines (changed lines only).

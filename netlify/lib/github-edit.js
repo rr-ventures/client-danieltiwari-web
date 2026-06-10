@@ -6,6 +6,18 @@
 const REPO = process.env.GH_REPO || "rr-ventures/client-danieltiwari-web";
 const API = "https://api.github.com";
 
+// The agent works across TWO repos. Paths are prefixed with the repo key.
+const REPOS = {
+  web: process.env.GH_REPO || "rr-ventures/client-danieltiwari-web",
+  db: process.env.GH_DB_REPO || "rr-ventures/product-dancoaching-db",
+};
+// "web/index.html" -> { key:"web", repo:"rr-ventures/client-danieltiwari-web", rel:"index.html" }
+function splitRepoPath(p) {
+  const m = String(p == null ? "" : p).match(/^(web|db)\/(.+)$/s);
+  if (!m) throw new Error(`path must start with web/ or db/ (got "${p}")`);
+  return { key: m[1], repo: REPOS[m[1]], rel: m[2] };
+}
+
 function token() {
   const t = process.env.GITHUB_RW_PAT || process.env.GITHUB_TOKEN;
   if (!t) throw new Error("GITHUB_RW_PAT not set");
@@ -94,4 +106,4 @@ async function applyEdit(id, field, value, opts = {}) {
   };
 }
 
-module.exports = { resolvePath, getEmail, applyEdit, parseMd, serializeMd, branchDir, gh, REPO };
+module.exports = { resolvePath, getEmail, applyEdit, parseMd, serializeMd, branchDir, gh, REPO, REPOS, splitRepoPath };

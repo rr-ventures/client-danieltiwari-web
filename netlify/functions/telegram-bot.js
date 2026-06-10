@@ -41,10 +41,12 @@ async function approveToken(token, who) {
   const cs = await store.get(token, { type: "json" }).catch(() => null);
   if (!cs) return { ok: false, msg: "This change was already published, discarded, or expired." };
   const firstLine = String(cs.summary || "Telegram agent edit").split("\n")[0].slice(0, 120);
-  const sha = await commitChangeset(cs.changes, `${firstLine}\n\nRequested by ${cs.requestedBy} via Telegram, approved by ${who}.`);
+  const commits = await commitChangeset(cs.changes, `${firstLine}\n\nRequested by ${cs.requestedBy} via Telegram, approved by ${who}.`);
   await store.delete(token);
-  if (cs.chatId) await send(cs.chatId, `✅ Published by <b>${escapeHtml(who)}</b>. Live in ~2 minutes.`).catch(() => {});
-  return { ok: true, msg: "Approved and published. Live in a couple of minutes.", sha };
+  const hitWeb = commits.some((c) => c.key === "web");
+  const note = hitWeb ? "Live on the site in ~2 minutes." : "Committed.";
+  if (cs.chatId) await send(cs.chatId, `✅ Published by <b>${escapeHtml(who)}</b>. ${note}`).catch(() => {});
+  return { ok: true, msg: `Approved and published. ${note}`, commits };
 }
 async function discardToken(token) {
   const store = changesetStore();

@@ -1,135 +1,67 @@
-// Telegram bot — lets Dan edit his nurture emails by message, with an
-// email-approval gate before anything reaches the repo / live funnel.
+// Telegram webhook for @dant_agent_bot — "Claude Code over Telegram".
+// Dan (or Reece) messages the bot in plain English; this returns 200 immediately
+// and fires the background agent (telegram-agent-background.js), which proposes a
+// repo change and asks for approval. This file ALSO handles approval — both the
+// inline button taps (callback_query) and the email Approve/Discard links — and
+// commits the staged changeset to main on approval (Netlify then deploys).
 //
-// Flow: Dan messages "/subject a3 | New line" -> bot stages the change in Blobs
-// and emails Dan a plain-English diff + an Approve link -> Dan clicks Approve ->
-// the change is committed to main via the GitHub edit engine -> Netlify deploys.
+// Lock: only the numeric Telegram user ids in DAN_TELEGRAM_USER_ID (comma-sep)
+// can do anything. Everyone else is refused. The bot can't be made un-messageable,
+// so this allowlist IS the security boundary.
 //
-// Setup (env on the Netlify site):
-//   TELEGRAM_BOT_TOKEN     full BotFather token (NOT the 9-char placeholder)
-//   TELEGRAM_WEBHOOK_SECRET shared secret; set the same value when registering the webhook
-//   DAN_TELEGRAM_USER_ID   Dan's numeric Telegram id (comma-sep for >1). Until set, the bot
-//                          replies with the sender's id and refuses edits (safe bootstrap).
-//   GITHUB_RW_PAT          repo write token (used by github-edit)
-//   RESEND_API_KEY, RESEND_FROM_EMAIL, DAN_NOTIFY_EMAIL  (already set) for the approval email
-const crypto = require("node:crypto");
-const { applyEdit, getEmail, branchDir } = require("../lib/github-edit");
-const { pendingEditsStore } = require("../lib/blobs");
-const { sendResendEmail, mailConfig } = require("../lib/send");
-const emails = require("../lib/emails.generated.json");
+// Env: TELEGRAM_BOT_TOKEN, TELEGRAM_WEBHOOK_SECRET, DAN_TELEGRAM_USER_ID,
+//      OPENROUTER_API_KEY, GITHUB_RW_PAT, RESEND_API_KEY, RESEND_FROM_EMAIL,
+//      DAN_NOTIFY_EMAIL, REECE_NOTIFY_EMAIL, BLOBS_SITE_ID, BLOBS_TOKEN.
+const { commitChangeset } = require("../lib/repo-commit");
+const { changesetStore } = require("../lib/blobs");
+const { send, answerCallback, escapeHtml } = require("../lib/telegram");
 
 const SITE = (process.env.URL || "https://danieltiwari.com").replace(/\/$/, "");
-const SELF = `${SITE}/.netlify/functions/telegram-bot`;
 
 function allowed(userId) {
   const list = String(process.env.DAN_TELEGRAM_USER_ID || "").split(",").map((s) => s.trim()).filter(Boolean);
   return { locked: list.length > 0, ok: list.includes(String(userId)) };
 }
 
-async function tg(method, payload) {
-  const token = process.env.TELEGRAM_BOT_TOKEN;
-  if (!token) return { skipped: "TELEGRAM_BOT_TOKEN missing" };
-  const res = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
-    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
-  });
-  return res.json().catch(() => ({}));
-}
-const reply = (chatId, text) => tg("sendMessage", { chat_id: chatId, text, parse_mode: "HTML", disable_web_page_preview: true });
-
-function listText() {
-  const line = (e, id) => `<b>${id}</b> (day ${e.day}) — ${e.subject}`;
-  const a = emails.branchA.map((e, i) => line(e, `a${i + 1}`)).join("\n");
-  const b = emails.branchB.map((e, i) => line(e, `b${i + 1}`)).join("\n");
-  return `<b>Branch A — diagnostic</b>\n${a}\n\n<b>Branch B — nurture</b>\n${b}`;
-}
-
-const HELP = [
-  "I edit Dan's nurture emails. Commands:",
-  "<code>/list</code> — all emails + ids",
-  "<code>/show a3</code> — see one email",
-  "<code>/subject a3 | New subject line</code> — change a subject",
-  "<code>/body a3 | New body text (blank line between paragraphs)</code> — change a body",
+const INTRO = [
+  "👋 I'm Dan's site agent. Tell me in plain English what to change on danieltiwari.com or the email funnel and I'll do it, show you the change, and only publish once you (or Dan) approve.",
   "",
-  "Every change is emailed to you to approve before it goes live.",
+  "Examples:",
+  "• <i>Make the welcome email warmer and a bit shorter</i>",
+  "• <i>Change the booking link everywhere to my new Cal.com URL</i>",
+  "• <i>On the homepage, change the headline to \"…\"</i>",
+  "• <i>What does the day-3 nurture email currently say?</i>",
 ].join("\n");
 
-function escapeHtml(s) {
-  return String(s == null ? "" : s).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+const page = (msg) =>
+  `<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><div style="font-family:Georgia,serif;max-width:32rem;margin:16vh auto;padding:0 1.2rem;color:#15140f;line-height:1.6;text-align:center"><h1 style="font-weight:normal;font-size:1.4rem">Daniel Tiwari</h1><p>${msg}</p></div>`;
+
+// Commit a staged changeset by token. Returns a short status string.
+async function approveToken(token, who) {
+  const store = changesetStore();
+  const cs = await store.get(token, { type: "json" }).catch(() => null);
+  if (!cs) return { ok: false, msg: "This change was already published, discarded, or expired." };
+  const firstLine = String(cs.summary || "Telegram agent edit").split("\n")[0].slice(0, 120);
+  const sha = await commitChangeset(cs.changes, `${firstLine}\n\nRequested by ${cs.requestedBy} via Telegram, approved by ${who}.`);
+  await store.delete(token);
+  if (cs.chatId) await send(cs.chatId, `✅ Published by <b>${escapeHtml(who)}</b>. Live in ~2 minutes.`).catch(() => {});
+  return { ok: true, msg: "Approved and published. Live in a couple of minutes.", sha };
 }
-
-async function stageEdit({ id, field, value, chatId }) {
-  // read current value for the diff
-  const cur = await getEmail(id);
-  const before = field === "body" ? cur.body : cur.fm[field];
-  const token = crypto.randomBytes(18).toString("base64url");
-  await pendingEditsStore().setJSON(token, { id, field, value, before, path: cur.path, chatId, createdAt: new Date().toISOString() });
-
-  const { from } = mailConfig();
-  const to = process.env.DAN_NOTIFY_EMAIL || "email@danieltiwari.com";
-  const approve = `${SELF}?approve=${token}`;
-  const discard = `${SELF}?discard=${token}`;
-  const html = `
-    <div style="font-family:Georgia,serif;color:#15140f;line-height:1.6;max-width:34rem">
-      <h2 style="font-weight:normal">Approve a change to email <b>${escapeHtml(id)}</b>?</h2>
-      <p>You asked to change the <b>${escapeHtml(field)}</b> of <code>${escapeHtml(cur.path)}</code>.</p>
-      <p style="color:#777"><b>Before:</b></p>
-      <blockquote style="border-left:3px solid #ddd;padding-left:12px;white-space:pre-wrap">${escapeHtml(before)}</blockquote>
-      <p style="color:#777"><b>After:</b></p>
-      <blockquote style="border-left:3px solid #15140f;padding-left:12px;white-space:pre-wrap">${escapeHtml(value)}</blockquote>
-      <p style="margin-top:24px">
-        <a href="${approve}" style="background:#15140f;color:#fff;padding:12px 22px;text-decoration:none;border-radius:6px">Approve &amp; publish</a>
-        &nbsp;&nbsp;<a href="${discard}" style="color:#777">Discard</a>
-      </p>
-      <p style="color:#999;font-size:13px">It goes live a couple of minutes after you approve. Affects new + in-flight leads who haven't received this email yet.</p>
-    </div>`;
-  const r = await sendResendEmail({ from, to: [to], subject: `Approve change to email ${id} (${field})`, html,
-    tags: [{ name: "source", value: "bot_approval" }] }).catch((e) => ({ error: e.message }));
-  await reply(chatId, r && r.error
-    ? `Couldn't email the approval: ${escapeHtml(r.error)}`
-    : `Staged. I've emailed <b>${escapeHtml(to)}</b> — approve there and it goes live.`);
-}
-
-async function handleCommand(text, chatId) {
-  const t = text.trim();
-  if (/^\/(start|help)/i.test(t)) return reply(chatId, HELP);
-  if (/^\/list/i.test(t)) return reply(chatId, listText());
-
-  const show = t.match(/^\/show\s+([ab]\d+)/i);
-  if (show) {
-    try {
-      const e = await getEmail(show[1]);
-      return reply(chatId, `<b>${escapeHtml(show[1])}</b> (day ${e.fm.day})\n<b>Subject:</b> ${escapeHtml(e.fm.subject)}\n<b>Preview:</b> ${escapeHtml(e.fm.preview)}\n\n${escapeHtml(e.body)}`);
-    } catch (err) { return reply(chatId, `⚠️ ${escapeHtml(err.message)}`); }
-  }
-
-  const edit = t.match(/^\/(subject|preview|body)\s+([ab]\d+)\s*\|\s*([\s\S]+)$/i);
-  if (edit) {
-    const [, field, id, value] = edit;
-    try { branchDir(id); } catch (err) { return reply(chatId, `⚠️ ${escapeHtml(err.message)}`); }
-    try { await stageEdit({ id: id.toLowerCase(), field: field.toLowerCase(), value: value.trim(), chatId }); }
-    catch (err) { await reply(chatId, `⚠️ ${escapeHtml(err.message)}`); }
-    return;
-  }
-  return reply(chatId, "Didn't catch that. Send <code>/help</code> for the commands.");
+async function discardToken(token) {
+  const store = changesetStore();
+  const cs = await store.get(token, { type: "json" }).catch(() => null);
+  if (cs) { await store.delete(token); if (cs.chatId) await send(cs.chatId, "✖ Change discarded. Nothing was published.").catch(() => {}); }
+  return cs ? "Change discarded. Nothing was published." : "This change was already handled or expired.";
 }
 
 exports.handler = async (event) => {
-  // ---- approval / discard links (GET) ----
+  // ---- Email Approve/Discard links (GET) ----
   const qs = event.queryStringParameters || {};
   if (qs.approve || qs.discard) {
-    const token = qs.approve || qs.discard;
-    const store = pendingEditsStore();
-    const pending = await store.get(token, { type: "json" }).catch(() => null);
-    if (!pending) return { statusCode: 200, headers: { "Content-Type": "text/html" }, body: page("This link has already been used or expired.") };
-    if (qs.discard) {
-      await store.delete(token);
-      return { statusCode: 200, headers: { "Content-Type": "text/html" }, body: page("Change discarded. Nothing was published.") };
-    }
     try {
-      const r = await applyEdit(pending.id, pending.field, pending.value, { branch: "main", message: `Edit ${pending.id} ${pending.field} via Telegram (approved by Dan)` });
-      await store.delete(token);
-      if (pending.chatId) await reply(pending.chatId, `✅ Published <b>${escapeHtml(pending.id)}</b> ${escapeHtml(pending.field)}. Live in ~2 minutes.`);
-      return { statusCode: 200, headers: { "Content-Type": "text/html" }, body: page(r.unchanged ? "No change — the text was already that." : "Approved and published. It will be live in a couple of minutes.") };
+      if (qs.discard) return { statusCode: 200, headers: { "Content-Type": "text/html" }, body: page(await discardToken(qs.discard)) };
+      const r = await approveToken(qs.approve, "email approval");
+      return { statusCode: 200, headers: { "Content-Type": "text/html" }, body: page(r.msg) };
     } catch (err) {
       return { statusCode: 200, headers: { "Content-Type": "text/html" }, body: page(`Could not publish: ${escapeHtml(err.message)}`) };
     }
@@ -137,7 +69,6 @@ exports.handler = async (event) => {
 
   if (event.httpMethod !== "POST") return { statusCode: 405, body: "Method not allowed" };
 
-  // ---- Telegram webhook (POST) ----
   const secret = process.env.TELEGRAM_WEBHOOK_SECRET;
   if (secret && event.headers["x-telegram-bot-api-secret-token"] !== secret) {
     return { statusCode: 401, body: "bad secret" };
@@ -145,24 +76,56 @@ exports.handler = async (event) => {
 
   let update;
   try { update = JSON.parse(event.body || "{}"); } catch { return { statusCode: 200, body: "ok" }; }
-  const msg = update.message || update.edited_message;
-  const text = msg && msg.text;
-  const chatId = msg && msg.chat && msg.chat.id;
-  const userId = msg && msg.from && msg.from.id;
-  if (!text || !chatId) return { statusCode: 200, body: "ok" };
 
-  const gate = allowed(userId);
-  if (!gate.ok) {
-    await reply(chatId, gate.locked
-      ? "Sorry, you're not authorised to edit Dan's funnel."
-      : `Not yet authorised. Your Telegram id is <b>${escapeHtml(userId)}</b> — send it to Reece to switch this on.`);
+  // ---- Inline button taps (approve/discard) ----
+  if (update.callback_query) {
+    const cq = update.callback_query;
+    const from = cq.from || {};
+    const gate = allowed(from.id);
+    if (!gate.ok) { await answerCallback(cq.id, "Not authorised."); return { statusCode: 200, body: "ok" }; }
+    const data = String(cq.data || "");
+    const [action, token] = [data.slice(0, 2), data.slice(3)];
+    try {
+      if (action === "ok") { const r = await approveToken(token, from.first_name || "Dan"); await answerCallback(cq.id, r.ok ? "Published ✅" : r.msg); }
+      else if (action === "no") { const m = await discardToken(token); await answerCallback(cq.id, "Discarded"); }
+      else await answerCallback(cq.id, "");
+    } catch (err) {
+      await answerCallback(cq.id, "Error");
+      if (cq.message) await send(cq.message.chat.id, `⚠️ Could not publish: ${escapeHtml(err.message)}`);
+    }
     return { statusCode: 200, body: "ok" };
   }
 
-  await handleCommand(text, chatId).catch(() => {});
+  // ---- Messages ----
+  const msg = update.message || update.edited_message;
+  const text = msg && msg.text;
+  const chatId = msg && msg.chat && msg.chat.id;
+  const from = (msg && msg.from) || {};
+  if (!text || !chatId) return { statusCode: 200, body: "ok" };
+
+  const gate = allowed(from.id);
+  if (!gate.ok) {
+    await send(chatId, gate.locked
+      ? "Sorry, you're not authorised to edit Dan's site."
+      : `Not yet authorised. Your Telegram id is <b>${escapeHtml(from.id)}</b> — send it to Reece to switch this on.`);
+    return { statusCode: 200, body: "ok" };
+  }
+
+  if (/^\/(start|help)\b/i.test(text.trim())) {
+    await send(chatId, INTRO);
+    return { statusCode: 200, body: "ok" };
+  }
+
+  // Acknowledge instantly, then run the agent in the background (can take ~30-60s).
+  await send(chatId, "🧠 On it — reading the site and working out the change…");
+  const requestedBy = from.first_name || (String(from.id) === "1956924282" ? "Reece" : "Dan");
+  try {
+    await fetch(`${SITE}/.netlify/functions/telegram-agent-background`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chatId, userId: from.id, text, requestedBy }),
+    });
+  } catch (err) {
+    await send(chatId, `⚠️ Couldn't start: ${escapeHtml(err.message)}`);
+  }
   return { statusCode: 200, body: "ok" };
 };
-
-function page(msg) {
-  return `<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><div style="font-family:Georgia,serif;max-width:30rem;margin:18vh auto;padding:0 1.2rem;color:#15140f;line-height:1.6;text-align:center"><h1 style="font-weight:normal;font-size:1.4rem">Daniel Tiwari</h1><p>${msg}</p></div>`;
-}

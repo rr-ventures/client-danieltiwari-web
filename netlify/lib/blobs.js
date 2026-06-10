@@ -35,4 +35,25 @@ function pendingEditsStore() {
     : getStore("pending-edits");
 }
 
-module.exports = { resultsStore, dripStore, pendingEditsStore };
+// Staged-but-not-yet-approved AGENT changesets (whole-repo edits proposed by the
+// Telegram Claude agent), keyed by an unguessable token. Holds the full
+// {changes, summary, requestedBy, chatId} until someone approves or discards.
+function changesetStore() {
+  const siteID = process.env.BLOBS_SITE_ID;
+  const token = process.env.BLOBS_TOKEN;
+  return siteID && token
+    ? getStore({ name: "agent-changesets", siteID, token })
+    : getStore("agent-changesets");
+}
+
+// Short per-user conversation memory so follow-ups ("now make it shorter") work.
+// One blob per Telegram user id: [{role, content}, ...] (trimmed).
+function threadStore() {
+  const siteID = process.env.BLOBS_SITE_ID;
+  const token = process.env.BLOBS_TOKEN;
+  return siteID && token
+    ? getStore({ name: "agent-threads", siteID, token })
+    : getStore("agent-threads");
+}
+
+module.exports = { resultsStore, dripStore, pendingEditsStore, changesetStore, threadStore };

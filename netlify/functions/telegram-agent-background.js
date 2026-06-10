@@ -47,9 +47,17 @@ exports.handler = async (event) => {
 
   const history = await loadThread(userId);
 
+  // Stream "what it's doing now" so the chat doesn't go silent for minutes.
+  let lastLine = "";
+  const onProgress = (line) => {
+    if (line === lastLine) return; // skip repeats (e.g. reading the same file twice)
+    lastLine = line;
+    return send(chatId, line).catch(() => {});
+  };
+
   let result;
   try {
-    result = await runAgent({ text, history });
+    result = await runAgent({ text, history, onProgress });
   } catch (err) {
     await send(chatId, `⚠️ I hit an error trying that: ${escapeHtml(err.message)}`);
     return { statusCode: 200, body: "error-reported" };

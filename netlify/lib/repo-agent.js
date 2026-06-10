@@ -95,6 +95,10 @@ Key areas:
 - content/emails/branch-a/*.md and content/emails/branch-b/*.md — the nurture email funnel copy (Markdown frontmatter: day, subject, preview). Branch A = diagnostic/high-fit leads, Branch B = nurture/everyone else. Body supports **bold**, {{first_name}} / {{top_focus_area}} / {{authenticity_stage}} merge fields, and [MAP] / [BOOK] link tokens.
 - Everything else is the website (pages, components, styles, Netlify functions).
 
+BUILD & PUBLISH (so your change actually goes live):
+- The live site is built from the repo ROOT into dist/ by scripts/build-static-site.mjs on every deploy. Every top-level *.html page publishes automatically, so creating a new page like services.html just works. If you add a NEW non-HTML asset (a .js, .css, image, or folder), you MUST also add its filename to the assetEntries list in scripts/build-static-site.mjs or it won't publish.
+- Email funnel copy is content/emails/*.md and is baked to live at deploy. Edit the .md, never the generated JSON.
+
 HOW YOU WORK:
 - Read before you write. Make the SMALLEST change that fully satisfies the request. Preserve surrounding structure, formatting, and voice.
 - Never touch secrets, tokens, .env files, anything under .netlify, or your own machinery (netlify/functions/telegram-*.js, netlify/lib/repo-agent.js, repo-commit.js, telegram.js).
@@ -104,9 +108,23 @@ HOW YOU WORK:
 Current repo files:
 ${files.join("\n")}`;
 
-// Runs the agent for one user message. Returns { reply, changes, assistantSummary }.
+function progressLine(name, path) {
+  const p = path ? ` <code>${path}</code>` : "";
+  switch (name) {
+    case "read_file": return `📖 Reading${p}`;
+    case "edit_file": return `✏️ Editing${p}`;
+    case "write_file": return `🆕 Writing${p}`;
+    case "delete_file": return `🗑️ Removing${p}`;
+    default: return `… working${p}`;
+  }
+}
+
+// Runs the agent for one user message. Returns { reply, changes }.
 // changes: [{ path, before|null, after|null }] — staged, not committed.
-async function runAgent({ text, history }) {
+// onProgress(line) is called before each tool action so the caller can stream
+// "what it's doing now" to the user instead of going silent for minutes.
+async function runAgent({ text, history, onProgress }) {
+  let progressCount = 0;
   const files = await repoTree();
   const staged = new Map();   // path -> { content } | { deleted:true }
   const original = new Map(); // path -> { content, sha }
@@ -138,6 +156,10 @@ async function runAgent({ text, history }) {
         try {
           const args = JSON.parse(tc.function.arguments || "{}");
           const name = tc.function.name;
+          if (onProgress && progressCount < 20) {
+            progressCount++;
+            try { await onProgress(progressLine(name, args.path)); } catch { /* progress is best-effort */ }
+          }
           if (name === "read_file") {
             const c = await current(args.path);
             result = c == null ? `ERROR: ${args.path} not found` : c;

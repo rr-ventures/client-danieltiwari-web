@@ -1,28 +1,27 @@
-import { cp, mkdir, rm } from 'node:fs/promises';
+import { cp, mkdir, rm, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 
 const root = process.cwd();
 const outDir = join(root, 'dist');
 
-const publicEntries = [
-  '404.html',
-  'about.html',
-  'apply.html',
+// Explicit non-HTML web assets that must ship. Every top-level *.html page is
+// added automatically below, so a newly created page publishes WITHOUT editing
+// this list. If you add a new non-HTML asset (a .js, .css, image, or folder),
+// add its name here.
+const assetEntries = [
   'assessment-core.js',
-  'assessment.html',
   'assessment.js',
   'assets',
   'favicon.svg',
-  'homepage-direction-v1.html',
-  'index.html',
-  'nurture-preview.html',
-  'privacy.html',
-  'result.html',
-  'site-notice.html',
   'site.css',
-  'style-picker.html',
   'styles.css',
 ];
+
+const htmlPages = (await readdir(root, { withFileTypes: true }))
+  .filter((d) => d.isFile() && d.name.endsWith('.html'))
+  .map((d) => d.name);
+
+const publicEntries = [...new Set([...assetEntries, ...htmlPages])];
 
 await rm(outDir, { recursive: true, force: true });
 await mkdir(outDir, { recursive: true });

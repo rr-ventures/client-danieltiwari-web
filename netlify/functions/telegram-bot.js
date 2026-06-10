@@ -24,12 +24,16 @@ function allowed(userId) {
 }
 
 const INTRO = [
-  "I'm your site agent for danieltiwari.com. Tell me plainly what to change — the site or the email funnel — and I'll show you the exact change and email you a link to approve before anything goes live.",
+  "Hey! I'm your agent for your website and your coaching notes 👋",
   "",
-  "For example:",
-  "• <i>Make the welcome email warmer and shorter</i>",
-  "• <i>Change my booking link everywhere to [new URL]</i>",
-  "• <i>What does the day-3 email say right now?</i>",
+  "Just tell me what you want in plain English. I'll make the change, email you the exact before/after, and only publish once you approve.",
+  "",
+  "Things you can say:",
+  "• Make my welcome email warmer and shorter",
+  "• Change my booking link to [new link]",
+  "• Add a testimonial under my homepage hero",
+  "• Add a note to my business plan that I'm raising the price",
+  "• What does my day-3 email say right now?",
 ].join("\n");
 
 const page = (msg) =>
@@ -100,7 +104,7 @@ exports.handler = async (event) => {
   }
 
   // Acknowledge instantly, then run the agent in the background (can take ~30-60s).
-  await send(chatId, "🧠 On it — reading the site and working out the change…");
+  await send(chatId, "On it 👀 having a look now…");
   const requestedBy = from.first_name || (String(from.id) === "1956924282" ? "Reece" : "Dan");
   try {
     await fetch(`${SITE}/.netlify/functions/telegram-agent-background`, {

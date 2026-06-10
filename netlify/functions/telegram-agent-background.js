@@ -5,7 +5,7 @@
 // (telegram-bot.js) returns 200 fast and fires this so Telegram doesn't time out.
 const crypto = require("node:crypto");
 const { runAgent, MODEL } = require("../lib/repo-agent");
-const { describeChangeset } = require("../lib/repo-commit");
+const { lineDiff } = require("../lib/repo-commit");
 const { changesetStore, threadStore } = require("../lib/blobs");
 const { send, escapeHtml } = require("../lib/telegram");
 const { sendResendEmail, mailConfig } = require("../lib/send");
@@ -22,20 +22,49 @@ async function saveThread(userId, history) {
   try { await threadStore().setJSON(String(userId), history.slice(-HISTORY_TURNS * 2)); } catch { /* best effort */ }
 }
 
+// Friendly label for a prefixed path, e.g. "Homepage", "Welcome email", "Business plan".
+function friendlyName(path) {
+  const p = path.replace(/^web\//, "").replace(/^db\//, "");
+  if (path.startsWith("web/")) {
+    if (p === "index.html") return "Homepage";
+    if (p.startsWith("content/emails/")) return `Funnel email (${p.split("/").pop()})`;
+    if (p.endsWith(".html")) return `Page: ${p.replace(/\.html$/, "")}`;
+    return `Website file: ${p}`;
+  }
+  if (p === "business_plan.md") return "Business plan";
+  return `Coaching DB: ${p}`;
+}
+
+// One file's before/after as a coloured, email-safe diff table.
+function emailDiffTable(change) {
+  const rows = lineDiff(change.before, change.after, 120).split("\n").map((line) => {
+    const add = line.startsWith("+ "), del = line.startsWith("- ");
+    const text = escapeHtml(line.slice(2)) || "&nbsp;";
+    const bg = add ? "#e6ffed" : del ? "#ffeef0" : "#fff";
+    const col = add ? "#137333" : del ? "#b3261e" : "#444";
+    const sign = add ? "+" : del ? "−" : " ";
+    return `<tr><td style="width:14px;color:#bbb;font-family:monospace;font-size:13px;padding:1px 6px;background:${bg}">${sign}</td><td style="font-family:monospace;font-size:13px;padding:1px 8px;white-space:pre-wrap;color:${col};background:${bg}">${text}</td></tr>`;
+  }).join("");
+  return `<table style="border-collapse:collapse;width:100%;border:1px solid #eee;border-radius:6px;overflow:hidden">${rows}</table>`;
+}
+
 function approvalEmail({ summary, changes, approve, discard, requestedBy }) {
-  const files = changes.map((c) => `<li><code>${escapeHtml(c.path)}</code> — ${c.before == null ? "new file" : c.after == null ? "deleted" : "edited"}</li>`).join("");
+  const blocks = changes.map((c) => {
+    const kind = c.before == null ? "Newly added" : c.after == null ? "Deleted" : "Edited";
+    return `<p style="margin:22px 0 6px;font-size:15px"><b>${escapeHtml(friendlyName(c.path))}</b> <span style="color:#999;font-weight:normal">— ${kind} · <code style="font-size:12px">${escapeHtml(c.path)}</code></span></p>${emailDiffTable(c)}`;
+  }).join("");
   return `
-  <div style="font-family:Georgia,serif;color:#15140f;line-height:1.6;max-width:36rem">
-    <h2 style="font-weight:normal">Approve a change to danieltiwari.com?</h2>
-    <p><b>${escapeHtml(requestedBy)}</b> asked the site agent to make this change:</p>
-    <blockquote style="border-left:3px solid #15140f;padding-left:12px">${escapeHtml(summary)}</blockquote>
-    <p style="color:#777">Files affected:</p>
-    <ul>${files}</ul>
-    <p style="margin-top:24px">
-      <a href="${approve}" style="background:#15140f;color:#fff;padding:12px 22px;text-decoration:none;border-radius:6px">Approve &amp; publish</a>
-      &nbsp;&nbsp;<a href="${discard}" style="color:#777">Discard</a>
+  <div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#15140f;line-height:1.55;max-width:42rem">
+    <h2 style="font-weight:600;font-size:19px;margin-bottom:4px">Approve this change?</h2>
+    <p style="color:#666;margin-top:0">${escapeHtml(requestedBy)} asked the agent to make a change. Here's exactly what will change, in plain English and line-by-line:</p>
+    <div style="background:#f6f8fa;border-left:3px solid #15140f;padding:12px 16px;border-radius:6px;font-size:15px">${escapeHtml(summary)}</div>
+    <h3 style="font-size:14px;color:#444;margin:26px 0 0;text-transform:uppercase;letter-spacing:.05em">The exact changes</h3>
+    ${blocks}
+    <p style="margin:30px 0 6px">
+      <a href="${approve}" style="background:#137333;color:#fff;padding:13px 26px;text-decoration:none;border-radius:6px;font-weight:600;font-size:15px">✓ Approve &amp; publish</a>
+      &nbsp;&nbsp;&nbsp;<a href="${discard}" style="color:#888;font-size:14px">Discard</a>
     </p>
-    <p style="color:#999;font-size:13px">Either Dan or Reece can approve. It goes live a couple of minutes after approval.</p>
+    <p style="color:#999;font-size:13px;margin-top:18px">Green = added, red = removed. Either Dan or Reece can approve. Website changes go live ~2 minutes after approval.</p>
   </div>`;
 }
 
@@ -99,15 +128,14 @@ exports.handler = async (event) => {
     html, tags: [{ name: "source", value: "agent_approval" }],
   }).catch((e) => ({ error: e.message }));
 
-  // Telegram: show exactly what it'll change (the diff) + tell them to approve by email.
-  const diff = describeChangeset(result.changes);
-  const where = recipients.join(" and ");
+  // Telegram: a friendly heads-up; the full before/after lives in the email.
+  const n = result.changes.length;
+  const what = n === 1 ? "1 thing" : `${n} things`;
   const tgText =
-    `📝 Here's the change I'll make:\n${escapeHtml(result.reply)}\n\n` +
-    `<b>Diff</b> (${result.changes.length} file${result.changes.length > 1 ? "s" : ""}):\n<pre>${escapeHtml(diff)}</pre>\n\n` +
+    `${escapeHtml(result.reply)}\n\n` +
     (mail && mail.error
-      ? `⚠️ I couldn't send the approval email: ${escapeHtml(mail.error)}. Nothing will publish until that's fixed.`
-      : `📧 I've emailed the approve/discard link to <b>${escapeHtml(where)}</b>. Approve there and it goes live in ~2 min. Nothing publishes until someone approves.`);
+      ? `⚠️ I couldn't send the approval email (${escapeHtml(mail.error)}), so nothing will go live yet. Want me to try again?`
+      : `📧 I've emailed you the exact before/after (${what} changing). Tap Approve in that email and it's live in ~2 min. Nothing changes until you do 👍`);
   await send(chatId, tgText);
 
   return { statusCode: 200, body: "staged" };

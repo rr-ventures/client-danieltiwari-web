@@ -79,30 +79,28 @@ exports.handler = async (event) => {
   const approve = `${SELF}?approve=${token}`;
   const discard = `${SELF}?discard=${token}`;
 
-  // Telegram: summary + diff + inline approve/discard buttons.
-  const diff = describeChangeset(result.changes);
-  const tgText =
-    `📝 <b>Proposed change</b>\n${escapeHtml(result.reply)}\n\n` +
-    `<b>Diff:</b>\n<pre>${escapeHtml(diff)}</pre>\n\n` +
-    `Approve to publish (you or Dan can approve). It goes live ~2 min after.`;
-  await send(chatId, tgText, {
-    reply_markup: { inline_keyboard: [[
-      { text: "✅ Approve & publish", callback_data: `ok:${token}` },
-      { text: "✖ Discard", callback_data: `no:${token}` },
-    ]]},
-  });
-
-  // Email both Dan and Reece with the same approve/discard links.
+  // Email BOTH Dan and Reece the approve/discard links — approval is email-only.
   const { from } = mailConfig();
   const recipients = [
     process.env.DAN_NOTIFY_EMAIL || "email@danieltiwari.com",
     process.env.REECE_NOTIFY_EMAIL || "reece.j.rainer@gmail.com",
   ].filter(Boolean);
   const html = approvalEmail({ summary: result.reply, changes: result.changes, approve, discard, requestedBy: requestedBy || String(userId) });
-  await sendResendEmail({
+  const mail = await sendResendEmail({
     from, to: recipients, subject: `Approve a change to danieltiwari.com (${result.changes.length} file${result.changes.length > 1 ? "s" : ""})`,
     html, tags: [{ name: "source", value: "agent_approval" }],
-  }).catch(() => {});
+  }).catch((e) => ({ error: e.message }));
+
+  // Telegram: show exactly what it'll change (the diff) + tell them to approve by email.
+  const diff = describeChangeset(result.changes);
+  const where = recipients.join(" and ");
+  const tgText =
+    `📝 Here's the change I'll make:\n${escapeHtml(result.reply)}\n\n` +
+    `<b>Diff</b> (${result.changes.length} file${result.changes.length > 1 ? "s" : ""}):\n<pre>${escapeHtml(diff)}</pre>\n\n` +
+    (mail && mail.error
+      ? `⚠️ I couldn't send the approval email: ${escapeHtml(mail.error)}. Nothing will publish until that's fixed.`
+      : `📧 I've emailed the approve/discard link to <b>${escapeHtml(where)}</b>. Approve there and it goes live in ~2 min. Nothing publishes until someone approves.`);
+  await send(chatId, tgText);
 
   return { statusCode: 200, body: "staged" };
 };

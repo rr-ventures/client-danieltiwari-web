@@ -14,7 +14,7 @@
 //      DAN_NOTIFY_EMAIL, REECE_NOTIFY_EMAIL, BLOBS_SITE_ID, BLOBS_TOKEN.
 const { commitChangeset } = require("../lib/repo-commit");
 const { changesetStore } = require("../lib/blobs");
-const { send, answerCallback, escapeHtml } = require("../lib/telegram");
+const { send, escapeHtml } = require("../lib/telegram");
 
 const SITE = (process.env.URL || "https://danieltiwari.com").replace(/\/$/, "");
 
@@ -24,13 +24,12 @@ function allowed(userId) {
 }
 
 const INTRO = [
-  "👋 I'm Dan's site agent. Tell me in plain English what to change on danieltiwari.com or the email funnel and I'll do it, show you the change, and only publish once you (or Dan) approve.",
+  "I'm your site agent for danieltiwari.com. Tell me plainly what to change — the site or the email funnel — and I'll show you the exact change and email you a link to approve before anything goes live.",
   "",
-  "Examples:",
-  "• <i>Make the welcome email warmer and a bit shorter</i>",
-  "• <i>Change the booking link everywhere to my new Cal.com URL</i>",
-  "• <i>On the homepage, change the headline to \"…\"</i>",
-  "• <i>What does the day-3 nurture email currently say?</i>",
+  "For example:",
+  "• <i>Make the welcome email warmer and shorter</i>",
+  "• <i>Change my booking link everywhere to [new URL]</i>",
+  "• <i>What does the day-3 email say right now?</i>",
 ].join("\n");
 
 const page = (msg) =>
@@ -77,26 +76,8 @@ exports.handler = async (event) => {
   let update;
   try { update = JSON.parse(event.body || "{}"); } catch { return { statusCode: 200, body: "ok" }; }
 
-  // ---- Inline button taps (approve/discard) ----
-  if (update.callback_query) {
-    const cq = update.callback_query;
-    const from = cq.from || {};
-    const gate = allowed(from.id);
-    if (!gate.ok) { await answerCallback(cq.id, "Not authorised."); return { statusCode: 200, body: "ok" }; }
-    const data = String(cq.data || "");
-    const [action, token] = [data.slice(0, 2), data.slice(3)];
-    try {
-      if (action === "ok") { const r = await approveToken(token, from.first_name || "Dan"); await answerCallback(cq.id, r.ok ? "Published ✅" : r.msg); }
-      else if (action === "no") { const m = await discardToken(token); await answerCallback(cq.id, "Discarded"); }
-      else await answerCallback(cq.id, "");
-    } catch (err) {
-      await answerCallback(cq.id, "Error");
-      if (cq.message) await send(cq.message.chat.id, `⚠️ Could not publish: ${escapeHtml(err.message)}`);
-    }
-    return { statusCode: 200, body: "ok" };
-  }
-
   // ---- Messages ----
+  // (Approval is email-only — there are no inline buttons / callback queries.)
   const msg = update.message || update.edited_message;
   const text = msg && msg.text;
   const chatId = msg && msg.chat && msg.chat.id;

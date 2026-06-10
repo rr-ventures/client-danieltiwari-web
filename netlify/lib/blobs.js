@@ -24,4 +24,15 @@ function dripStore() {
     : getStore("nurture-drip");
 }
 
-module.exports = { resultsStore, dripStore };
+// Staged-but-not-yet-approved Telegram edits, keyed by an unguessable token.
+// The bot writes a pending edit + emails Dan an approve link; the approve
+// handler reads it back, commits it, and deletes the blob.
+function pendingEditsStore() {
+  const siteID = process.env.BLOBS_SITE_ID;
+  const token = process.env.BLOBS_TOKEN;
+  return siteID && token
+    ? getStore({ name: "pending-edits", siteID, token })
+    : getStore("pending-edits");
+}
+
+module.exports = { resultsStore, dripStore, pendingEditsStore };

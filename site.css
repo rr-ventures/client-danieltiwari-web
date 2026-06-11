@@ -62,7 +62,7 @@ header.bar.on-dark.scrolled{background:rgba(20,19,14,.86);box-shadow:0 1px 0 var
 
 /* ---- section rhythm ---- */
 section{position:relative;padding:clamp(5rem,12vh,11rem) 0}
-section.tall{min-height:100vh;display:flex;align-items:center}
+section.tall{min-height:100dvh;display:flex;align-items:center}
 .center{text-align:center}
 .section-head{font-family:var(--sc);font-size:.82rem;letter-spacing:.34em;color:var(--muted);text-transform:uppercase;margin-bottom:1.8rem}
 

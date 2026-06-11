@@ -1,8 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Daniel Tiwari">
-  <rect width="64" height="64" rx="10" fill="#15140f"/>
-  <text x="32" y="42" text-anchor="middle"
-        font-family="Georgia, 'Times New Roman', serif"
-        font-size="30" font-weight="500"
-        fill="#f4f1eb" letter-spacing="0">DT</text>
-  <rect x="22" y="49" width="20" height="1" fill="#cfc8ba"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <rect width="64" height="64" fill="#0c0c0c"/>
+  <text
+    x="32"
+    y="46"
+    text-anchor="middle"
+    font-family="'Spectral SC', 'Georgia', 'Times New Roman', serif"
+    font-size="28"
+    font-weight="400"
+    letter-spacing="1"
+    fill="#ffffff"
+  >DT</text>
 </svg>

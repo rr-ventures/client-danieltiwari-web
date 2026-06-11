@@ -44,6 +44,8 @@
   .inner .lede{margin-bottom:3rem}
 
   .notify-form{display:flex;flex-direction:column;gap:1rem}
+  .field-row{display:flex;gap:1rem}
+  .field-row .field{flex:1}
   .field{display:flex;flex-direction:column;gap:.5rem;text-align:left}
   .field label{font-family:var(--sc);font-size:.68rem;letter-spacing:.2em;color:var(--accent)}
   .field input{background:transparent;border:1px solid var(--hair);color:var(--ink);padding:.85rem 1.2rem;font-family:var(--body);font-size:.95rem;font-weight:300;border-radius:2px;outline:none;transition:border-color .2s;width:100%}
@@ -83,9 +85,15 @@
       <p class="lede">Leave your email and I'll send you a direct link the moment it's ready.</p>
 
       <form class="notify-form" id="notify-form" novalidate>
-        <div class="field">
-          <label for="name">Name</label>
-          <input id="name" name="name" type="text" autocomplete="name" placeholder="First and last">
+        <div class="field-row">
+          <div class="field">
+            <label for="first-name">First name</label>
+            <input id="first-name" name="first-name" type="text" autocomplete="given-name" placeholder="First">
+          </div>
+          <div class="field">
+            <label for="last-name">Last name</label>
+            <input id="last-name" name="last-name" type="text" autocomplete="family-name" placeholder="Last">
+          </div>
         </div>
         <div class="field">
           <label for="email">Email</label>
@@ -127,7 +135,7 @@
       const res = await fetch('/api/assessment-notify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, name: form.name.value.trim() }),
+        body: JSON.stringify({ email, firstName: form['first-name'].value.trim(), lastName: form['last-name'].value.trim() }),
       });
       if (res.ok) {
         form.style.display = 'none';

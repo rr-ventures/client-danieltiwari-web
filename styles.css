@@ -37,7 +37,7 @@ html, body {
 }
 
 body {
-  min-height: 100vh;
+  min-height: 100dvh;
   overflow-x: hidden;
 }
 
@@ -312,7 +312,7 @@ section {
 /* ---------- Hero ---------- */
 
 .hero {
-  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   justify-content: center;

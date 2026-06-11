@@ -178,6 +178,10 @@
   footer .foot-links a:hover{color:var(--ink)}
   footer .hairline{height:1px;background:var(--hair);max-width:3rem;margin:0 auto 1.6rem}
 
+  /* subscribed banner */
+  .subscribed-banner{display:none;position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);z-index:200;background:#1a1a1a;border:1px solid var(--hair);color:#c8c4bc;font-family:var(--sc);font-size:.78rem;letter-spacing:.18em;padding:1rem 2rem;border-radius:2px;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.5)}
+  .subscribed-banner.show{display:block}
+
   /* reveal */
   .rise{opacity:0;transform:translateY(18px);transition:opacity .9s ease,transform .9s ease}
   .rise.in{opacity:1;transform:none}
@@ -395,6 +399,8 @@
   </div>
 </section>
 
+<div class="subscribed-banner" id="subscribed-banner">You're on the list. Words worth reading, when they're ready.</div>
+
 <button class="testi-fixed-btn" id="testi-fixed-prev" aria-label="Previous testimonial">←</button>
 <button class="testi-fixed-btn" id="testi-fixed-next" aria-label="Next testimonial">→</button>
 
@@ -409,6 +415,13 @@
 </footer>
 
 <script>
+  // Newsletter success banner
+  if (new URLSearchParams(location.search).get('subscribed') === '1') {
+    const banner = document.getElementById('subscribed-banner');
+    banner.classList.add('show');
+    setTimeout(() => banner.classList.remove('show'), 6000);
+  }
+
   const io = new IntersectionObserver((es) => {
     es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
   }, { threshold: .14 });

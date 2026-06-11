@@ -40,6 +40,14 @@
   force = true
 
 # Assessment under construction — redirect to coming-soon page until ready to go live.
+# NOTE: site links resolve extensionless (Netlify Pretty URLs), so the nav/CTA buttons
+# hit /assessment, NOT /assessment.html. Both must redirect or the buttons bypass it.
+[[redirects]]
+  from = "/assessment"
+  to = "/assessment-coming-soon.html"
+  status = 302
+  force = true
+
 [[redirects]]
   from = "/assessment.html"
   to = "/assessment-coming-soon.html"

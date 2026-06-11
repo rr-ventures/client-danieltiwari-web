@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Daniel Tiwari — Transformational Coach</title>
+<title>Daniel Tiwari — Private Coaching</title>
 <meta name="description" content="Private coaching for ambitious individuals who are done living a life that isn't fully theirs.">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="canonical" href="https://danieltiwari.com/">
 <meta name="theme-color" content="#0c0c0c">
-<meta property="og:title" content="Daniel Tiwari — Transformational Coach">
-<meta property="og:description" content="Private coaching for the renegades of mainstream society.">
+<meta property="og:title" content="Daniel Tiwari — Private Coaching">
+<meta property="og:description" content="Most people spend their lives optimizing a version of themselves they never chose.">
 <meta property="og:type" content="website">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -60,7 +60,7 @@
   .header-cta:hover{background:#fff;border-color:#fff;color:var(--bg)}
 
   /* hero */
-  .hero{position:relative;min-height:100dvh;display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .hero{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden}
   .hero::before{content:"";position:absolute;top:0;bottom:0;left:30%;right:-30%;background-image:url('/assets/video/dan-hero-statue-poster.jpg');background-size:cover;background-position:left center;filter:saturate(.7);z-index:0}
   .hero-video{position:absolute;top:0;bottom:0;left:30%;right:-30%;height:100%;object-fit:cover;object-position:left center;filter:saturate(.7);z-index:0}
   @media (prefers-reduced-motion:reduce){.hero-video{display:none}}
@@ -178,14 +178,35 @@
   footer .foot-links a:hover{color:var(--ink)}
   footer .hairline{height:1px;background:var(--hair);max-width:3rem;margin:0 auto 1.6rem}
 
-  /* subscribed banner */
-  .subscribed-banner{display:none;position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);z-index:200;background:#1a1a1a;border:1px solid var(--hair);color:#c8c4bc;font-family:var(--sc);font-size:.78rem;letter-spacing:.18em;padding:1rem 2rem;border-radius:2px;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.5)}
-  .subscribed-banner.show{display:block}
-
   /* reveal */
   .rise{opacity:0;transform:translateY(18px);transition:opacity .9s ease,transform .9s ease}
   .rise.in{opacity:1;transform:none}
   @media(prefers-reduced-motion:reduce){.rise{opacity:1;transform:none;transition:none}}
+
+  /* ===== MOBILE OPTIMISATION — scoped to small screens; desktop unchanged ===== */
+  html,body{overflow-x:hidden}              /* guard against any stray horizontal scroll */
+  img,video{max-width:100%}
+  @media(max-width:900px){
+    header{padding:1.1rem 1.4rem}           /* drop the large desktop left-inset on mobile */
+    .header-name{font-size:.8rem;letter-spacing:.14em}
+    .header-cta{font-size:.66rem;letter-spacing:.14em;padding:.5rem .9rem}
+  }
+  @media(max-width:640px){
+    section{padding:clamp(4.5rem,11vh,8rem) 1.4rem}
+    .hero-inner{padding:0 1.4rem}
+    .hero-video{left:0;right:0}             /* match poster framing on phones */
+    .hero h1{font-size:clamp(1.5rem,6vw,2rem);line-height:1.4}
+    .hero .lede{margin-bottom:2.4rem}
+    .hero-actions{gap:.8rem}
+    .label{letter-spacing:.26em}            /* keep wide tracking from overflowing */
+    .who-grid{margin-top:2rem}
+    .who-col li,.how-list li{font-size:1.08rem;line-height:1.55}
+    .newsletter form{grid-template-columns:1fr}  /* stack name fields */
+    .testi-quote{font-size:1rem}
+  }
+  @media(max-width:380px){
+    .header-cta{font-size:.6rem;letter-spacing:.1em;padding:.45rem .7rem}
+  }
 </style>
 </head>
 <body>
@@ -399,8 +420,6 @@
   </div>
 </section>
 
-<div class="subscribed-banner" id="subscribed-banner">You're on the list. Words worth reading, when they're ready.</div>
-
 <button class="testi-fixed-btn" id="testi-fixed-prev" aria-label="Previous testimonial">←</button>
 <button class="testi-fixed-btn" id="testi-fixed-next" aria-label="Next testimonial">→</button>
 
@@ -415,13 +434,6 @@
 </footer>
 
 <script>
-  // Newsletter success banner
-  if (new URLSearchParams(location.search).get('subscribed') === '1') {
-    const banner = document.getElementById('subscribed-banner');
-    banner.classList.add('show');
-    setTimeout(() => banner.classList.remove('show'), 6000);
-  }
-
   const io = new IntersectionObserver((es) => {
     es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
   }, { threshold: .14 });
@@ -486,6 +498,12 @@
     fixedNext.classList.toggle('visible', entry.isIntersecting);
   }, {rootMargin: '-48% 0px -48% 0px', threshold: 0});
   testiObserver.observe(testiSection);
+  if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+    const testiWrap = document.querySelector('.testi-wrap');
+    let timer = setInterval(() => showSlide(current + 1, 1), 5000);
+    testiWrap.addEventListener('mouseenter', () => clearInterval(timer));
+    testiWrap.addEventListener('mouseleave', () => { timer = setInterval(() => showSlide(current + 1, 1), 5000); });
+  }
   let touchStartX = 0;
   track.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, {passive:true});
   track.addEventListener('touchend', e => {

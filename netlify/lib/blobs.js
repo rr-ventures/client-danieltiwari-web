@@ -56,4 +56,18 @@ function threadStore() {
     : getStore("agent-threads");
 }
 
-module.exports = { resultsStore, dripStore, pendingEditsStore, changesetStore, threadStore };
+// Staged-but-not-yet-approved REPO-WIDE pushes (any change to main from any
+// source — direct push, another agent, fleet autosave). The GitHub Action posts
+// the commit + diff here keyed by an unguessable token; the approve link
+// publishes the matching (built-but-unpublished, because the site is locked)
+// Netlify deploy, the reject link discards it. Mirrors the Telegram gate but for
+// every change, not just the bot's.
+function changeGateStore() {
+  const siteID = process.env.BLOBS_SITE_ID;
+  const token = process.env.BLOBS_TOKEN;
+  return siteID && token
+    ? getStore({ name: "change-gate", siteID, token })
+    : getStore("change-gate");
+}
+
+module.exports = { resultsStore, dripStore, pendingEditsStore, changesetStore, threadStore, changeGateStore };

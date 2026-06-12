@@ -85,6 +85,7 @@ exports.handler = async (event) => {
       email: pending.email,
       firstName: pending.firstName || "",
       lastName: pending.lastName || "",
+      source: (existing && existing.source) || pending.source || "",
       status: "confirmed",
       createdAt: (existing && existing.createdAt) || pending.createdAt || confirmedAt,
       confirmedAt,
@@ -130,6 +131,7 @@ exports.handler = async (event) => {
   const email = String(body.email || "").trim();
   const firstName = String(body.first_name || body["first-name"] || "").trim();
   const lastName = String(body.last_name || body["last-name"] || "").trim();
+  const source = String(body.source || "").trim().slice(0, 100);
 
   if (!email || !email.includes("@")) {
     return { statusCode: 400, body: JSON.stringify({ error: "A valid email is required." }) };
@@ -145,11 +147,12 @@ exports.handler = async (event) => {
       email,
       firstName,
       lastName,
+      source,
       status: "pending",
       createdAt,
       confirmedAt: null,
     });
-    await store.setJSON(`confirm:${token}`, { email, firstName, lastName, createdAt });
+    await store.setJSON(`confirm:${token}`, { email, firstName, lastName, source, createdAt });
   } catch (error) {
     return { statusCode: 500, body: JSON.stringify({ error: "Could not save your subscription. Please try again." }) };
   }

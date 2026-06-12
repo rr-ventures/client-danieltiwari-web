@@ -82,7 +82,7 @@
     <div class="inner">
       <p class="eyebrow sc">Personal self-assessment</p>
       <h1>Being built right now.</h1>
-      <p class="lede">Leave your email and I'll send you a direct link the moment it's ready.</p>
+      <p class="lede">Sign up to my newsletter and I'll send you a direct link the moment it's ready.</p>
 
       <form class="notify-form" id="notify-form" novalidate>
         <div class="field-row">
@@ -99,12 +99,12 @@
           <label for="email">Email</label>
           <input id="email" name="email" type="email" required autocomplete="email" placeholder="you@example.com">
         </div>
-        <button type="submit" class="btn btn-primary" id="submit-btn">Notify me →</button>
+        <button type="submit" class="btn btn-primary" id="submit-btn">Join the newsletter →</button>
       </form>
 
       <div class="success" id="success">
-        <p class="check sc">You're on the list</p>
-        <p>I'll send you a direct link as soon as it's live.</p>
+        <p class="check sc">Almost there</p>
+        <p>Check your inbox and confirm your e-mail address to get on the list.</p>
       </div>
     </div>
   </div>
@@ -132,21 +132,22 @@
     btn.disabled = true;
     btn.textContent = 'Sending…';
     try {
-      const res = await fetch('/api/assessment-notify', {
+      const res = await fetch('/api/newsletter-submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, firstName: form['first-name'].value.trim(), lastName: form['last-name'].value.trim() }),
+        body: JSON.stringify({ email, first_name: form['first-name'].value.trim(), last_name: form['last-name'].value.trim(), source: 'assessment-coming-soon' }),
       });
-      if (res.ok) {
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.ok) {
         form.style.display = 'none';
         success.classList.add('visible');
       } else {
-        throw new Error();
+        throw new Error(data.error || '');
       }
-    } catch {
+    } catch (err) {
       btn.disabled = false;
       btn.textContent = 'Notify me →';
-      alert('Something went wrong. Please try again.');
+      alert(err.message || 'Something went wrong. Please try again.');
     }
   });
 </script>

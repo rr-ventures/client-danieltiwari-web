@@ -100,6 +100,16 @@
   .btn-ghost{background:transparent;color:var(--muted);border-color:var(--hair)}
   .btn-ghost:hover{color:var(--ink);border-color:var(--ink)}
 
+  /* section guide */
+  .section-guide{margin-bottom:2.8rem;padding-bottom:2.4rem;border-bottom:1px solid var(--hair)}
+  .guide-video-wrap{position:relative;width:100%;aspect-ratio:16/9;background:#1c1a14;border-radius:2px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;margin-bottom:.8rem}
+  .play-btn{width:3.2rem;height:3.2rem;border-radius:50%;border:1px solid rgba(242,237,228,.25);display:flex;align-items:center;justify-content:center}
+  .play-btn svg{fill:rgba(242,237,228,.55);margin-left:.18rem}
+  .guide-video-caption{font-family:var(--sc);font-size:.65rem;letter-spacing:.2em;color:rgba(242,237,228,.3);text-align:center;padding:0 1rem}
+  .guide-label{font-family:var(--sc);font-size:.65rem;letter-spacing:.25em;color:var(--muted);margin:1.6rem 0 .7rem}
+  .guide-text{font-size:.95rem;line-height:1.85;color:var(--accent)}
+  .guide-text p+p{margin-top:.9rem}
+
   /* reveal */
   .obs-fade,.rise{opacity:0;transform:translateY(18px);transition:opacity .9s ease,transform .9s ease}
   .obs-fade.is-in,.rise.in,.rise.is-in{opacity:1;transform:none}
@@ -148,6 +158,20 @@
             <p>For each area, mark fulfilment now, long-term importance, and urgency to address it.</p>
           </div>
         </div>
+        <div class="section-guide">
+          <div class="guide-video-wrap">
+            <div class="play-btn">
+              <svg width="13" height="15" viewBox="0 0 13 15"><path d="M0 0l13 7.5L0 15V0z"/></svg>
+            </div>
+            <p class="guide-video-caption sc">How to answer this section — Daniel Tiwari</p>
+          </div>
+          <p class="guide-label sc">How to answer</p>
+          <div class="guide-text">
+            <p>Score each area based on where you actually are right now — not where you want to be, and not where you think you should be. Most people instinctively inflate areas tied to their self-image. Resist that.</p>
+            <p>Fulfilment is how satisfied you genuinely feel in this area today. Importance is how much it truly matters to you long-term. Urgency is how pressing it feels to address it — regardless of whether you're ready to.</p>
+          </div>
+        </div>
+
         <div class="scale-legend"><span>1 = low</span><span>10 = high</span></div>
         <div id="wheel-rows" class="scale-grid" aria-live="polite"></div>
       </section>
@@ -161,6 +185,20 @@
             <p>Choose the answer that is most honest, not the answer that sounds best.</p>
           </div>
         </div>
+        <div class="section-guide">
+          <div class="guide-video-wrap">
+            <div class="play-btn">
+              <svg width="13" height="15" viewBox="0 0 13 15"><path d="M0 0l13 7.5L0 15V0z"/></svg>
+            </div>
+            <p class="guide-video-caption sc">How to answer this section — Daniel Tiwari</p>
+          </div>
+          <p class="guide-label sc">How to answer</p>
+          <div class="guide-text">
+            <p>Choose the option that most honestly describes where you are right now — not where you hope to be, and not the answer that sounds most self-aware. These questions are designed to cut through the stories we tell ourselves.</p>
+            <p>If two answers feel close, pick the one that makes you slightly uncomfortable. That discomfort usually means you're being accurate.</p>
+          </div>
+        </div>
+
         <div class="question-grid">
           <div class="field">
             <label for="path_signal"><span class="num">05</span> Your current path</label>
@@ -241,6 +279,20 @@
             <p>This section helps separate real readiness from curiosity.</p>
           </div>
         </div>
+        <div class="section-guide">
+          <div class="guide-video-wrap">
+            <div class="play-btn">
+              <svg width="13" height="15" viewBox="0 0 13 15"><path d="M0 0l13 7.5L0 15V0z"/></svg>
+            </div>
+            <p class="guide-video-caption sc">How to answer this section — Daniel Tiwari</p>
+          </div>
+          <p class="guide-label sc">How to answer</p>
+          <div class="guide-text">
+            <p>This section is not about qualifying yourself. It is about getting honest with yourself about what you actually want and what you are actually willing to do.</p>
+            <p>For the open questions at the end, write the version you would usually edit out. The unfiltered answer is almost always the more useful one — and the one I actually read.</p>
+          </div>
+        </div>
+
         <div class="question-grid">
           <div class="field">
             <label for="vision_scale"><span class="num">11</span> Life vision</label>

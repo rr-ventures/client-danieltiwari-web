@@ -10,9 +10,9 @@ const html = (body) => ({ statusCode: 200, headers: { "Content-Type": "text/html
 exports.handler = async (event) => {
   const qs = event.queryStringParameters || {};
   try {
-    if (qs.reject) return html(page(await reject(qs.reject)));
+    if (qs.reject) return html(page(await reject(qs.reject, qs.by)));
     if (qs.approve) {
-      const r = await approve(qs.approve);
+      const r = await approve(qs.approve, qs.by);
       return html(page(r.msg));
     }
   } catch (err) {

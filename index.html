@@ -169,6 +169,10 @@
   .newsletter input[type=email],.newsletter input[type=text]{background:transparent;border:1px solid var(--hair);color:var(--ink);padding:.9rem 1.4rem;font-family:var(--body);font-size:.95rem;border-radius:2px;width:100%;outline:none;transition:border-color .2s}
   .newsletter input[type=email]:focus,.newsletter input[type=text]:focus{border-color:var(--accent)}
   .newsletter input::placeholder{color:var(--muted)}
+  .newsletter-status{max-width:37rem;margin:1.2rem auto 0;font-size:.9rem;line-height:1.6;color:var(--muted)}
+  .newsletter-status.is-success{color:var(--accent)}
+  .newsletter-status.is-error{color:#d98a6a}
+  .newsletter form.is-sending{opacity:.6;pointer-events:none}
 
   /* footer */
   footer{background:#080808;padding:4rem 2rem;text-align:center}
@@ -409,14 +413,14 @@
     <h2>Words Worth Writing.</h2>
     <blockquote class="newsletter-quote">"When a stream or a bubbling spring flows out from the mountains, it is doing its thing. And if a thirsty traveler helps himself, well that's fine. When a bird sings, it doesn't sing for the advancement of music, but if somebody stops to listen and is delighted, that's fine. And so, I talk in the same spirit."</blockquote>
     <cite class="newsletter-cite sc">Alan Watts</cite>
-    <form name="newsletter" method="POST" data-netlify="true" netlify-honeypot="bot-field" action="/?subscribed=1">
-      <input type="hidden" name="form-name" value="newsletter">
-      <p hidden><label>Don't fill this in: <input name="bot-field"></label></p>
+    <form id="newsletter-form" name="newsletter" novalidate>
+      <p hidden><label>Don't fill this in: <input name="bot-field" tabindex="-1" autocomplete="off"></label></p>
       <input type="text" name="first-name" required placeholder="First name" aria-label="First name">
       <input type="text" name="last-name" required placeholder="Last name" aria-label="Last name">
       <input type="email" name="email" required placeholder="your@email.com" aria-label="Email address">
       <button type="submit" class="btn btn-primary sc">Subscribe</button>
     </form>
+    <p id="newsletter-status" class="newsletter-status" role="status" aria-live="polite" hidden></p>
   </div>
 </section>
 
@@ -510,6 +514,56 @@
     const diff = touchStartX - e.changedTouches[0].clientX;
     if (Math.abs(diff) > 50) showSlide(current + (diff > 0 ? 1 : -1), diff > 0 ? 1 : -1);
   }, {passive:true});
+
+  /* Newsletter signup — posts to the Netlify function, shows inline status. */
+  (function(){
+    var form = document.getElementById('newsletter-form');
+    var status = document.getElementById('newsletter-status');
+    if (!form || !status) return;
+    var btn = form.querySelector('button[type="submit"]');
+    var btnLabel = btn ? btn.textContent : 'Subscribe';
+
+    function show(msg, kind){
+      status.hidden = false;
+      status.textContent = msg;
+      status.className = 'newsletter-status' + (kind ? ' is-' + kind : '');
+    }
+
+    form.addEventListener('submit', function(e){
+      e.preventDefault();
+      var email = (form.email.value || '').trim();
+      if (!email || email.indexOf('@') === -1) { show('Please enter a valid email address.', 'error'); form.email.focus(); return; }
+
+      form.classList.add('is-sending');
+      if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+      show('', '');
+
+      fetch('/api/newsletter-submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          first_name: (form['first-name'].value || '').trim(),
+          last_name: (form['last-name'].value || '').trim(),
+          email: email,
+          'bot-field': (form['bot-field'] ? form['bot-field'].value : '')
+        })
+      })
+      .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(d){ return { ok: r.ok, d: d }; }); })
+      .then(function(res){
+        if (res.ok && res.d.ok) {
+          form.reset();
+          show("Almost there. Check your inbox and confirm your e-mail address.", 'success');
+        } else {
+          show((res.d && res.d.error) || 'Something went wrong. Please try again in a moment.', 'error');
+        }
+      })
+      .catch(function(){ show('Could not reach the server. Please try again.', 'error'); })
+      .finally(function(){
+        form.classList.remove('is-sending');
+        if (btn) { btn.disabled = false; btn.textContent = btnLabel; }
+      });
+    });
+  })();
 </script>
 </body>
 </html>

@@ -109,10 +109,49 @@ async function chat(messages) {
   return j;
 }
 
-const SYSTEM = (listing) => `You are Daniel Tiwari's personal agent. Dan (the coach) or Reece (his agency) message you in plain English; you make the change across his TWO repositories. EVERY path you use must start with a repo prefix:
+const FALLBACK_WEB_CONTEXT = `# Daniel Tiwari Website Agent Context
+
+Runtime: this is a Netlify-hosted website and Telegram bot, not OpenClaw.
+Message path: Telegram -> netlify/functions/telegram-bot.js -> netlify/functions/telegram-agent-background.js -> netlify/lib/repo-agent.js -> OpenRouter model/tool loop -> staged Netlify Blob changeset -> email approval -> GitHub commit -> Netlify deploy.
+Homepage newsletter:
+- Form/UI: index.html #newsletter.
+- Browser POST: /api/newsletter-submit.
+- Redirect: netlify.toml.
+- Handler: netlify/functions/newsletter-submit.js.
+- Subscriber confirmation email copy: confirmationHtml() in netlify/functions/newsletter-submit.js.
+- Flow: POST stores pending subscriber and sends confirmation-link email; GET /api/newsletter-submit?confirm=<token> marks them confirmed and notifies Dan.
+- Subscriber store: newsletter-subscribers Netlify Blob, including one-time confirmation-token records.
+- Delivery: netlify/lib/send.js via Resend.
+Assessment/result funnel:
+- Quiz UI: assessment.html, assessment.js, assessment-core.js.
+- Submit handler: netlify/functions/assessment-submit.js.
+- Result page: result.html at /r/<id>.
+- Editable nurture copy: content/emails/branch-a/*.md and content/emails/branch-b/*.md.
+- Renderer/build: netlify/lib/sequence.js and scripts/build-emails.mjs.
+- Drip sender/state: netlify/functions/nurture-drip.js and nurture-drip Netlify Blob.
+GitHub/approval:
+- The agent stages changes only.
+- telegram-agent-background.js stores pending changes in agent-changesets Netlify Blob and emails Dan/Reece approval links.
+- telegram-bot.js approves/discards; approve commits to GitHub main through netlify/lib/repo-commit.js.
+- GitHub main on web deploys via Netlify; db commits do not deploy the website.`;
+
+async function loadWebAgentContext() {
+  try {
+    const { content } = await readFromMain("web/AGENTS.md");
+    return content.slice(0, 14000);
+  } catch {
+    return FALLBACK_WEB_CONTEXT;
+  }
+}
+
+const SYSTEM = (listing, webContext) => `You are Daniel Tiwari's personal agent. Dan (the coach) or Reece (his agency) message you in plain English; you make the change across his TWO repositories. EVERY path you use must start with a repo prefix:
 
 - web/  = client-danieltiwari-web — Dan's public coaching WEBSITE + email funnel. Editing it and getting it approved DEPLOYS to danieltiwari.com.
 - db/   = product-dancoaching-db — Dan's PRIVATE coaching-business repo: business_plan.md, his strategy and content and session notes (db/dan/), mentor synthesis (db/dan/mentors/), and Reece's consultant context (db/reece/). It is NOT a website — commits just version it, nothing deploys.
+- web/AGENTS.md = compact operator context for the Dan website stack. It is loaded below. Use it before making claims about forms, emails, deployment, routing, or where a requested website change lives.
+
+LOADED web/AGENTS.md CONTEXT:
+${webContext}
 
 If a request could touch either repo and it's not obvious, ASK which. Rule of thumb: anything about the website, a page, the funnel, or emails => web/. Anything about the business plan, strategy, positioning, offer, content ideas, notes, or research => db/.
 
@@ -130,6 +169,13 @@ web/ — BUILD & PUBLISH (so a website change actually goes live):
 - The live site is built from the repo ROOT into dist/ by scripts/build-static-site.mjs on every deploy. Every top-level *.html page publishes automatically, so creating web/services.html just works. If you add a NEW non-HTML asset (a .js, .css, image, or folder), you MUST also add its filename to the assetEntries list in web/scripts/build-static-site.mjs or it won't publish.
 - PRETTY URLS: the live site serves pages WITHOUT the .html extension and rewrites internal links to match, so a link/button you see as /assessment.html in the source actually resolves to /assessment for visitors. This matters for redirects in web/netlify.toml: a redirect rule "from = /page.html" will NOT catch the /page that the buttons actually use. When you add or change a redirect, add a rule for the extensionless path (and keep the .html one too), or the change silently does nothing.
 - Email funnel copy is web/content/emails/*.md (frontmatter: day, subject, preview; body supports **bold**, {{first_name}}/{{top_focus_area}}/{{authenticity_stage}} merge fields, [MAP]/[BOOK] tokens). Edit the .md, never the generated JSON.
+
+CRITICAL WEB TARGETS — use these before guessing:
+- Homepage newsletter form markup and browser submit code are in web/index.html, section #newsletter. It posts to /api/newsletter-submit.
+- Newsletter subscriber confirmation/welcome email copy is NOT in web/content/emails and is NOT an external email platform by default. It lives in web/netlify/functions/newsletter-submit.js inside confirmationHtml().
+- Assessment result/nurture emails are the files under web/content/emails/branch-a and web/content/emails/branch-b, baked by web/scripts/build-emails.mjs into web/netlify/lib/emails.generated.json and rendered by web/netlify/lib/sequence.js.
+- API route wiring is in web/netlify.toml. If a form or endpoint is involved, check the redirect from /api/... to the Netlify Function before deciding what to edit.
+- Do not tell Dan or Reece something is probably handled by Kit, Mailchimp, ConvertKit, or another external platform unless you have checked web/AGENTS.md and the repo files and found clear evidence.
 
 db/ — CONVENTIONS:
 - Dan's own work goes under db/dan/, Reece's consultant context under db/reece/, locked business state in db/business_plan.md.
@@ -172,6 +218,7 @@ async function runAgent({ text, history, onProgress }) {
   const webList = trees.byKey.web.map((p) => `web/${p}`).join("\n");
   const dbTop = listDir(trees.all, "db").map((e) => `db/${e}`).join("\n");
   const listing = `${webList}\n\n[db/ top-level — use list_dir to go deeper]\n${dbTop}`;
+  const webContext = await loadWebAgentContext();
   const staged = new Map();   // prefixed path -> { content } | { deleted:true }
   const original = new Map(); // prefixed path -> { content, sha }
 
@@ -186,7 +233,7 @@ async function runAgent({ text, history, onProgress }) {
   }
 
   const messages = [
-    { role: "system", content: SYSTEM(listing) },
+    { role: "system", content: SYSTEM(listing, webContext) },
     ...(Array.isArray(history) ? history : []),
     { role: "user", content: text },
   ];

@@ -16,6 +16,11 @@
   status = 200
 
 [[redirects]]
+  from = "/api/newsletter-submit"
+  to = "/.netlify/functions/newsletter-submit"
+  status = 200
+
+[[redirects]]
   from = "/api/result-data"
   to = "/.netlify/functions/result-data"
   status = 200

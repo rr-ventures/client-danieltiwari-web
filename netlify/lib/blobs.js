@@ -24,6 +24,16 @@ function dripStore() {
     : getStore("nurture-drip");
 }
 
+// Newsletter subscribers (the homepage "Words Worth Writing" form). One blob
+// per subscriber keyed by email: { email, firstName, lastName, confirmedAt }.
+function subscribersStore() {
+  const siteID = process.env.BLOBS_SITE_ID;
+  const token = process.env.BLOBS_TOKEN;
+  return siteID && token
+    ? getStore({ name: "newsletter-subscribers", siteID, token })
+    : getStore("newsletter-subscribers");
+}
+
 // Staged-but-not-yet-approved Telegram edits, keyed by an unguessable token.
 // The bot writes a pending edit + emails Dan an approve link; the approve
 // handler reads it back, commits it, and deletes the blob.
@@ -70,4 +80,4 @@ function changeGateStore() {
     : getStore("change-gate");
 }
 
-module.exports = { resultsStore, dripStore, pendingEditsStore, changesetStore, threadStore, changeGateStore };
+module.exports = { resultsStore, dripStore, subscribersStore, pendingEditsStore, changesetStore, threadStore, changeGateStore };

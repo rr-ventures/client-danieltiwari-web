@@ -4,7 +4,7 @@
 // notifies Dan when they click the confirmation link.
 const crypto = require("node:crypto");
 const { subscribersStore } = require("../lib/blobs");
-const { sendResendEmail, mailConfig } = require("../lib/send");
+const { sendResendEmail, mailConfig, leadActionEmail } = require("../lib/send");
 
 function escapeHtml(value) {
   return String(value || "")
@@ -49,15 +49,20 @@ function confirmationHtml(firstName, confirmUrl) {
 
 async function sendSubscriberNotify({ email, firstName, lastName, from, replyTo, testMode, testEmail }) {
   const notifyTo = testMode ? testEmail : (process.env.NOTIFY_TO || process.env.DAN_NOTIFY_EMAIL || "email@danieltiwari.com");
+  const fullName = escapeHtml([firstName, lastName].filter(Boolean).join(" ")) || "(not given)";
   return sendResendEmail({
     from,
-    to: [notifyTo],
+    to: String(notifyTo).split(",").map((s) => s.trim()).filter(Boolean),
     reply_to: testMode ? replyTo : email,
-    subject: `New newsletter subscriber: ${firstName || email}`,
-    html: `<div style="font-family: Georgia, serif; color:#15140f;">
-      <p><strong>Name:</strong> ${escapeHtml([firstName, lastName].filter(Boolean).join(" ")) || "(not given)"}</p>
-      <p><strong>Email:</strong> ${escapeHtml(email)}</p>
-    </div>`,
+    subject: `ACTION REQUIRED: Add new lead to CRM — ${firstName || email}`,
+    html: leadActionEmail({
+      kind: "Newsletter subscriber",
+      rows: [
+        ["Name", fullName],
+        ["Email", escapeHtml(email)],
+        ["Source", "Newsletter signup (confirmed)"],
+      ],
+    }),
     tags: [{ name: "source", value: "newsletter_notify" }],
   });
 }

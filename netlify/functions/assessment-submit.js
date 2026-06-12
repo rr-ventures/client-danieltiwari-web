@@ -1,7 +1,7 @@
 const crypto = require("node:crypto");
 const { buildBranch } = require("../lib/sequence");
 const { resultsStore, dripStore } = require("../lib/blobs");
-const { sendResendEmail, mailConfig } = require("../lib/send");
+const { sendResendEmail, mailConfig, leadActionEmail } = require("../lib/send");
 
 function firstNameOf(answers) {
   const n = String(answers.first_name || answers.name || "").trim();
@@ -239,10 +239,20 @@ exports.handler = async (event) => {
 
   const notifyEmail = sendResendEmail({
     from,
-    to: [notifyTo],
+    to: String(notifyTo).split(",").map((s) => s.trim()).filter(Boolean),
     reply_to: TEST_MODE ? replyTo : answers.email,
-    subject: `New assessment lead: ${answers.name || answers.email}`,
-    html: `${notifyEmailHtml(answers, result)}<p style="font-family:Georgia,serif"><strong>Result page:</strong> <a href="${escapeHtml(resultUrl)}">${escapeHtml(resultUrl)}</a></p>`,
+    subject: `ACTION REQUIRED: Add new lead to CRM — ${answers.name || answers.email}`,
+    html: leadActionEmail({
+      kind: "Assessment lead",
+      rows: [
+        ["Name", escapeHtml(answers.name || "(not given)")],
+        ["Email", escapeHtml(answers.email)],
+        ["Top focus", escapeHtml(mergeFields.top_focus_area || "—")],
+        ["Stage", escapeHtml(mergeFields.authenticity_stage || "—")],
+      ],
+      extraHtml: `<p style="font-family:Georgia,serif;margin-top:1rem"><strong>Result page:</strong> <a href="${escapeHtml(resultUrl)}">${escapeHtml(resultUrl)}</a></p>
+        <details style="margin-top:1rem"><summary style="cursor:pointer;color:#8a857a;font-size:.85rem">Full assessment detail</summary>${notifyEmailHtml(answers, result)}</details>`,
+    }),
     tags: [{ name: "source", value: "assessment_notify" }],
   }).catch((err) => ({ error: err.message }));
 

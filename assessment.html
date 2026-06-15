@@ -26,6 +26,7 @@
     --measure:38rem;
   }
   *{box-sizing:border-box;margin:0;padding:0}
+  [hidden]{display:none!important}
   body{background:var(--bg);color:var(--ink);font-family:var(--body);font-weight:300;line-height:1.75;-webkit-font-smoothing:antialiased}
   a{color:inherit;text-decoration:none}
   h1,h2{font-family:var(--display);font-weight:400;line-height:1.1;letter-spacing:.01em}
@@ -115,6 +116,28 @@
   .obs-fade.is-in,.rise.in,.rise.is-in{opacity:1;transform:none}
   @media(prefers-reduced-motion:reduce){.obs-fade,.rise{opacity:1;transform:none;transition:none}}
   @media(max-width:640px){.question-grid{grid-template-columns:1fr}}
+
+  /* fulfillment one-at-a-time */
+  .area-counter{display:block;font-family:var(--sc);font-size:.7rem;letter-spacing:.25em;color:var(--muted);margin-bottom:1.6rem;text-align:center}
+  .fulfillment-area-label{font-family:var(--display);font-size:clamp(1.6rem,3vw,2.4rem);text-align:center;margin-bottom:2rem;line-height:1.2}
+  .number-scale{display:flex;gap:.4rem;margin:0 auto 1rem;max-width:36rem}
+  .number-btn{flex:1;height:2.8rem;border:1px solid var(--hair);border-radius:2px;background:transparent;font-family:var(--sc);font-size:.8rem;letter-spacing:.05em;color:var(--ink);cursor:pointer;transition:background .15s,border-color .15s,color .15s}
+  .number-btn:hover{border-color:var(--accent)}
+  .number-btn.selected{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+  .scale-legend-card{display:flex;justify-content:space-between;max-width:36rem;margin:0 auto 2.4rem;font-family:var(--sc);font-size:.65rem;letter-spacing:.2em;color:var(--muted)}
+  .fulfillment-next-btn{display:block;margin:0 auto}
+
+  /* pie chart */
+  .pie-wrap{max-width:400px;margin:1.6rem auto 2rem}
+
+  /* focus selection */
+  .focus-list{display:flex;flex-direction:column;gap:.6rem;margin-top:1rem}
+  .focus-option{display:flex;align-items:center;gap:1.2rem;padding:.9rem 1.2rem;border:1px solid var(--hair);border-radius:2px;cursor:pointer;transition:border-color .2s}
+  .focus-option:has(input:checked){border-color:var(--ink);background:rgba(28,26,20,.03)}
+  .focus-option input{position:absolute;opacity:0;width:0;height:0}
+  .focus-rank{font-size:.65rem;letter-spacing:.2em;color:var(--accent);flex-shrink:0}
+  .focus-label{flex:1}
+  .focus-scores{font-size:.82rem;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -145,35 +168,85 @@
         <span class="step-dot"></span>
         <span class="step-dot"></span>
         <span class="step-dot"></span>
+        <span class="step-dot"></span>
+        <span class="step-dot"></span>
+        <span class="step-dot"></span>
       </div>
     </div>
 
     <form id="assessment-form" aria-label="Daniel Tiwari self-assessment">
-      <!-- 01 · the wheel -->
+      <!-- 01 · fulfillment (one at a time) -->
+      <section class="assessment-section">
+        <div id="fulfillment-intro">
+          <div class="assessment-section-head">
+            <span class="num">01</span>
+            <div>
+              <h2>Your life, right now.</h2>
+              <p>Rate each area on your first honest instinct. Don't overthink it.</p>
+            </div>
+          </div>
+          <div class="section-guide">
+            <div class="guide-video-wrap">
+              <div class="play-btn">
+                <svg width="13" height="15" viewBox="0 0 13 15"><path d="M0 0l13 7.5L0 15V0z"/></svg>
+              </div>
+              <p class="guide-video-caption sc">How to answer this section — Daniel Tiwari</p>
+            </div>
+            <p class="guide-label sc">How to answer</p>
+            <div class="guide-text">
+              <p>Score each area based on your immediate gut feeling — not where you want to be, not where you think you should be. The only valuable answer is the honest one.</p>
+            </div>
+          </div>
+          <div style="text-align:center;padding-top:1rem">
+            <button type="button" class="btn btn-primary" id="btn-get-started">Get started →</button>
+          </div>
+        </div>
+        <div id="fulfillment-areas" hidden>
+          <div id="fulfillment-inputs"></div>
+          <div id="fulfillment-card"></div>
+        </div>
+      </section>
+
+      <!-- 02 · importance -->
       <section class="assessment-section">
         <div class="assessment-section-head">
           <span class="num">02</span>
           <div>
-            <h2>The wheel.</h2>
-            <p>For each area, mark fulfilment now, long-term importance, and urgency to address it.</p>
+            <h2>What matters to you.</h2>
+            <p>Regardless of where each area stands right now — how important is it to you in life, long term?</p>
           </div>
         </div>
-        <div class="section-guide">
-          <div class="guide-video-wrap">
-            <div class="play-btn">
-              <svg width="13" height="15" viewBox="0 0 13 15"><path d="M0 0l13 7.5L0 15V0z"/></svg>
-            </div>
-            <p class="guide-video-caption sc">How to answer this section — Daniel Tiwari</p>
-          </div>
-          <p class="guide-label sc">How to answer</p>
-          <div class="guide-text">
-            <p>Score each area based on where you actually are right now — not where you want to be, and not where you think you should be. Most people instinctively inflate areas tied to their self-image. Resist that.</p>
-            <p>Fulfilment is how satisfied you genuinely feel in this area today. Importance is how much it truly matters to you long-term. Urgency is how pressing it feels to address it — regardless of whether you're ready to.</p>
-          </div>
-        </div>
+        <div id="importance-pie" class="pie-wrap"></div>
+        <div class="scale-legend"><span>1 = not important</span><span>10 = extremely important</span></div>
+        <div id="importance-rows" class="scale-grid"></div>
+      </section>
 
-        <div class="scale-legend"><span>1 = low</span><span>10 = high</span></div>
-        <div id="wheel-rows" class="scale-grid" aria-live="polite"></div>
+      <!-- 03 · urgency -->
+      <section class="assessment-section">
+        <div class="assessment-section-head">
+          <span class="num">03</span>
+          <div>
+            <h2>What's pressing right now.</h2>
+            <p>How urgent does it feel to address each area — regardless of long-term importance?</p>
+          </div>
+        </div>
+        <div id="urgency-pie" class="pie-wrap"></div>
+        <div class="scale-legend"><span>1 = not urgent</span><span>10 = highly urgent</span></div>
+        <div id="urgency-rows" class="scale-grid"></div>
+      </section>
+
+      <!-- 04 · focus selection -->
+      <section class="assessment-section">
+        <div class="assessment-section-head">
+          <span class="num">04</span>
+          <div>
+            <h2>Where to focus.</h2>
+            <p>Pick 1, 2, or 3 areas to go deeper on.</p>
+          </div>
+        </div>
+        <div id="focus-pie" class="pie-wrap"></div>
+        <div class="guide-text" style="margin:0 0 1.6rem"><em>Consider which areas, if improved, would have the biggest ripple effect on everything else in your life.</em></div>
+        <div id="ranked-areas" class="focus-list"></div>
       </section>
 
       <!-- 03 · the deeper layer -->
@@ -371,12 +444,10 @@
         </div>
       </section>
 
-      <div class="form-nav">
+      <div class="form-nav" id="form-nav" hidden>
         <button type="button" class="btn btn-ghost" id="btn-back" hidden>← Back</button>
         <button type="button" class="btn btn-primary" id="btn-next">Next →</button>
-        <button type="submit" class="btn btn-primary" id="btn-submit" hidden>Show my snapshot →</button>
       </div>
-      <p class="form-note" id="form-note" hidden><span class="dot"></span>Your result appears immediately, and a copy is sent to your email.</p>
     </form>
 
     <section id="assessment-result" class="assessment-result" hidden aria-live="polite"></section>
@@ -405,8 +476,7 @@
     const stepDots=document.querySelectorAll('.step-dot');
     const btnBack=document.getElementById('btn-back');
     const btnNext=document.getElementById('btn-next');
-    const btnSubmit=document.getElementById('btn-submit');
-    const formNote=document.getElementById('form-note');
+    const formNav=document.getElementById('form-nav');
     const wrap=document.querySelector('.assessment-wrap');
     const total=sections.length;
     let current=0;
@@ -415,19 +485,26 @@
       sections.forEach((s,i)=>s.classList.toggle('active',i===n));
       stepLabel.textContent=`${n+1} of ${total}`;
       stepDots.forEach((d,i)=>d.classList.toggle('active',i===n));
-      btnBack.hidden=n===0;
-      btnNext.hidden=n===total-1;
-      btnSubmit.hidden=n!==total-1;
-      formNote.hidden=n!==total-1;
-      wrap.scrollIntoView({behavior:'smooth',block:'start'});
+      const isFulfillment=n===0;
+      formNav.hidden=isFulfillment;
+      btnBack.hidden=n<=1;
+      btnNext.hidden=false;
+      window.scrollTo({top:0,behavior:'smooth'});
+      if(window.onStepChange) window.onStepChange(n);
     }
 
     function validateStep(n){
+      if(n===3){
+        const checked=sections[n].querySelectorAll('input[name="focus_area"]:checked');
+        if(!checked.length){alert('Please select at least one area to focus on.');return false;}
+        return true;
+      }
       const fields=sections[n].querySelectorAll('input[required],select[required],textarea[required]');
       for(const f of fields){if(!f.reportValidity())return false;}
       return true;
     }
 
+    window.advanceMainStep=function(){current++;showStep(current);};
     btnNext.addEventListener('click',()=>{if(validateStep(current)){current++;showStep(current);}});
     btnBack.addEventListener('click',()=>{current--;showStep(current);});
     showStep(0);

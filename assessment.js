@@ -1,8 +1,8 @@
 /* ============================================================
    Daniel Tiwari — assessment form behaviour
-   Scoring + Authenticity Map render live in assessment-core.js
-   (shared with the hosted result page). This file owns the live
-   quiz: building the rows, submitting, and revealing the result.
+   Scoring + result render live in assessment-core.js (shared with
+   the hosted result page). This file owns the live quiz: step
+   initialization, one-at-a-time fulfillment, and submission.
    ============================================================ */
 
 function collectAnswers(form) {
@@ -14,29 +14,129 @@ function updateRangeOutput(input) {
   if (output) output.value = input.value;
 }
 
-function renderFocusRows() {
-  const mount = document.getElementById("wheel-rows");
-  if (!mount) return;
-  mount.innerHTML = AREAS.map(([key, label], index) => `
+function getWheelValues() {
+  return AREAS.map(([key, label]) => ({
+    key, label,
+    fulfillment: parseInt(document.querySelector(`input[name="fulfillment_${key}"]`)?.value || 5),
+    importance: parseInt(document.querySelector(`input[name="importance_${key}"]`)?.value || 7),
+    urgency: parseInt(document.querySelector(`input[name="urgency_${key}"]`)?.value || 7),
+  }));
+}
+
+function buildScaleRows(containerId, type, defaultVal) {
+  document.getElementById(containerId).innerHTML = AREAS.map(([key, label], i) => `
     <div class="scale-row">
       <div class="scale-area">
-        <span class="num">${String(index + 1).padStart(2, "0")}</span>
+        <span class="num">${String(i + 1).padStart(2, "0")}</span>
         <strong>${label}</strong>
       </div>
-      ${["fulfillment", "importance", "urgency"].map((type) => `
-        <label class="scale-control">
-          <span>${type === "fulfillment" ? "fulfilment" : type}</span>
-          <input type="range" min="1" max="10" value="${type === "fulfillment" ? "5" : "7"}" name="${type}_${key}" aria-label="${label} ${type}" required>
-          <output>${type === "fulfillment" ? "5" : "7"}</output>
-        </label>`).join("")}
-    </div>`).join("");
-  mount.querySelectorAll('input[type="range"]').forEach((input) => {
-    updateRangeOutput(input);
+      <label class="scale-control">
+        <span>${type}</span>
+        <input type="range" min="1" max="10" value="${defaultVal}" name="${type}_${key}" aria-label="${label} ${type}">
+        <output>${defaultVal}</output>
+      </label>
+    </div>
+  `).join("");
+  document.getElementById(containerId).querySelectorAll('input[type="range"]').forEach((input) => {
     input.addEventListener("input", () => updateRangeOutput(input));
   });
 }
 
-// Reveal a persistent, shareable link to the hosted map once we have its id.
+/* ---- Step 0: Fulfillment (one at a time) ---- */
+function renderFulfillmentCard(index) {
+  const [key, label] = AREAS[index];
+  const isLast = index === AREAS.length - 1;
+  const card = document.getElementById("fulfillment-card");
+  card.innerHTML = `
+    <p class="area-counter sc">${index + 1} / ${AREAS.length}</p>
+    <h3 class="fulfillment-area-label">${label}</h3>
+    <div class="number-scale">
+      ${[1,2,3,4,5,6,7,8,9,10].map(n => `<button type="button" class="number-btn" data-val="${n}">${n}</button>`).join("")}
+    </div>
+    <div class="scale-legend-card"><span>not fulfilled</span><span>fully fulfilled</span></div>
+    <button type="button" class="btn btn-primary fulfillment-next-btn" disabled>${isLast ? "Continue →" : "Next →"}</button>
+  `;
+  let selected = null;
+  card.querySelectorAll(".number-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      card.querySelectorAll(".number-btn").forEach(b => b.classList.remove("selected"));
+      btn.classList.add("selected");
+      selected = btn.dataset.val;
+      card.querySelector(".fulfillment-next-btn").disabled = false;
+    });
+  });
+  card.querySelector(".fulfillment-next-btn").addEventListener("click", () => {
+    if (!selected) return;
+    const hidden = document.createElement("input");
+    hidden.type = "hidden";
+    hidden.name = `fulfillment_${key}`;
+    hidden.value = selected;
+    document.getElementById("fulfillment-inputs").appendChild(hidden);
+    if (!isLast) {
+      renderFulfillmentCard(index + 1);
+    } else {
+      window.advanceMainStep();
+    }
+  });
+}
+
+function initFulfillmentStep() {
+  document.getElementById("fulfillment-inputs").innerHTML = "";
+  document.getElementById("fulfillment-intro").hidden = false;
+  document.getElementById("fulfillment-areas").hidden = true;
+  document.getElementById("btn-get-started").addEventListener("click", () => {
+    document.getElementById("fulfillment-intro").hidden = true;
+    document.getElementById("fulfillment-areas").hidden = false;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    renderFulfillmentCard(0);
+  }, { once: true });
+}
+
+/* ---- Step 1: Importance ---- */
+function initImportanceStep() {
+  document.getElementById("importance-pie").innerHTML = renderPieChart(getWheelValues());
+  buildScaleRows("importance-rows", "importance", 7);
+}
+
+/* ---- Step 2: Urgency ---- */
+function initUrgencyStep() {
+  document.getElementById("urgency-pie").innerHTML = renderPieChart(getWheelValues());
+  buildScaleRows("urgency-rows", "urgency", 7);
+}
+
+/* ---- Step 3: Focus selection ---- */
+function initFocusStep() {
+  const wheel = getWheelValues();
+  const ranked = rankAllAreas(wheel);
+  document.getElementById("focus-pie").innerHTML = renderPieChart(wheel);
+  document.getElementById("ranked-areas").innerHTML = ranked.map((area, i) => `
+    <label class="focus-option">
+      <input type="checkbox" name="focus_area" value="${area.key}">
+      <span class="focus-rank sc">${String(i + 1).padStart(2, "0")}</span>
+      <span class="focus-label">${area.label}</span>
+      <span class="focus-scores">${area.fulfillment}/10 fulfilment</span>
+    </label>
+  `).join("");
+  document.getElementById("ranked-areas").querySelectorAll('input[type="checkbox"]').forEach((cb) => {
+    cb.addEventListener("change", () => {
+      const checked = document.querySelectorAll('input[name="focus_area"]:checked');
+      if (checked.length > 3) cb.checked = false;
+    });
+  });
+}
+
+/* ---- Step change hook ---- */
+window.onStepChange = function(step) {
+  if (step === 0) initFulfillmentStep();
+  if (step === 1) initImportanceStep();
+  if (step === 2) initUrgencyStep();
+  if (step === 3) initFocusStep();
+};
+
+// Initialize step 0 — showStep(0) ran before this script loaded
+initFulfillmentStep();
+
+/* ---- Submission ---- */
 function revealShareLink(resultUrl) {
   if (!resultUrl) return;
   const actions = document.querySelector("#authenticity-map .result-actions");
@@ -72,12 +172,9 @@ async function submitAssessment(form, submitButton) {
   }
 }
 
-renderFocusRows();
 const form = document.getElementById("assessment-form");
 if (form) {
   form.addEventListener("submit", (event) => {
     event.preventDefault();
-    if (!form.reportValidity()) return;
-    submitAssessment(form, form.querySelector('button[type="submit"]'));
   });
 }

@@ -175,6 +175,35 @@ function renderWheel(wheel) {
   </svg>`;
 }
 
+function rankAllAreas(wheel) {
+  return wheel
+    .map((a) => ({ ...a, score: (11 - a.fulfillment) + a.importance + a.urgency }))
+    .sort((a, b) => b.score - a.score);
+}
+
+function renderPieChart(wheel) {
+  const size = 300, c = size / 2, R = 108, n = wheel.length;
+  const slice = (Math.PI * 2) / n;
+  let bg = '', fill = '', labels = '';
+  wheel.forEach((area, i) => {
+    const a0 = slice * i - Math.PI / 2;
+    const a1 = slice * (i + 1) - Math.PI / 2;
+    const x0 = (c + Math.cos(a0) * R).toFixed(1), y0 = (c + Math.sin(a0) * R).toFixed(1);
+    const x1 = (c + Math.cos(a1) * R).toFixed(1), y1 = (c + Math.sin(a1) * R).toFixed(1);
+    bg += `<path d="M${c},${c} L${x0},${y0} A${R},${R} 0 0,1 ${x1},${y1} Z" fill="var(--bg2)" stroke="var(--bg)" stroke-width="2"/>`;
+    const fr = Math.max(R * (area.fulfillment / 10), 2);
+    const fx0 = (c + Math.cos(a0) * fr).toFixed(1), fy0 = (c + Math.sin(a0) * fr).toFixed(1);
+    const fx1 = (c + Math.cos(a1) * fr).toFixed(1), fy1 = (c + Math.sin(a1) * fr).toFixed(1);
+    fill += `<path d="M${c},${c} L${fx0},${fy0} A${fr.toFixed(1)},${fr.toFixed(1)} 0 0,1 ${fx1},${fy1} Z" fill="var(--ink)" opacity="0.72" stroke="var(--bg)" stroke-width="2"/>`;
+    const ma = a0 + slice / 2;
+    const lx = (c + Math.cos(ma) * (R + 22)).toFixed(1);
+    const ly = (c + Math.sin(ma) * (R + 22) + 4).toFixed(1);
+    const anchor = Math.abs(Math.cos(ma)) < 0.15 ? 'middle' : Math.cos(ma) < 0 ? 'end' : 'start';
+    labels += `<text x="${lx}" y="${ly}" text-anchor="${anchor}" font-size="9" fill="var(--muted)" font-family="Alegreya SC,serif" letter-spacing=".04em">${area.label}</text>`;
+  });
+  return `<svg viewBox="-64 -24 ${size + 128} ${size + 48}" class="wheel-svg" role="img" aria-label="Your fulfilment across all areas">${bg}${fill}${labels}</svg>`;
+}
+
 function renderResult(result, emailState = "pending") {
   const el = document.getElementById("assessment-result");
   if (!el) return;

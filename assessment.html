@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#f2ede4">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Spectral+SC:wght@300;400;500;600&family=Spectral:ital,wght@0,300;0,400;1,300;1,400&family=Alegreya+SC:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Spectral+SC:wght@300;400;500;600&family=Spectral:ital,wght@0,300;0,400;1,300;1,400&family=Alegreya+SC:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/site.css">
 <style>
   :root{
@@ -25,6 +25,7 @@
     --sc:"Alegreya SC",serif;
     --measure:38rem;
   }
+  html{font-size:18px}
   *{box-sizing:border-box;margin:0;padding:0}
   [hidden]{display:none!important}
   body{background:var(--bg);color:var(--ink);font-family:var(--body);font-weight:300;line-height:1.75;-webkit-font-smoothing:antialiased}
@@ -45,13 +46,7 @@
   /* buttons */
   .btn{display:inline-block;font-family:var(--sc);font-size:.8rem;font-weight:500;letter-spacing:.18em;padding:1.1rem 2.6rem;border:1px solid;border-radius:2px;transition:background .2s,color .2s,border-color .2s;cursor:pointer;text-decoration:none}
   .btn-primary,.btn.btn-primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
-  .btn-primary:hover{background:#fff;border-color:#fff}
-
-  /* hero */
-  .assess-hero{padding:clamp(8rem,16vh,14rem) 2rem clamp(5rem,10vh,8rem);text-align:center}
-  .assess-hero h1{margin-bottom:1.6rem}
-  .assess-hero .lede{margin-bottom:1.4rem}
-  .assess-hero .meta{font-size:.72rem;letter-spacing:.25em;color:var(--accent)}
+  .btn-primary:hover{background:#4a4640;border-color:#4a4640}
 
   /* assessment layout */
   .assessment-wrap{max-width:44rem;margin:0 auto;padding:0 2rem clamp(6rem,12vh,10rem)}
@@ -59,8 +54,8 @@
   .assessment-intro .eyebrow{font-family:var(--sc);font-size:.72rem;letter-spacing:.3em;color:var(--accent);margin-bottom:1.2rem}
   .assessment-intro h2{margin-bottom:1rem}
   .assessment-section{border-top:1px solid var(--hair);padding:3rem 0}
-  .assessment-section-head{display:flex;gap:1.6rem;align-items:flex-start;margin-bottom:2.4rem}
-  .assessment-section-head .num{font-family:var(--sc);font-size:.72rem;letter-spacing:.2em;color:var(--accent);padding-top:.3rem;flex-shrink:0}
+  .assessment-section-head{text-align:center;margin-bottom:2.4rem}
+  .assessment-section-head .num{display:block;font-family:var(--sc);font-size:.72rem;letter-spacing:.2em;color:var(--accent);margin-bottom:.6rem}
   .assessment-section-head h2{margin-bottom:.5rem}
   .assessment-section-head p{color:#7a7268;font-size:.95rem}
   .question-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.6rem}
@@ -92,11 +87,6 @@
   /* multi-step */
   .assessment-section{display:none}
   .assessment-section.active{display:block}
-  .step-progress{display:flex;justify-content:space-between;align-items:center;margin-bottom:3rem;padding-bottom:2rem;border-bottom:1px solid var(--hair)}
-  .step-label{font-family:var(--sc);font-size:.68rem;letter-spacing:.2em;color:var(--muted)}
-  .step-dots{display:flex;gap:.5rem}
-  .step-dot{width:.35rem;height:.35rem;border-radius:50%;background:var(--hair);transition:background .3s}
-  .step-dot.active{background:var(--ink)}
   .form-nav{display:flex;gap:1rem;justify-content:center;align-items:center;padding-top:2rem;border-top:1px solid var(--hair)}
   .btn-ghost{background:transparent;color:var(--muted);border-color:var(--hair)}
   .btn-ghost:hover{color:var(--ink);border-color:var(--ink)}
@@ -108,6 +98,10 @@
   .play-btn svg{fill:rgba(242,237,228,.55);margin-left:.18rem}
   .guide-video-caption{font-family:var(--sc);font-size:.65rem;letter-spacing:.2em;color:rgba(242,237,228,.3);text-align:center;padding:0 1rem}
   .guide-label{font-family:var(--sc);font-size:.65rem;letter-spacing:.25em;color:var(--muted);margin:1.6rem 0 .7rem}
+  .transcript-toggle{background:none;border:none;font-family:var(--sc);font-size:.65rem;letter-spacing:.2em;color:var(--muted);cursor:pointer;padding:.5rem 0;display:block;margin:.4rem auto 0;transition:color .2s;text-decoration:underline;text-underline-offset:3px}
+  .transcript-toggle:hover{color:var(--ink)}
+  .transcript-body{display:none;margin-top:1rem;font-size:.88rem;line-height:1.85;color:var(--accent)}
+  .transcript-body.open{display:block}
   .guide-text{font-size:.95rem;line-height:1.85;color:var(--accent)}
   .guide-text p+p{margin-top:.9rem}
 
@@ -125,19 +119,87 @@
   .number-btn:hover{border-color:var(--accent)}
   .number-btn.selected{background:var(--ink);color:var(--bg);border-color:var(--ink)}
   .scale-legend-card{display:flex;justify-content:space-between;max-width:36rem;margin:0 auto 2.4rem;font-family:var(--sc);font-size:.65rem;letter-spacing:.2em;color:var(--muted)}
-  .fulfillment-next-btn{display:block;margin:0 auto}
+  .fulfillment-nav{display:flex;gap:1rem;justify-content:center;align-items:center}
+  .fulfillment-error{visibility:hidden;text-align:center;font-family:var(--sc);font-size:.68rem;letter-spacing:.15em;color:#c0392b;margin-top:.8rem}
+  .fulfillment-error.visible{visibility:visible}
+  .fulfillment-area-desc{text-align:center;font-size:.88rem;color:var(--muted);margin-top:-.8rem;margin-bottom:1.8rem;line-height:1.6}
 
   /* pie chart */
-  .pie-wrap{max-width:400px;margin:1.6rem auto 2rem}
+  .pie-wrap{max-width:480px;margin:1.6rem auto 2rem}
+  #importance-pie{width:clamp(min(92vw,480px),34vw,560px);max-width:none;margin:2rem 0;position:relative;left:50%;transform:translateX(-50%)}
+  #importance-pie .wheel-svg{width:100%;max-width:none;height:auto;display:block}
 
-  /* focus selection */
-  .focus-list{display:flex;flex-direction:column;gap:.6rem;margin-top:1rem}
-  .focus-option{display:flex;align-items:center;gap:1.2rem;padding:.9rem 1.2rem;border:1px solid var(--hair);border-radius:2px;cursor:pointer;transition:border-color .2s}
-  .focus-option:has(input:checked){border-color:var(--ink);background:rgba(28,26,20,.03)}
-  .focus-option input{position:absolute;opacity:0;width:0;height:0}
-  .focus-rank{font-size:.65rem;letter-spacing:.2em;color:var(--accent);flex-shrink:0}
-  .focus-label{flex:1}
-  .focus-scores{font-size:.82rem;color:var(--muted)}
+  /* 1-3 scale rows */
+  .scale-row{display:flex;align-items:center;justify-content:space-between;gap:1.2rem;padding:.9rem 0;border-bottom:1px solid var(--hair)}
+  .scale-row:last-child{border-bottom:none}
+  .scale-area{display:flex;align-items:center;gap:.8rem;flex:1;min-width:0}
+  .scale-area .num{font-family:var(--sc);font-size:.68rem;letter-spacing:.2em;color:var(--muted);flex-shrink:0}
+  .scale-btns{display:flex;gap:.4rem;flex-shrink:0}
+  .scale-btn{width:2.6rem;height:2.6rem;border:1px solid var(--hair);border-radius:2px;background:transparent;font-family:var(--sc);font-size:.8rem;color:var(--ink);cursor:pointer;transition:background .15s,border-color .15s,color .15s}
+  .scale-btn:hover{border-color:var(--accent)}
+  .scale-btn.selected{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+  .drag-list{display:flex;flex-direction:column}
+  .drag-item{display:flex;align-items:flex-start;gap:1rem;padding:.9rem 0;border-bottom:1px solid var(--hair)}
+  .drag-item:last-child{border-bottom:none}
+  .drag-rank{font-family:var(--sc);font-size:.65rem;letter-spacing:.2em;color:var(--muted);width:1.4rem;flex-shrink:0;padding-top:.18rem}
+  .drag-label-wrap{flex:1;min-width:0;display:flex;flex-direction:column;gap:.2rem}
+  .drag-label{font-size:.95rem}
+  .drag-desc{font-size:.75rem;color:var(--muted);line-height:1.5}
+  .move-btns{display:flex;flex-direction:column;gap:.2rem;flex-shrink:0}
+  .move-btn{width:2rem;height:1.4rem;border:1px solid var(--hair);border-radius:2px;background:transparent;color:var(--ink);cursor:pointer;font-size:.75rem;line-height:1;transition:border-color .15s,background .15s,color .15s}
+  .move-btn:hover:not(:disabled){border-color:var(--ink);background:var(--ink);color:var(--bg)}
+  .move-btn:disabled{opacity:.2;cursor:default}
+
+  /* ranking warning */
+  .rank-warning{display:none;font-family:var(--sc);font-size:.68rem;letter-spacing:.15em;color:#c0392b;margin:.8rem 0 0;text-align:center}
+  .rank-warning.visible{display:block}
+
+  /* deeper questions */
+  .deeper-block{padding:2rem 0;border-bottom:1px solid var(--hair)}
+  .deeper-block:last-child{border-bottom:none;padding-bottom:0}
+  .deeper-block-head{margin-bottom:1.6rem}
+  .deeper-area-name{font-family:var(--display);font-size:clamp(1.2rem,2.2vw,1.5rem);font-weight:400;line-height:1.2;margin-bottom:.3rem}
+  .deeper-area-desc{font-size:.82rem;color:var(--muted);line-height:1.5}
+  .deeper-field{display:flex;flex-direction:column;gap:.5rem;margin-bottom:1.2rem}
+  .deeper-field:last-child{margin-bottom:0}
+  .deeper-field label{font-family:var(--sc);font-size:.68rem;letter-spacing:.2em;color:var(--accent)}
+  .deeper-field label strong{font-weight:700}
+  .vision-actual-check{position:absolute;opacity:0;width:0;height:0}
+  .confirm-check-wrap{display:flex;align-items:center;gap:.7rem;cursor:pointer;margin-top:.5rem;user-select:none}
+  .confirm-check-box{width:1.1rem;height:1.1rem;border:1px solid var(--hair);border-radius:2px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:background .15s,border-color .15s}
+  .vision-actual-check:checked+.confirm-check-box{background:var(--ink);border-color:var(--ink)}
+  .vision-actual-check:checked+.confirm-check-box::after{content:'✓';color:var(--bg);font-size:.65rem;line-height:1}
+  .confirm-check-text{font-family:var(--sc);font-size:.78rem;letter-spacing:.15em;color:var(--ink)}
+  .deeper-field textarea{background:transparent;border:1px solid var(--hair);color:var(--ink);padding:.85rem 1.2rem;font-family:var(--body);font-size:.95rem;font-weight:300;border-radius:2px;outline:none;transition:border-color .2s;width:100%;min-height:5.5rem;resize:vertical;line-height:1.7}
+  .deeper-field textarea:focus{border-color:var(--accent)}
+  .deeper-field textarea::placeholder{color:var(--muted)}
+  .yn-expand{border-left:2px solid var(--hair);padding-left:1.2rem;margin-top:.2rem}
+  .yn-btns{display:flex;gap:.6rem;margin-top:.4rem}
+  .yn-btn{padding:.55rem 1.8rem;border:1px solid var(--hair);border-radius:2px;background:transparent;font-family:var(--sc);font-size:.75rem;letter-spacing:.15em;color:var(--ink);cursor:pointer;transition:background .15s,border-color .15s,color .15s}
+  .yn-btn:hover{border-color:var(--accent)}
+  .yn-btn.selected{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+  .yn-error{display:none;font-family:var(--sc);font-size:.68rem;letter-spacing:.15em;color:#c0392b;margin-top:.5rem}
+  .yn-error.visible{display:block}
+
+  /* focus reveal header */
+  .focus-reveal-head{text-align:center;padding:2.4rem 0 3rem}
+  .focus-reveal-eyebrow{font-size:.72rem;letter-spacing:.3em;color:var(--accent);margin-bottom:1.2rem}
+  .focus-reveal-title{font-family:var(--display);font-size:clamp(2rem,4vw,3.2rem);font-weight:400;line-height:1.1;margin-bottom:1.2rem}
+  .focus-reveal-sub{color:var(--muted);font-size:.95rem;max-width:28rem;margin:0 auto;line-height:1.75}
+
+  /* focus recommendation */
+  .rec-list{display:flex;flex-direction:column}
+  .rec-item{display:flex;align-items:center;gap:1rem;padding:.9rem 0;border-bottom:1px solid var(--hair);cursor:pointer;transition:opacity .2s,background .15s}
+  .rec-item:last-child{border-bottom:none}
+  .rec-item:not(.selected){opacity:.25}
+  .rec-item.selected{background:var(--bg2);border-left:2px solid var(--ink);padding-left:.8rem;border-radius:2px}
+  .rec-num{font-family:var(--sc);font-size:.65rem;letter-spacing:.2em;color:var(--muted);width:1.4rem;flex-shrink:0}
+  .rec-info{flex:1}
+  .rec-label{display:block;font-size:.95rem;font-weight:600}
+  .rec-reason{display:block;font-family:var(--sc);font-size:.63rem;letter-spacing:.1em;color:var(--muted);margin-top:.25rem}
+  .rec-check{width:1.5rem;height:1.5rem;border:1px solid var(--hair);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;flex-shrink:0;transition:background .15s,border-color .15s,color .15s}
+  .rec-item.selected .rec-check{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+  .rec-hint{font-family:var(--sc);font-size:.65rem;letter-spacing:.15em;color:var(--muted);text-align:center;margin-top:1.4rem}
 </style>
 </head>
 <body>
@@ -149,59 +211,40 @@
 </header>
 
 <main id="main">
-  <!-- hero -->
-  <section class="hero assess-hero stage">
-    <div class="wrap">
-      <p class="eyebrow">Personal self-assessment</p>
-      <h1 class="display">Taking an honest look</h1>
-      <p class="lede" style="max-width:32rem;margin:0 auto">I created this assessment for you to gain insight over yourself and your life.</p>
-      <p class="meta sc">10–15 minutes</p>
-    </div>
-  </section>
-
-  <div class="assessment-wrap">
-
-    <div class="step-progress">
-      <span class="step-label" id="step-label">1 of 4</span>
-      <div class="step-dots" id="step-dots">
-        <span class="step-dot"></span>
-        <span class="step-dot"></span>
-        <span class="step-dot"></span>
-        <span class="step-dot"></span>
-        <span class="step-dot"></span>
-        <span class="step-dot"></span>
-        <span class="step-dot"></span>
-      </div>
-    </div>
+  <div class="assessment-wrap" style="padding-top:clamp(7rem,14vh,11rem)">
 
     <form id="assessment-form" aria-label="Daniel Tiwari self-assessment">
       <!-- 01 · fulfillment (one at a time) -->
       <section class="assessment-section">
         <div id="fulfillment-intro">
-          <div class="assessment-section-head">
-            <span class="num">01</span>
-            <div>
-              <h2>Your life, right now.</h2>
-              <p>Rate each area on your first honest instinct. Don't overthink it.</p>
-            </div>
+          <div style="text-align:center;margin-bottom:2.8rem">
+            <h2 style="margin:0 0 1rem">Personal Self-Assessment</h2>
+            <p class="lede" style="max-width:30rem;margin:0 auto">I created this assessment to give you honest insight into where you are and what deserves your attention right now.</p>
+            <p style="margin-top:.9rem;font-family:var(--sc);font-size:.72rem;letter-spacing:.25em;color:var(--muted)">10–15 minutes</p>
           </div>
           <div class="section-guide">
             <div class="guide-video-wrap">
               <div class="play-btn">
                 <svg width="13" height="15" viewBox="0 0 13 15"><path d="M0 0l13 7.5L0 15V0z"/></svg>
               </div>
-              <p class="guide-video-caption sc">How to answer this section — Daniel Tiwari</p>
+              <p class="guide-video-caption sc">Introduction — Daniel Tiwari</p>
             </div>
-            <p class="guide-label sc">How to answer</p>
-            <div class="guide-text">
-              <p>Score each area based on your immediate gut feeling — not where you want to be, not where you think you should be. The only valuable answer is the honest one.</p>
+            <button type="button" class="transcript-toggle" onclick="toggleTranscript(this)">Show text</button>
+            <div class="transcript-body">
+              <p>[Transcript placeholder — fill in once video is recorded.]</p>
+            </div>
+            <div class="guide-text" style="margin-top:1.6rem">
+              <p>You'll rate your fulfillment across 11 areas of life, identify what matters most and what's most urgent, then choose where to focus. Your answers generate a personalised PDF with honest insight and your next most important steps.</p>
+              <p>The only thing that affects your results is honesty — vague answers produce vague insight. That said, honesty doesn't mean full disclosure. If any question touches something too personal to put into words here, writing <em>too personal</em> or <em>prefer not to say</em> is a completely valid answer.</p>
             </div>
           </div>
-          <div style="text-align:center;padding-top:1rem">
+          <div style="text-align:center;padding-top:1.6rem">
             <button type="button" class="btn btn-primary" id="btn-get-started">Get started →</button>
           </div>
         </div>
         <div id="fulfillment-areas" hidden>
+          <h2 style="margin-bottom:1rem;text-align:center">Taking an honest look</h2>
+          <p class="lede" style="margin-bottom:2.4rem;text-align:center">Rate your fulfillment level in the mentioned area based on an emotional snap judgement. Don't think about it. Take your first impression.</p>
           <div id="fulfillment-inputs"></div>
           <div id="fulfillment-card"></div>
         </div>
@@ -209,16 +252,31 @@
 
       <!-- 02 · importance -->
       <section class="assessment-section">
-        <div class="assessment-section-head">
-          <span class="num">02</span>
-          <div>
-            <h2>What matters to you.</h2>
-            <p>Regardless of where each area stands right now — how important is it to you in life, long term?</p>
+        <div id="importance-rating">
+          <div class="assessment-section-head">
+            <span class="num">02</span>
+            <div>
+              <h2>What matters to you.</h2>
+              <p>Regardless of where each area stands right now — how important is it to you in life, long term?</p>
+            </div>
           </div>
+          <div class="section-guide">
+            <div class="guide-video-wrap">
+              <div class="play-btn">
+                <svg width="13" height="15" viewBox="0 0 13 15"><path d="M0 0l13 7.5L0 15V0z"/></svg>
+              </div>
+              <p class="guide-video-caption sc">How to rank — Daniel Tiwari</p>
+            </div>
+            <button type="button" class="transcript-toggle" onclick="toggleTranscript(this)">Show text</button>
+            <div class="transcript-body">
+              <p>[Transcript placeholder — fill in once video is recorded.]</p>
+            </div>
+          </div>
+          <p style="font-family:var(--sc);font-size:.65rem;letter-spacing:.2em;color:var(--muted);margin-bottom:1.2rem">Use the arrows to rank — top is most important</p>
+          <div id="importance-rows" class="drag-list"></div>
+          <div id="importance-hidden-inputs"></div>
         </div>
-        <div id="importance-pie" class="pie-wrap"></div>
-        <div class="scale-legend"><span>1 = not important</span><span>10 = extremely important</span></div>
-        <div id="importance-rows" class="scale-grid"></div>
+
       </section>
 
       <!-- 03 · urgency -->
@@ -227,35 +285,7 @@
           <span class="num">03</span>
           <div>
             <h2>What's pressing right now.</h2>
-            <p>How urgent does it feel to address each area — regardless of long-term importance?</p>
-          </div>
-        </div>
-        <div id="urgency-pie" class="pie-wrap"></div>
-        <div class="scale-legend"><span>1 = not urgent</span><span>10 = highly urgent</span></div>
-        <div id="urgency-rows" class="scale-grid"></div>
-      </section>
-
-      <!-- 04 · focus selection -->
-      <section class="assessment-section">
-        <div class="assessment-section-head">
-          <span class="num">04</span>
-          <div>
-            <h2>Where to focus.</h2>
-            <p>Pick 1, 2, or 3 areas to go deeper on.</p>
-          </div>
-        </div>
-        <div id="focus-pie" class="pie-wrap"></div>
-        <div class="guide-text" style="margin:0 0 1.6rem"><em>Consider which areas, if improved, would have the biggest ripple effect on everything else in your life.</em></div>
-        <div id="ranked-areas" class="focus-list"></div>
-      </section>
-
-      <!-- 03 · the deeper layer -->
-      <section class="assessment-section">
-        <div class="assessment-section-head">
-          <span class="num">03</span>
-          <div>
-            <h2>The deeper layer.</h2>
-            <p>Choose the answer that is most honest, not the answer that sounds best.</p>
+            <p>Rate how pressing each area feels right now. If something is approaching a critical threshold, it comes first — regardless of how important it is long-term. If nothing is on fire, think in terms of bottlenecks and leverage: which areas are limiting your progress across the board, or which, if improved, would lift everything else along with them?</p>
           </div>
         </div>
         <div class="section-guide">
@@ -263,84 +293,55 @@
             <div class="play-btn">
               <svg width="13" height="15" viewBox="0 0 13 15"><path d="M0 0l13 7.5L0 15V0z"/></svg>
             </div>
-            <p class="guide-video-caption sc">How to answer this section — Daniel Tiwari</p>
+            <p class="guide-video-caption sc">What's pressing right now — Daniel Tiwari</p>
           </div>
-          <p class="guide-label sc">How to answer</p>
-          <div class="guide-text">
-            <p>Choose the option that most honestly describes where you are right now — not where you hope to be, and not the answer that sounds most self-aware. These questions are designed to cut through the stories we tell ourselves.</p>
-            <p>If two answers feel close, pick the one that makes you slightly uncomfortable. That discomfort usually means you're being accurate.</p>
+          <button type="button" class="transcript-toggle" onclick="toggleTranscript(this)">Show text</button>
+          <div class="transcript-body">
+            <p>[Transcript placeholder — fill in once video is recorded.]</p>
           </div>
         </div>
+        <p style="font-family:var(--sc);font-size:.65rem;letter-spacing:.2em;color:var(--muted);margin-bottom:1.2rem">Use the arrows to rank — most pressing at the top</p>
+        <div id="urgency-rows" class="drag-list"></div>
+        <div id="urgency-hidden-inputs"></div>
+      </section>
 
-        <div class="question-grid">
-          <div class="field">
-            <label for="path_signal"><span class="num">05</span> Your current path</label>
-            <select id="path_signal" name="path_signal" required>
-              <option value="">Choose one</option>
-              <option value="1">I still believe the current path should work if I do it properly.</option>
-              <option value="2">I am tired, frustrated, or drained, but still trying to push through.</option>
-              <option value="3">Something feels fundamentally off, but I cannot fully name it yet.</option>
-              <option value="4">I know I have been pursuing or performing a life that is not really mine.</option>
-              <option value="5">I have admitted it and started choosing differently.</option>
-              <option value="6">I am actively building life around what feels true now.</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="decision_signal"><span class="num">06</span> Decision</label>
-            <select id="decision_signal" name="decision_signal" required>
-              <option value="">Choose one</option>
-              <option value="1">I have not made a real decision to change yet.</option>
-              <option value="3">I want change, but I am still negotiating with comfort.</option>
-              <option value="4">I have named the pattern and can no longer fully pretend.</option>
-              <option value="5">I have decided to live more honestly, even if the path is unclear.</option>
-              <option value="6">I am already acting from that decision.</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="previous_attempts"><span class="num">07</span> What have you tried?</label>
-            <select id="previous_attempts" name="previous_attempts" required>
-              <option value="">Choose one</option>
-              <option value="1">I have mostly thought about it.</option>
-              <option value="2">I have consumed books, content, or ideas.</option>
-              <option value="3">I have tried changing it myself.</option>
-              <option value="4">I have tried serious self-work but something is still stuck.</option>
-              <option value="5">I know self-directed work is no longer enough.</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="help_openness"><span class="num">08</span> Outside help</label>
-            <select id="help_openness" name="help_openness" required>
-              <option value="">Choose one</option>
-              <option value="1">I am not really open to help.</option>
-              <option value="2">I am curious but resistant.</option>
-              <option value="3">I would consider it if it felt right.</option>
-              <option value="4">I am actively considering help.</option>
-              <option value="5">I know I need the right person to reflect this back to me.</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="change_timeline"><span class="num">09</span> Timeline</label>
-            <select id="change_timeline" name="change_timeline" required>
-              <option value="">Choose one</option>
-              <option value="1">There is no real timeline.</option>
-              <option value="2">Sometime this year.</option>
-              <option value="3">In the next few months.</option>
-              <option value="4">Soon. I am tired of carrying this.</option>
-              <option value="5">Now. Waiting is part of the pattern.</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="investment_readiness"><span class="num">10</span> Investment readiness</label>
-            <select id="investment_readiness" name="investment_readiness" required>
-              <option value="">Choose one</option>
-              <option value="1">I am not ready to invest in coaching.</option>
-              <option value="2">I would need a low-commitment option first.</option>
-              <option value="3">I could invest if the fit was very clear.</option>
-              <option value="4">I am ready to invest in the right support.</option>
-              <option value="5">I see this as one of the most important investments I could make.</option>
-            </select>
+      <!-- 04 · spillover -->
+      <section class="assessment-section">
+        <div class="assessment-section-head">
+          <span class="num">04</span>
+          <div>
+            <h2>The ripple effect.</h2>
+            <p>If only one area improved, which would create the biggest positive ripple effect across all other areas in your life?</p>
           </div>
         </div>
+        <div id="spillover-rows" class="rec-list"></div>
+        <p class="rank-warning" id="spillover-warning">Please select one area before continuing.</p>
+        <p class="rec-hint sc">Select one.</p>
+        <div id="spillover-hidden-input"></div>
+      </section>
+
+      <!-- 05 · focus recommendation -->
+      <section class="assessment-section">
+        <div class="focus-reveal-head">
+          <p class="focus-reveal-eyebrow sc">Based on your answers</p>
+          <h2 class="focus-reveal-title">Here's where to focus.</h2>
+          <p class="focus-reveal-sub">These are the two areas the assessment has surfaced for you. Tap either to swap it out.</p>
+        </div>
+        <div id="rec-list" class="rec-list"></div>
+        <p class="rec-hint sc">Selected areas will be the focus of the next section.</p>
+        <div id="focus-hidden-inputs"></div>
+      </section>
+
+      <!-- 06 · deeper questions (area-specific) -->
+      <section class="assessment-section">
+        <div class="assessment-section-head">
+          <span class="num">06</span>
+          <div>
+            <h2>Going deeper.</h2>
+            <p>Two questions for each area you chose to focus on. Write the version you would usually edit out.</p>
+          </div>
+        </div>
+        <div id="deeper-questions"></div>
       </section>
 
       <!-- 04 · fit signals -->
@@ -359,11 +360,33 @@
             </div>
             <p class="guide-video-caption sc">How to answer this section — Daniel Tiwari</p>
           </div>
+          <button type="button" class="transcript-toggle" onclick="toggleTranscript(this)">Show text</button>
+          <div class="transcript-body">
+            <p>[Transcript placeholder — fill in once video is recorded.]</p>
+          </div>
           <p class="guide-label sc">How to answer</p>
           <div class="guide-text">
             <p>This section is not about qualifying yourself. It is about getting honest with yourself about what you actually want and what you are actually willing to do.</p>
             <p>For the open questions at the end, write the version you would usually edit out. The unfiltered answer is almost always the more useful one — and the one I actually read.</p>
           </div>
+        </div>
+
+        <div class="deeper-field" style="margin-bottom:2rem">
+          <label>Do you believe that meaningful change in your focus areas is possible for you?</label>
+          <label class="confirm-check-wrap">
+            <input type="checkbox" name="change_possible" value="yes">
+            <span class="confirm-check-box"></span>
+            <span class="confirm-check-text">I believe it is</span>
+          </label>
+        </div>
+
+        <div class="deeper-field" style="margin-bottom:2rem">
+          <label>Do you feel like you have the mental and emotional resources to tackle your challenges and create change right now?</label>
+          <label class="confirm-check-wrap">
+            <input type="checkbox" name="resources_ready" value="yes">
+            <span class="confirm-check-box"></span>
+            <span class="confirm-check-text">I feel I do right now</span>
+          </label>
         </div>
 
         <div class="question-grid">
@@ -448,6 +471,7 @@
         <button type="button" class="btn btn-ghost" id="btn-back" hidden>← Back</button>
         <button type="button" class="btn btn-primary" id="btn-next">Next →</button>
       </div>
+
     </form>
 
     <section id="assessment-result" class="assessment-result" hidden aria-live="polite"></section>
@@ -472,8 +496,6 @@
 
   (function(){
     const sections=Array.from(document.querySelectorAll('#assessment-form .assessment-section'));
-    const stepLabel=document.getElementById('step-label');
-    const stepDots=document.querySelectorAll('.step-dot');
     const btnBack=document.getElementById('btn-back');
     const btnNext=document.getElementById('btn-next');
     const formNav=document.getElementById('form-nav');
@@ -483,8 +505,6 @@
 
     function showStep(n){
       sections.forEach((s,i)=>s.classList.toggle('active',i===n));
-      stepLabel.textContent=`${n+1} of ${total}`;
-      stepDots.forEach((d,i)=>d.classList.toggle('active',i===n));
       const isFulfillment=n===0;
       formNav.hidden=isFulfillment;
       btnBack.hidden=n<=1;
@@ -494,20 +514,33 @@
     }
 
     function validateStep(n){
+      if(n===1&&window._validateRanking?.['importance-rows']){if(!window._validateRanking['importance-rows']())return false;}
+      if(n===2&&window._validateRanking?.['urgency-rows']){if(!window._validateRanking['urgency-rows']())return false;}
       if(n===3){
-        const checked=sections[n].querySelectorAll('input[name="focus_area"]:checked');
-        if(!checked.length){alert('Please select at least one area to focus on.');return false;}
+        const input=document.querySelector('#spillover-hidden-input input');
+        if(!input){const w=document.getElementById('spillover-warning');w.classList.add('visible');w.scrollIntoView({behavior:'smooth',block:'nearest'});return false;}
         return true;
       }
+      if(n===4){
+        const inputs=sections[n].querySelectorAll('input[name="focus_area"]');
+        if(!inputs.length){alert('Please select at least one area.');return false;}
+        return true;
+      }
+      if(n===5&&window._validateDeeper){return window._validateDeeper();}
       const fields=sections[n].querySelectorAll('input[required],select[required],textarea[required]');
       for(const f of fields){if(!f.reportValidity())return false;}
       return true;
     }
 
+    window.toggleTranscript=function(btn){const body=btn.nextElementSibling;const open=body.classList.toggle('open');btn.textContent=open?'Hide text':'Show text';};
     window.advanceMainStep=function(){current++;showStep(current);};
     btnNext.addEventListener('click',()=>{if(validateStep(current)){current++;showStep(current);}});
     btnBack.addEventListener('click',()=>{current--;showStep(current);});
-    showStep(0);
+    const _p=new URLSearchParams(location.search);
+    const _s=parseInt(_p.get('step'));
+    current=isNaN(_s)?0:_s;
+    showStep(current);
+    if(_p.get('view')==='rating'&&current===1)document.getElementById('importance-intro-next').click();
   })();
 </script>
 <script src="/assessment-core.js" defer></script>

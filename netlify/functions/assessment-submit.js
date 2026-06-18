@@ -67,7 +67,7 @@ function topFocusAreas(answers) {
     return { key, label, fulfillment, importance, urgency, score };
   })
     .sort((a, b) => b.score - a.score)
-    .slice(0, 3);
+    .slice(0, 2);
 }
 
 function authenticityStage(answers) {

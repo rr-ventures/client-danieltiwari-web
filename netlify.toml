@@ -25,13 +25,13 @@
   to = "/.netlify/functions/result-data"
   status = 200
 
-# Hosted Authenticity Map — short shareable id, rendered client-side by result.html.
+# Hosted Authenticity Map, short shareable id, rendered client-side by result.html.
 [[redirects]]
   from = "/r/*"
   to = "/result.html"
   status = 200
 
-# Old V2 pages folded into the single-page direction — send them home.
+# Old V2 pages folded into the single-page direction, send them home.
 [[redirects]]
   from = "/about.html"
   to = "/"
@@ -44,9 +44,17 @@
   status = 301
   force = true
 
-# Assessment under construction — preview testers bypass with cookie; everyone else gets coming-soon.
+# Assessment under construction, preview testers bypass with cookie; everyone else gets coming-soon.
+# Cookie condition must come first and WITHOUT force=true so Netlify evaluates it before the fallback.
 [[redirects]]
   from = "/assessment"
+  to = "/assessment.html"
+  status = 200
+  [redirects.conditions]
+    Cookie = ["preview_access=true"]
+
+[[redirects]]
+  from = "/assessment.html"
   to = "/assessment.html"
   status = 200
   [redirects.conditions]
@@ -56,20 +64,18 @@
   from = "/assessment"
   to = "/assessment-coming-soon.html"
   status = 302
-  force = true
 
 [[redirects]]
   from = "/assessment.html"
   to = "/assessment-coming-soon.html"
   status = 302
-  force = true
 
 [[redirects]]
   from = "/api/assessment-notify"
   to = "/.netlify/functions/assessment-notify"
   status = 200
 
-# Working/scratch files — never publicly reachable.
+# Working/scratch files, never publicly reachable.
 [[redirects]]
   from = "/style-picker.html"
   to = "/"

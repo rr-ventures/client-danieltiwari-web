@@ -68,6 +68,15 @@
   footer a:hover{color:var(--ink)}
   footer .links{margin-top:1rem;display:flex;justify-content:center;gap:2rem;font-family:var(--sc);font-size:.68rem;letter-spacing:.15em;color:var(--muted)}
   footer .hairline{height:1px;background:var(--hair);max-width:3rem;margin:0 auto 1.6rem}
+
+  .tester-gate{margin-top:3rem;text-align:center}
+  .tester-toggle{background:none;border:none;font-family:var(--sc);font-size:.65rem;letter-spacing:.2em;color:var(--hair);cursor:pointer;padding:.4rem;transition:color .2s}
+  .tester-toggle:hover{color:var(--muted)}
+  .tester-form{margin-top:.8rem;display:flex;flex-direction:column;align-items:center;gap:.5rem}
+  .tester-form input{background:transparent;border:1px solid var(--hair);color:var(--ink);padding:.6rem 1rem;font-family:var(--body);font-size:.9rem;font-weight:300;border-radius:2px;outline:none;width:12rem;text-align:center;transition:border-color .2s}
+  .tester-form input:focus{border-color:var(--accent)}
+  .tester-form input::placeholder{color:var(--hair)}
+  .tester-error{font-family:var(--sc);font-size:.65rem;letter-spacing:.15em;color:#a05050}
 </style>
 </head>
 <body>
@@ -102,6 +111,14 @@
         <button type="submit" class="btn btn-primary" id="submit-btn">Join the newsletter →</button>
       </form>
 
+      <div class="tester-gate">
+        <button class="tester-toggle" id="tester-toggle" type="button">Preview access</button>
+        <div class="tester-form" id="tester-form" hidden>
+          <input type="password" id="tester-pw" placeholder="Password" autocomplete="off">
+          <p class="tester-error" id="tester-error" hidden>Incorrect password.</p>
+        </div>
+      </div>
+
       <div class="success" id="success">
         <p class="check sc">Almost there</p>
         <p>Check your inbox and confirm your e-mail address to get on the list.</p>
@@ -118,6 +135,29 @@
 </footer>
 
 <script>
+  const PREVIEW_PASSWORD = 'danielpreview';
+
+  const testerToggle = document.getElementById('tester-toggle');
+  const testerForm   = document.getElementById('tester-form');
+  const testerPw     = document.getElementById('tester-pw');
+  const testerError  = document.getElementById('tester-error');
+
+  testerToggle.addEventListener('click', () => {
+    testerForm.hidden = !testerForm.hidden;
+    if (!testerForm.hidden) testerPw.focus();
+  });
+
+  testerPw.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter') return;
+    if (testerPw.value === PREVIEW_PASSWORD) {
+      document.cookie = 'preview_access=true; path=/; max-age=604800; SameSite=Lax';
+      window.location.href = '/assessment';
+    } else {
+      testerError.hidden = false;
+      testerPw.value = '';
+    }
+  });
+
   const bar = document.getElementById('bar');
   window.addEventListener('scroll', () => bar.classList.toggle('scrolled', scrollY > 8), { passive: true });
 

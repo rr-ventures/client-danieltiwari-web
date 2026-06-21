@@ -615,6 +615,114 @@ function renderActsGroups(key) {
   build();
 }
 
+/* ---- Control attitude groups ---- */
+function renderControlAttitude(key) {
+  const container = document.getElementById('control-attitude-' + key);
+  if (!container) return;
+  const items = (_deeperState['deeper_' + key + '_control_items'] || []).filter(i => i && i.trim());
+  container.hidden = items.length === 0;
+  if (!items.length) { container.innerHTML = ''; return; }
+  if (!Array.isArray(_deeperState['deeper_' + key + '_control_attitude_groups'])) {
+    _deeperState['deeper_' + key + '_control_attitude_groups'] = [{ selected: [], answer: '' }];
+  }
+  const groups = _deeperState['deeper_' + key + '_control_attitude_groups'];
+
+  function sync() {
+    _deeperState['deeper_' + key + '_control_attitude_groups'] = groups;
+    const h = container.querySelector('input[type="hidden"]');
+    if (h) h.value = JSON.stringify(groups);
+  }
+
+  function buildGroup(gi, inner) {
+    const g = groups[gi];
+    if (!Array.isArray(g.selected)) g.selected = [];
+    const wrap = document.createElement('div');
+    wrap.className = 'acts-group';
+    const checks = document.createElement('div');
+    checks.className = 'acts-checkboxes';
+    items.forEach(item => {
+      const lbl = document.createElement('label');
+      lbl.className = 'acts-check-label';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = g.selected.includes(item);
+      cb.addEventListener('change', () => {
+        if (cb.checked) { if (!g.selected.includes(item)) g.selected.push(item); }
+        else { g.selected = g.selected.filter(s => s !== item); }
+        answerReveal.hidden = g.selected.length === 0;
+        sync();
+      });
+      const span = document.createElement('span');
+      span.textContent = item;
+      lbl.appendChild(cb); lbl.appendChild(span);
+      checks.appendChild(lbl);
+    });
+    wrap.appendChild(checks);
+    const answerReveal = document.createElement('div');
+    answerReveal.className = 'acts-value-reveal';
+    answerReveal.hidden = g.selected.length === 0;
+    const ynBtns = document.createElement('div');
+    ynBtns.className = 'yn-btns';
+    ynBtns.style.marginTop = '.6rem';
+    ['yes', 'no'].forEach(val => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'yn-btn' + (g.answer === val ? ' selected' : '');
+      btn.textContent = val.charAt(0).toUpperCase() + val.slice(1);
+      btn.addEventListener('click', () => {
+        ynBtns.querySelectorAll('.yn-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        g.answer = val;
+        sync();
+      });
+      ynBtns.appendChild(btn);
+    });
+    answerReveal.appendChild(ynBtns);
+    wrap.appendChild(answerReveal);
+    if (groups.length > 1) {
+      const footer = document.createElement('div');
+      footer.className = 'acts-group-footer';
+      const rmBtn = document.createElement('button');
+      rmBtn.type = 'button';
+      rmBtn.className = 'acts-group-remove';
+      rmBtn.textContent = 'Remove';
+      rmBtn.addEventListener('click', () => { groups.splice(gi, 1); buildAll(inner); sync(); });
+      footer.appendChild(rmBtn);
+      wrap.appendChild(footer);
+    }
+    return wrap;
+  }
+
+  function buildAll(inner) {
+    inner.innerHTML = '';
+    groups.forEach((_, gi) => inner.appendChild(buildGroup(gi, inner)));
+    const addBtn = document.createElement('button');
+    addBtn.type = 'button';
+    addBtn.className = 'list-add-btn';
+    addBtn.style.marginTop = '.8rem';
+    addBtn.textContent = '+ Add another';
+    addBtn.addEventListener('click', () => { groups.push({ selected: [], answer: '' }); buildAll(inner); sync(); });
+    inner.appendChild(addBtn);
+  }
+
+  container.innerHTML = '';
+  const sectionWrap = document.createElement('div');
+  sectionWrap.className = 'deeper-field';
+  sectionWrap.style.marginTop = '1.4rem';
+  const lbl = document.createElement('label');
+  lbl.textContent = 'Is your attitude towards and interpretation of these things serving you?';
+  sectionWrap.appendChild(lbl);
+  const inner = document.createElement('div');
+  buildAll(inner);
+  sectionWrap.appendChild(inner);
+  container.appendChild(sectionWrap);
+  const hidden = document.createElement('input');
+  hidden.type = 'hidden';
+  hidden.name = 'deeper_' + key + '_control_attitude_groups';
+  hidden.value = JSON.stringify(groups);
+  container.appendChild(hidden);
+}
+
 /* ---- Control bullet list ---- */
 function renderControlList(key) {
   const container = document.getElementById('control-list-' + key);
@@ -628,13 +736,7 @@ function renderControlList(key) {
     _deeperState['deeper_' + key + '_control_items'] = items;
     const hidden = container.querySelector('input[type="hidden"]');
     if (hidden) hidden.value = JSON.stringify(items);
-    const filled = items.filter(i => i && i.trim()).length > 0;
-    const reveal = container.closest('.yn-expand')?.querySelector('.control-attitude-reveal');
-    if (reveal) {
-      reveal.hidden = !filled;
-      const ta = reveal.querySelector('textarea');
-      if (ta) ta.required = filled;
-    }
+    renderControlAttitude(key);
   }
 
   function build() {
@@ -726,9 +828,8 @@ function initDeeperStep() {
     const q3Expand = urgencyFocused
       ? `What would need to be resolved, achieved, or in place…`
       : `Describe the version of this area that would feel fully alive…`;
-    const controlYn       = _deeperState[`deeper_${key}_control_yn`] || '';
-    const controlItems    = _deeperState[`deeper_${key}_control_items`] || [];
-    const controlAttitude = _deeperState[`deeper_${key}_control_attitude`] || '';
+    const controlYn    = _deeperState[`deeper_${key}_control_yn`] || '';
+    const controlItems = _deeperState[`deeper_${key}_control_items`] || [];
     const actsYn       = _deeperState[`deeper_${key}_acts_yn`] || '';
     const omitsYn      = _deeperState[`deeper_${key}_omits_yn`] || '';
     const omitsVal     = _deeperState[`deeper_${key}_omits`] || '';
@@ -770,12 +871,7 @@ function initDeeperStep() {
               <label>What are they?</label>
               <div id="control-list-${key}"></div>
             </div>
-            <div class="control-attitude-reveal" ${controlItems.filter(i => i && i.trim()).length ? '' : 'hidden'}>
-              <div class="deeper-field" style="margin-bottom:0">
-                <label for="deeper_${key}_control_attitude">Is your attitude towards and interpretation of these things serving you?</label>
-                <textarea id="deeper_${key}_control_attitude" name="deeper_${key}_control_attitude" placeholder="Be honest — how are you relating to what you can't change?">${controlAttitude}</textarea>
-              </div>
-            </div>
+            <div id="control-attitude-${key}" ${controlItems.filter(i => i && i.trim()).length ? '' : 'hidden'}></div>
           </div>
         </div>
         <div class="deeper-field yn-field" data-key="${key}" data-role="vision">
@@ -827,7 +923,7 @@ function initDeeperStep() {
       </div>`;
   }).join('');
 
-  selectedKeys.forEach(k => { renderCauseList(k); renderActsGroups(k); renderControlList(k); });
+  selectedKeys.forEach(k => { renderCauseList(k); renderActsGroups(k); renderControlList(k); renderControlAttitude(k); });
 
   // Wire up toggle buttons
   container.querySelectorAll('.yn-field').forEach(field => {

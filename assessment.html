@@ -203,6 +203,11 @@
 </style>
 </head>
 <body>
+<script>
+  if (!document.cookie.split(';').some(function(c){return c.trim()==='preview_access=true';})) {
+    window.location.replace('/assessment');
+  }
+</script>
 <a class="skip" href="#main">Skip to content</a>
 
 <header id="bar">

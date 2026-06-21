@@ -415,7 +415,7 @@ function initDeeperStep() {
           <p class="yn-error">Please select one.</p>
           <div class="yn-expand" ${actsYn !== 'yes' ? 'hidden' : ''}>
             <div class="deeper-field" style="margin-top:.9rem">
-              <label for="deeper_${key}_acts">What is it?</label>
+              <label for="deeper_${key}_acts">What are they?</label>
               <textarea id="deeper_${key}_acts" name="deeper_${key}_acts" ${actsYn === 'yes' ? 'required' : ''} placeholder="The honest version — not what you'd say out loud, what you actually know…">${actsVal}</textarea>
             </div>
             <div class="values-reveal" ${actsVal ? '' : 'hidden'}>

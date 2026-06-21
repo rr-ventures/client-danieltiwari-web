@@ -528,13 +528,14 @@ function renderActsGroups(key) {
     const reveal = document.createElement('div');
     reveal.className = 'acts-value-reveal';
     reveal.hidden = g.selected.length === 0;
-    const revLbl = document.createElement('label');
-    revLbl.textContent = "What are the values that these actions are serving? Be brutally honest with yourself here, because they may be values that you don't consciously approve of.";
-    const ta = document.createElement('textarea');
-    ta.placeholder = 'Security, comfort, belonging, control, avoiding failure…';
-    ta.value = g.value || '';
-    ta.addEventListener('input', () => { g.value = ta.value; syncGroups(); });
-    reveal.appendChild(revLbl); reveal.appendChild(ta);
+    const valueInp = document.createElement('input');
+    valueInp.type = 'text';
+    valueInp.className = 'cause-input';
+    valueInp.style.marginTop = '.6rem';
+    valueInp.placeholder = 'e.g. Security, comfort, avoiding failure…';
+    valueInp.value = g.value || '';
+    valueInp.addEventListener('input', () => { g.value = valueInp.value; syncGroups(); });
+    reveal.appendChild(valueInp);
     wrap.appendChild(reveal);
     if (groups.length > 1) {
       const footer = document.createElement('div');
@@ -586,9 +587,12 @@ function renderActsGroups(key) {
     container.appendChild(listEl);
 
     const vgWrap = document.createElement('div');
-    vgWrap.className = 'acts-vg-wrap';
+    vgWrap.className = 'acts-vg-wrap deeper-field';
     vgWrap.hidden = items.filter(it => it && it.trim()).length === 0;
-    vgWrap.style.marginTop = '1.2rem';
+    vgWrap.style.marginTop = '1.4rem';
+    const vgLbl = document.createElement('label');
+    vgLbl.textContent = "What values are those actions serving? Be brutally honest — they may be values you don't consciously approve of.";
+    vgWrap.appendChild(vgLbl);
     const vgInner = document.createElement('div');
     vgInner.className = 'acts-vg-inner';
     buildValueGroups(vgInner);

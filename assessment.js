@@ -918,7 +918,7 @@ function initDeeperStep() {
         ${head}
         <div id="recap-causes-${key}-control" data-label="Why ${label} feels like a ${data.fulfillment}/10" class="recap-block" hidden></div>
         <div class="deeper-field yn-field" data-key="${key}" data-role="control">
-          <label>Is there anything that on the other hand you feel like is NOT in your control?</label>
+          <label>Is there anything above that on the other hand you feel like is NOT in your control?</label>
           <div class="yn-btns">
             <button type="button" class="yn-btn${controlYn === 'yes' ? ' selected' : ''}" data-val="yes">Yes</button>
             <button type="button" class="yn-btn${controlYn === 'no'  ? ' selected' : ''}" data-val="no">No</button>

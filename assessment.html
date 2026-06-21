@@ -512,8 +512,23 @@
 
     window.toggleTranscript=function(btn){const body=btn.nextElementSibling;const open=body.classList.toggle('open');btn.textContent=open?'Hide text':'Show text';};
     window.advanceMainStep=function(){current++;showStep(current);};
-    btnNext.addEventListener('click',()=>{if(validateStep(current)){current++;showStep(current);}});
-    btnBack.addEventListener('click',()=>{current--;showStep(current);});
+    btnNext.addEventListener('click',()=>{
+      if(current===5&&window._showDeeperSubPage&&window._deeperSubPageIdx<window._deeperSubPageCount-1){
+        if(window._validateDeeperSubPage&&window._validateDeeperSubPage(window._deeperSubPageIdx)){
+          window._showDeeperSubPage(window._deeperSubPageIdx+1);
+        }
+      } else {
+        if(validateStep(current)){current++;showStep(current);}
+      }
+    });
+    btnBack.addEventListener('click',()=>{
+      if(current===5&&window._deeperSubPageIdx>0){
+        window._showDeeperSubPage(window._deeperSubPageIdx-1);
+      } else {
+        current--;showStep(current);
+        if(current===5&&window._showDeeperSubPage){window._showDeeperSubPage(window._deeperSubPageCount-1);}
+      }
+    });
     document.addEventListener('keydown',function(e){
       if(e.key!=='Enter'||e.target.tagName==='TEXTAREA'||formNav.hidden)return;
       e.preventDefault();btnNext.click();

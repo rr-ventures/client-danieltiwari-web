@@ -873,31 +873,34 @@ function initDeeperStep() {
   const areaMap = Object.fromEntries(AREAS.map(([key, label, desc]) => [key, { label, desc }]));
   const wheelMap = Object.fromEntries(wheel.map(a => [a.key, a]));
 
-  container.innerHTML = selectedKeys.map(key => {
+  // Sub-pages: 5 per area
+  const qtypes = ['cause', 'acts', 'control', 'vision', 'omits'];
+  const allSubPages = selectedKeys.flatMap(key => qtypes.map(qtype => ({ key, qtype })));
+
+  container.innerHTML = selectedKeys.flatMap(key => {
     const { label, desc } = areaMap[key] || { label: key, desc: '' };
     const data = wheelMap[key] || {};
     const urgencyFocused = (data.urgency || 0) > (data.importance || 0);
     const q3Toggle = `Are you consciously aware of what it would take for ${label} to be a 10/10?`;
-    const q3Expand = urgencyFocused
-      ? `What would need to be resolved, achieved, or in place…`
-      : `Describe the version of this area that would feel fully alive…`;
-    const controlYn    = _deeperState[`deeper_${key}_control_yn`] || '';
-    const controlItems = _deeperState[`deeper_${key}_control_items`] || [];
-    const actsYn       = _deeperState[`deeper_${key}_acts_yn`] || '';
-    const omitsYn = _deeperState[`deeper_${key}_omits_yn`] || '';
+    const q3Expand = urgencyFocused ? `What would need to be resolved, achieved, or in place…` : `Describe the version of this area that would feel fully alive…`;
+    const controlYn      = _deeperState[`deeper_${key}_control_yn`] || '';
+    const controlItems   = _deeperState[`deeper_${key}_control_items`] || [];
+    const actsYn         = _deeperState[`deeper_${key}_acts_yn`] || '';
+    const omitsYn        = _deeperState[`deeper_${key}_omits_yn`] || '';
     const visionYn       = _deeperState[`deeper_${key}_vision_yn`] || '';
     const visionItems    = _deeperState[`deeper_${key}_vision_items`] || [];
     const visionActualYn = _deeperState[`deeper_${key}_vision_actual_yn`] || '';
-    return `
-      <div class="deeper-block">
-        <div class="deeper-block-head">
-          <p class="deeper-area-name">${label}</p>
-          ${desc ? `<p class="deeper-area-desc">${desc}</p>` : ''}
-        </div>
+    const head = `<div class="deeper-block-head"><p class="deeper-area-name">${label}</p>${desc ? `<p class="deeper-area-desc">${desc}</p>` : ''}</div>`;
+    return [
+      `<div class="deeper-subpage" id="deeper-sub-${key}-cause" hidden>
+        ${head}
         <div class="deeper-field">
           <label>Why does ${label} only feel like a ${data.fulfillment}/10 right now? List everything you can come up with.</label>
           <div id="cause-list-${key}"></div>
         </div>
+      </div>`,
+      `<div class="deeper-subpage" id="deeper-sub-${key}-acts" hidden>
+        ${head}
         <div class="deeper-field yn-field" data-key="${key}" data-role="acts">
           <label>Is there anything <strong>you</strong> are doing that is contributing to the above? If multiple things, list them all.</label>
           <div class="yn-btns">
@@ -909,6 +912,9 @@ function initDeeperStep() {
             <div id="acts-groups-${key}" style="margin-top:.5rem"></div>
           </div>
         </div>
+      </div>`,
+      `<div class="deeper-subpage" id="deeper-sub-${key}-control" hidden>
+        ${head}
         <div class="deeper-field yn-field" data-key="${key}" data-role="control">
           <label>Is there anything that on the other hand you feel like is NOT in your control?</label>
           <div class="yn-btns">
@@ -921,6 +927,9 @@ function initDeeperStep() {
             <div id="control-attitude-${key}" ${controlItems.filter(i => i && i.trim()).length ? '' : 'hidden'}></div>
           </div>
         </div>
+      </div>`,
+      `<div class="deeper-subpage" id="deeper-sub-${key}-vision" hidden>
+        ${head}
         <div class="deeper-field yn-field" data-key="${key}" data-role="vision">
           <label>${q3Toggle}</label>
           <div class="yn-btns">
@@ -944,6 +953,9 @@ function initDeeperStep() {
             </div>
           </div>
         </div>
+      </div>`,
+      `<div class="deeper-subpage" id="deeper-sub-${key}-omits" hidden>
+        ${head}
         <div class="deeper-field yn-field" data-key="${key}" data-role="omits">
           <label>Is there anything that <strong>you</strong> are NOT doing but COULD be doing that would improve ${label}?</label>
           <div class="yn-btns">
@@ -955,12 +967,24 @@ function initDeeperStep() {
             <div id="omits-groups-${key}" style="margin-top:.5rem"></div>
           </div>
         </div>
-      </div>`;
+      </div>`,
+    ];
   }).join('');
+
+  // Sub-page navigation
+  function showDeeperSubPage(idx) {
+    container.querySelectorAll('.deeper-subpage').forEach((el, i) => { el.hidden = i !== idx; });
+    window._deeperSubPageIdx = idx;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  window._deeperSubPageCount = allSubPages.length;
+  window._deeperSubPageIdx = 0;
+  window._showDeeperSubPage = showDeeperSubPage;
+  showDeeperSubPage(0);
 
   selectedKeys.forEach(k => { renderCauseList(k); renderActsGroups(k); renderOmitsGroups(k); renderControlList(k); renderControlAttitude(k); renderVisionList(k); });
 
-  // Wire up toggle buttons
+  // Wire up yn-field toggles
   container.querySelectorAll('.yn-field').forEach(field => {
     const key = field.dataset.key;
     const role = field.dataset.role;
@@ -968,9 +992,7 @@ function initDeeperStep() {
     const expand = field.querySelector('.yn-expand');
     const textareas = expand.querySelectorAll('textarea');
     const error = field.querySelector('.yn-error');
-    const expandOn = role === 'vision'
-      ? (val) => val === 'yes' || val === 'partially'
-      : (val) => val === 'yes';
+    const expandOn = role === 'vision' ? (val) => val === 'yes' || val === 'partially' : (val) => val === 'yes';
     field.querySelectorAll('.yn-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         field.querySelectorAll('.yn-btn').forEach(b => b.classList.remove('selected'));
@@ -984,35 +1006,7 @@ function initDeeperStep() {
     });
   });
 
-  // Show values-reveal when textarea has content; wire confirm checkbox; uncheck on vision edit
-  container.querySelectorAll('.yn-expand').forEach(expand => {
-    const whatIsIt = expand.querySelector('textarea');
-    const valuesReveal = expand.querySelector('.values-reveal');
-    if (!whatIsIt || !valuesReveal) return;
-    const valuesTa = valuesReveal.querySelector('textarea');
-    const confirmCheck = valuesReveal.querySelector('.vision-actual-check');
-    const confirmError = valuesReveal.querySelector('.yn-error');
-    const visionField = expand.closest('.yn-field');
-
-    if (confirmCheck) {
-      confirmCheck.addEventListener('change', () => {
-        _deeperState[`deeper_${visionField?.dataset.key}_vision_actual_yn`] = confirmCheck.checked ? 'yes' : '';
-        if (confirmError) confirmError.classList.remove('visible');
-      });
-    }
-
-    whatIsIt.addEventListener('input', () => {
-      const hasContent = whatIsIt.value.trim().length > 0;
-      valuesReveal.hidden = !hasContent;
-      if (valuesTa) valuesTa.required = hasContent;
-      if (confirmCheck && confirmCheck.checked) {
-        confirmCheck.checked = false;
-        _deeperState[`deeper_${visionField?.dataset.key}_vision_actual_yn`] = '';
-      }
-    });
-  });
-
-  // Persist textarea values on input
+  // Persist textarea values
   container.querySelectorAll('textarea').forEach(ta => {
     ta.addEventListener('input', () => { _deeperState[ta.name] = ta.value; });
   });
@@ -1022,85 +1016,91 @@ function initDeeperStep() {
     window.scrollTo({ top: window.scrollY + el.getBoundingClientRect().top - offset, behavior: 'smooth' });
   }
 
-  // Custom validator — checks yn selection + required fields
-  window._validateDeeper = function() {
+  // Per-sub-page validation
+  window._validateDeeperSubPage = function(idx) {
+    const sp = allSubPages[idx];
+    if (!sp) return true;
+    const { key, qtype } = sp;
+    const subEl = document.getElementById('deeper-sub-' + key + '-' + qtype);
+    if (!subEl) return true;
     let valid = true;
-    container.querySelectorAll('.yn-field').forEach(field => {
+
+    subEl.querySelectorAll('.yn-field').forEach(field => {
       const error = field.querySelector('.yn-error');
       if (!field.querySelector('.yn-btn.selected')) {
         error.classList.add('visible');
         if (valid) scrollToVisible(field);
         valid = false;
-      } else {
-        error.classList.remove('visible');
-      }
+      } else { error.classList.remove('visible'); }
     });
-    container.querySelectorAll('.vision-actual-field').forEach(field => {
-      if (field.closest('[hidden]')) return;
-      const check = field.querySelector('.vision-actual-check');
-      const error = field.querySelector('.yn-error');
-      if (check && !check.checked) {
-        error.classList.add('visible');
-        if (valid) scrollToVisible(field);
-        valid = false;
-      } else if (error) {
-        error.classList.remove('visible');
-      }
-    });
-    // Validate cause lists
-    for (const k of selectedKeys) {
-      const causes = (_deeperState['deeper_' + k + '_causes'] || []).filter(c => c && c.trim());
+
+    if (qtype === 'cause') {
+      const causes = (_deeperState['deeper_' + key + '_causes'] || []).filter(c => c && c.trim());
       if (!causes.length) {
-        const cl = document.getElementById('cause-list-' + k);
+        const cl = document.getElementById('cause-list-' + key);
         const inp = cl?.querySelector('.cause-input');
         if (inp) { inp.setCustomValidity('Please add at least one reason.'); inp.reportValidity(); inp.setCustomValidity(''); }
         if (valid && cl) scrollToVisible(cl);
         valid = false;
       }
     }
-    // Validate acts + omits: every item must have ≥1 value group that covers it
-    function checkItemGroups(k, type) {
-      if (_deeperState['deeper_' + k + '_' + type + '_yn'] !== 'yes') return;
-      const filledItems = (_deeperState['deeper_' + k + '_' + type + '_items'] || []).filter(i => i && i.trim());
-      const groups = _deeperState['deeper_' + k + '_' + type + '_groups'] || [];
-      const gc = document.getElementById(type + '-groups-' + k);
-      const vgWrap = gc?.querySelector('.' + type + '-vg-wrap');
-      const vgError = vgWrap?.querySelector('.yn-error');
-      if (!filledItems.length) {
-        if (valid && gc) scrollToVisible(gc);
-        valid = false;
-        return;
-      }
-      const allCovered = filledItems.every(item =>
-        groups.some(g => Array.isArray(g.selected) && g.selected.includes(item) && g.value && g.value.trim())
-      );
-      if (!allCovered) {
-        if (vgError) vgError.classList.add('visible');
-        if (valid && vgWrap) scrollToVisible(vgWrap);
-        valid = false;
-      } else {
-        if (vgError) vgError.classList.remove('visible');
-      }
-    }
-    for (const k of selectedKeys) { checkItemGroups(k, 'acts'); checkItemGroups(k, 'omits'); }
-    // Validate vision list
-    for (const k of selectedKeys) {
-      const yn = _deeperState['deeper_' + k + '_vision_yn'];
-      if (yn !== 'yes' && yn !== 'partially') continue;
-      const vItems = (_deeperState['deeper_' + k + '_vision_items'] || []).filter(i => i && i.trim());
-      if (!vItems.length) {
-        const vc = document.getElementById('vision-list-' + k);
-        const inp = vc?.querySelector('.cause-input');
-        if (inp) { inp.setCustomValidity('Please describe what it would take.'); inp.reportValidity(); inp.setCustomValidity(''); }
-        if (valid && vc) scrollToVisible(vc);
-        valid = false;
+
+    if (qtype === 'acts' || qtype === 'omits') {
+      if (_deeperState['deeper_' + key + '_' + qtype + '_yn'] === 'yes') {
+        const filledItems = (_deeperState['deeper_' + key + '_' + qtype + '_items'] || []).filter(i => i && i.trim());
+        const groups = _deeperState['deeper_' + key + '_' + qtype + '_groups'] || [];
+        const gc = document.getElementById(qtype + '-groups-' + key);
+        const vgWrap = gc?.querySelector('.' + qtype + '-vg-wrap');
+        const vgError = vgWrap?.querySelector('.yn-error');
+        if (!filledItems.length) {
+          if (valid && gc) scrollToVisible(gc);
+          valid = false;
+        } else {
+          const allCovered = filledItems.every(item =>
+            groups.some(g => Array.isArray(g.selected) && g.selected.includes(item) && g.value && g.value.trim())
+          );
+          if (!allCovered) {
+            if (vgError) vgError.classList.add('visible');
+            if (valid && vgWrap) scrollToVisible(vgWrap);
+            valid = false;
+          } else { if (vgError) vgError.classList.remove('visible'); }
+        }
       }
     }
+
+    if (qtype === 'vision') {
+      const yn = _deeperState['deeper_' + key + '_vision_yn'];
+      if (yn === 'yes' || yn === 'partially') {
+        const vItems = (_deeperState['deeper_' + key + '_vision_items'] || []).filter(i => i && i.trim());
+        if (!vItems.length) {
+          const vc = document.getElementById('vision-list-' + key);
+          const inp = vc?.querySelector('.cause-input');
+          if (inp) { inp.setCustomValidity('Please describe what it would take.'); inp.reportValidity(); inp.setCustomValidity(''); }
+          if (valid && vc) scrollToVisible(vc);
+          valid = false;
+        }
+      }
+      subEl.querySelectorAll('.vision-actual-field').forEach(field => {
+        if (field.closest('[hidden]')) return;
+        const check = field.querySelector('.vision-actual-check');
+        const error = field.querySelector('.yn-error');
+        if (check && !check.checked) {
+          if (error) error.classList.add('visible');
+          if (valid) scrollToVisible(field);
+          valid = false;
+        } else if (error) { error.classList.remove('visible'); }
+      });
+    }
+
     if (!valid) return false;
-    for (const f of container.querySelectorAll('textarea[required]')) {
+    for (const f of subEl.querySelectorAll('textarea[required]')) {
       if (!f.reportValidity()) return false;
     }
     return true;
+  };
+
+  window._validateDeeper = function() {
+    return window._validateDeeperSubPage(window._deeperSubPageIdx);
   };
 }
 

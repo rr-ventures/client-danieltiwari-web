@@ -427,7 +427,7 @@ function initDeeperStep() {
           </div>
         </div>
         <div class="deeper-field yn-field" data-key="${key}" data-role="control">
-          <label>Is any of what's contributing to this <strong>outside of your control</strong> to change?</label>
+          <label>What are things that on the other hand feel like they're not in your control?</label>
           <div class="yn-btns">
             <button type="button" class="yn-btn${controlYn === 'yes' ? ' selected' : ''}" data-val="yes">Yes</button>
             <button type="button" class="yn-btn${controlYn === 'no'  ? ' selected' : ''}" data-val="no">No</button>

@@ -933,7 +933,7 @@ function initDeeperStep() {
             <div id="vision-list-${key}" data-placeholder="${q3Expand}" style="margin-top:.9rem"></div>
             <div class="values-reveal" ${visionItems.filter(i => i && i.trim()).length ? '' : 'hidden'}>
               <div class="deeper-field vision-actual-field" data-key="${key}">
-                <label>Are you sure you <strong>ACTUALLY WANT THIS?</strong> Or is this something you think you're <strong>SUPPOSED TO</strong> want, or <strong>WOULD LIKE TO</strong> want, but don't really?</label>
+                <label>Are you sure you <strong>ACTUALLY WANT THESE?</strong> Or are these things you think you're <strong>SUPPOSED TO</strong> want, or <strong>WOULD LIKE TO</strong> want, but don't really?</label>
                 <label class="confirm-check-wrap">
                   <input type="checkbox" class="vision-actual-check" name="deeper_${key}_vision_actual" value="yes" ${visionActualYn === 'yes' ? 'checked' : ''}>
                   <span class="confirm-check-box"></span>

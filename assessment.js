@@ -901,6 +901,7 @@ function initDeeperStep() {
       </div>`,
       `<div class="deeper-subpage" id="deeper-sub-${key}-acts" hidden>
         ${head}
+        <div id="recap-causes-${key}-acts" data-label="Why ${label} feels like a ${data.fulfillment}/10" class="recap-block" hidden></div>
         <div class="deeper-field yn-field" data-key="${key}" data-role="acts">
           <label>Is there anything <strong>you</strong> are doing that is contributing to the above? If multiple things, list them all.</label>
           <div class="yn-btns">
@@ -915,6 +916,7 @@ function initDeeperStep() {
       </div>`,
       `<div class="deeper-subpage" id="deeper-sub-${key}-control" hidden>
         ${head}
+        <div id="recap-causes-${key}-control" data-label="Why ${label} feels like a ${data.fulfillment}/10" class="recap-block" hidden></div>
         <div class="deeper-field yn-field" data-key="${key}" data-role="control">
           <label>Is there anything that on the other hand you feel like is NOT in your control?</label>
           <div class="yn-btns">
@@ -956,6 +958,8 @@ function initDeeperStep() {
       </div>`,
       `<div class="deeper-subpage" id="deeper-sub-${key}-omits" hidden>
         ${head}
+        <div id="recap-causes-${key}-omits" data-label="Why ${label} feels like a ${data.fulfillment}/10" class="recap-block" hidden></div>
+        <div id="recap-vision-${key}" data-label="Your vision for a 10/10 ${label}" class="recap-block" hidden></div>
         <div class="deeper-field yn-field" data-key="${key}" data-role="omits">
           <label>Is there anything that <strong>you</strong> are NOT doing but COULD be doing that would improve ${label}?</label>
           <div class="yn-btns">
@@ -972,10 +976,40 @@ function initDeeperStep() {
   }).join('');
 
   // Sub-page navigation
+  function fillRecapBlock(el, items) {
+    if (!el || !items.length) { if (el) el.hidden = true; return; }
+    el.hidden = false;
+    const lbl = el.dataset.label || '';
+    el.innerHTML = '';
+    const p = document.createElement('p');
+    p.className = 'recap-label';
+    p.textContent = lbl;
+    el.appendChild(p);
+    const ul = document.createElement('ul');
+    ul.className = 'recap-list';
+    items.forEach(item => { const li = document.createElement('li'); li.textContent = item; ul.appendChild(li); });
+    el.appendChild(ul);
+  }
+
   function showDeeperSubPage(idx) {
     container.querySelectorAll('.deeper-subpage').forEach((el, i) => { el.hidden = i !== idx; });
     window._deeperSubPageIdx = idx;
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    const sp = allSubPages[idx];
+    if (!sp) return;
+    const { key, qtype } = sp;
+    const causes = (_deeperState['deeper_' + key + '_causes'] || []).filter(c => c && c.trim());
+    if (qtype === 'acts' || qtype === 'control') {
+      fillRecapBlock(document.getElementById('recap-causes-' + key + '-' + qtype), causes);
+    }
+    if (qtype === 'omits') {
+      fillRecapBlock(document.getElementById('recap-causes-' + key + '-omits'), causes);
+      const vYn = _deeperState['deeper_' + key + '_vision_yn'];
+      const vItems = (vYn === 'yes' || vYn === 'partially')
+        ? (_deeperState['deeper_' + key + '_vision_items'] || []).filter(i => i && i.trim())
+        : [];
+      fillRecapBlock(document.getElementById('recap-vision-' + key), vItems);
+    }
   }
   window._deeperSubPageCount = allSubPages.length;
   window._deeperSubPageIdx = 0;

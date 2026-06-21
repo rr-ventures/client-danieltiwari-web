@@ -420,7 +420,7 @@ function initDeeperStep() {
             </div>
             <div class="values-reveal" ${actsVal ? '' : 'hidden'}>
               <div class="deeper-field" style="margin-bottom:0">
-                <label for="deeper_${key}_acts_values">What value(s) of yours are you serving with this action?</label>
+                <label for="deeper_${key}_acts_values">What are the values that you are serving with each of these actions?</label>
                 <textarea id="deeper_${key}_acts_values" name="deeper_${key}_acts_values" ${(actsYn === 'yes' && actsVal) ? 'required' : ''} placeholder="Security, comfort, belonging, control, avoiding failure…">${actsValues}</textarea>
               </div>
             </div>

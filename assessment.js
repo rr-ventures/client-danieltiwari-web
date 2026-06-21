@@ -422,100 +422,193 @@ function renderCauseList(key) {
   build();
 }
 
-/* ---- Acts value groups ---- */
+/* ---- Acts: bullet list + value groups ---- */
 function renderActsGroups(key) {
-  const container = document.getElementById('acts-groups-' + key);
+  const container = document.getElementById(‘acts-groups-’ + key);
   if (!container) return;
-  const causes = (_deeperState['deeper_' + key + '_causes'] || []).filter(c => c && c.trim());
-  if (!Array.isArray(_deeperState['deeper_' + key + '_acts_groups'])) {
-    _deeperState['deeper_' + key + '_acts_groups'] = [{ selected: [], value: '' }];
-  }
-  const groups = _deeperState['deeper_' + key + '_acts_groups'];
 
-  function sync() {
-    _deeperState['deeper_' + key + '_acts_groups'] = groups;
-    const hidden = container.querySelector('input[type="hidden"]');
-    if (hidden) hidden.value = JSON.stringify(groups);
+  if (!Array.isArray(_deeperState[‘deeper_’ + key + ‘_acts_items’])) {
+    _deeperState[‘deeper_’ + key + ‘_acts_items’] = [‘’];
+  }
+  const items = _deeperState[‘deeper_’ + key + ‘_acts_items’];
+
+  if (!Array.isArray(_deeperState[‘deeper_’ + key + ‘_acts_groups’])) {
+    _deeperState[‘deeper_’ + key + ‘_acts_groups’] = [{ selected: [], value: ‘’ }];
+  }
+  const groups = _deeperState[‘deeper_’ + key + ‘_acts_groups’];
+
+  function syncItems() {
+    _deeperState[‘deeper_’ + key + ‘_acts_items’] = items;
+    const h = container.querySelector(‘input[name="deeper_’ + key + ‘_acts_items"]’);
+    if (h) h.value = JSON.stringify(items);
+    refreshValueGroups();
   }
 
-  function buildGroup(gi) {
+  function syncGroups() {
+    _deeperState[‘deeper_’ + key + ‘_acts_groups’] = groups;
+    const h = container.querySelector(‘input[name="deeper_’ + key + ‘_acts_groups"]’);
+    if (h) h.value = JSON.stringify(groups);
+  }
+
+  // ── Section 1: bullet list of what they’re doing ──
+  function buildItemList(listEl) {
+    listEl.innerHTML = ‘’;
+    const rows = document.createElement(‘div’);
+    rows.className = ‘cause-list’;
+    items.forEach((val, i) => {
+      const row = document.createElement(‘div’);
+      row.className = ‘cause-item’;
+      const bullet = document.createElement(‘span’);
+      bullet.className = ‘cause-bullet’;
+      bullet.textContent = ‘—‘;
+      const inp = document.createElement(‘input’);
+      inp.type = ‘text’;
+      inp.className = ‘cause-input’;
+      inp.value = val;
+      inp.placeholder = ‘Describe what you are doing…’;
+      inp.addEventListener(‘input’, () => {
+        items[i] = inp.value;
+        syncItems();
+        listEl.querySelectorAll(‘.cause-remove’).forEach(b => { b.hidden = items.length === 1; });
+      });
+      const rm = document.createElement(‘button’);
+      rm.type = ‘button’;
+      rm.className = ‘cause-remove’;
+      rm.textContent = ‘×’;
+      rm.hidden = items.length === 1;
+      rm.addEventListener(‘click’, () => {
+        items.splice(i, 1);
+        buildItemList(listEl);
+        syncItems();
+      });
+      row.appendChild(bullet); row.appendChild(inp); row.appendChild(rm);
+      rows.appendChild(row);
+    });
+    const addBtn = document.createElement(‘button’);
+    addBtn.type = ‘button’;
+    addBtn.className = ‘list-add-btn’;
+    addBtn.textContent = ‘+ Add another’;
+    addBtn.addEventListener(‘click’, () => {
+      items.push(‘’);
+      buildItemList(listEl);
+      const inputs = listEl.querySelectorAll(‘.cause-input’);
+      if (inputs.length) inputs[inputs.length - 1].focus();
+    });
+    listEl.appendChild(rows);
+    listEl.appendChild(addBtn);
+  }
+
+  // ── Section 2: value groups (appears once items are filled) ──
+  function buildGroup(gi, vgEl) {
     const g = groups[gi];
     if (!Array.isArray(g.selected)) g.selected = [];
-    const wrap = document.createElement('div');
-    wrap.className = 'acts-group';
-    const checks = document.createElement('div');
-    checks.className = 'acts-checkboxes';
-    if (!causes.length) {
-      const note = document.createElement('p');
-      note.style.cssText = 'font-size:.88rem;color:var(--muted)';
-      note.textContent = 'Fill in the reasons above first.';
-      checks.appendChild(note);
-    } else {
-      causes.forEach(cause => {
-        const lbl = document.createElement('label');
-        lbl.className = 'acts-check-label';
-        const cb = document.createElement('input');
-        cb.type = 'checkbox';
-        cb.checked = g.selected.includes(cause);
-        cb.addEventListener('change', () => {
-          if (cb.checked) { if (!g.selected.includes(cause)) g.selected.push(cause); }
-          else { g.selected = g.selected.filter(c => c !== cause); }
-          reveal.hidden = g.selected.length === 0;
-          sync();
-        });
-        const span = document.createElement('span');
-        span.textContent = cause;
-        lbl.appendChild(cb); lbl.appendChild(span);
-        checks.appendChild(lbl);
+    const filledItems = items.filter(it => it && it.trim());
+    const wrap = document.createElement(‘div’);
+    wrap.className = ‘acts-group’;
+    const checks = document.createElement(‘div’);
+    checks.className = ‘acts-checkboxes’;
+    filledItems.forEach(item => {
+      const lbl = document.createElement(‘label’);
+      lbl.className = ‘acts-check-label’;
+      const cb = document.createElement(‘input’);
+      cb.type = ‘checkbox’;
+      cb.checked = g.selected.includes(item);
+      cb.addEventListener(‘change’, () => {
+        if (cb.checked) { if (!g.selected.includes(item)) g.selected.push(item); }
+        else { g.selected = g.selected.filter(s => s !== item); }
+        reveal.hidden = g.selected.length === 0;
+        syncGroups();
       });
-    }
+      const span = document.createElement(‘span’);
+      span.textContent = item;
+      lbl.appendChild(cb); lbl.appendChild(span);
+      checks.appendChild(lbl);
+    });
     wrap.appendChild(checks);
-    const reveal = document.createElement('div');
-    reveal.className = 'acts-value-reveal';
+    const reveal = document.createElement(‘div’);
+    reveal.className = ‘acts-value-reveal’;
     reveal.hidden = g.selected.length === 0;
-    const revLbl = document.createElement('label');
-    revLbl.textContent = 'What are the values that these actions are serving? Be brutally honest with yourself here, because they may be values that you don’t consciously approve of.';
-    const ta = document.createElement('textarea');
-    ta.placeholder = 'Security, comfort, belonging, control, avoiding failure…';
-    ta.value = g.value || '';
-    ta.addEventListener('input', () => { g.value = ta.value; sync(); });
+    const revLbl = document.createElement(‘label’);
+    revLbl.textContent = ‘What are the values that these actions are serving? Be brutally honest with yourself here, because they may be values that you don’t consciously approve of.’;
+    const ta = document.createElement(‘textarea’);
+    ta.placeholder = ‘Security, comfort, belonging, control, avoiding failure…’;
+    ta.value = g.value || ‘’;
+    ta.addEventListener(‘input’, () => { g.value = ta.value; syncGroups(); });
     reveal.appendChild(revLbl); reveal.appendChild(ta);
     wrap.appendChild(reveal);
     if (groups.length > 1) {
-      const footer = document.createElement('div');
-      footer.className = 'acts-group-footer';
-      const rmBtn = document.createElement('button');
-      rmBtn.type = 'button';
-      rmBtn.className = 'acts-group-remove';
-      rmBtn.textContent = 'Remove';
-      rmBtn.addEventListener('click', () => { groups.splice(gi, 1); buildAll(); sync(); });
+      const footer = document.createElement(‘div’);
+      footer.className = ‘acts-group-footer’;
+      const rmBtn = document.createElement(‘button’);
+      rmBtn.type = ‘button’;
+      rmBtn.className = ‘acts-group-remove’;
+      rmBtn.textContent = ‘Remove’;
+      rmBtn.addEventListener(‘click’, () => { groups.splice(gi, 1); buildValueGroups(vgEl); syncGroups(); });
       footer.appendChild(rmBtn);
       wrap.appendChild(footer);
     }
     return wrap;
   }
 
-  function buildAll() {
-    container.innerHTML = '';
-    groups.forEach((_, gi) => container.appendChild(buildGroup(gi)));
-    const addBtn = document.createElement('button');
-    addBtn.type = 'button';
-    addBtn.className = 'list-add-btn';
-    addBtn.style.marginTop = '.8rem';
-    addBtn.textContent = '+ Add another value group';
-    addBtn.addEventListener('click', () => {
-      groups.push({ selected: [], value: '' });
-      buildAll();
-      sync();
+  function buildValueGroups(vgEl) {
+    vgEl.innerHTML = ‘’;
+    groups.forEach((_, gi) => vgEl.appendChild(buildGroup(gi, vgEl)));
+    const addBtn = document.createElement(‘button’);
+    addBtn.type = ‘button’;
+    addBtn.className = ‘list-add-btn’;
+    addBtn.style.marginTop = ‘.8rem’;
+    addBtn.textContent = ‘+ Add another value group’;
+    addBtn.addEventListener(‘click’, () => {
+      groups.push({ selected: [], value: ‘’ });
+      buildValueGroups(vgEl);
+      syncGroups();
     });
-    const hidden = document.createElement('input');
-    hidden.type = 'hidden';
-    hidden.name = 'deeper_' + key + '_acts_groups';
-    hidden.value = JSON.stringify(groups);
-    container.appendChild(addBtn);
-    container.appendChild(hidden);
+    vgEl.appendChild(addBtn);
   }
-  buildAll();
+
+  function refreshValueGroups() {
+    const filledItems = items.filter(it => it && it.trim());
+    const vgWrap = container.querySelector(‘.acts-vg-wrap’);
+    if (!vgWrap) return;
+    vgWrap.hidden = filledItems.length === 0;
+    if (filledItems.length) {
+      const vgEl = vgWrap.querySelector(‘.acts-vg-inner’);
+      if (vgEl) buildValueGroups(vgEl);
+    }
+  }
+
+  // ── Full build ──
+  function build() {
+    container.innerHTML = ‘’;
+
+    const listEl = document.createElement(‘div’);
+    buildItemList(listEl);
+    container.appendChild(listEl);
+
+    const vgWrap = document.createElement(‘div’);
+    vgWrap.className = ‘acts-vg-wrap’;
+    vgWrap.hidden = items.filter(it => it && it.trim()).length === 0;
+    vgWrap.style.marginTop = ‘1.2rem’;
+    const vgInner = document.createElement(‘div’);
+    vgInner.className = ‘acts-vg-inner’;
+    buildValueGroups(vgInner);
+    vgWrap.appendChild(vgInner);
+    container.appendChild(vgWrap);
+
+    const hiddenItems = document.createElement(‘input’);
+    hiddenItems.type = ‘hidden’;
+    hiddenItems.name = ‘deeper_’ + key + ‘_acts_items’;
+    hiddenItems.value = JSON.stringify(items);
+    container.appendChild(hiddenItems);
+
+    const hiddenGroups = document.createElement(‘input’);
+    hiddenGroups.type = ‘hidden’;
+    hiddenGroups.name = ‘deeper_’ + key + ‘_acts_groups’;
+    hiddenGroups.value = JSON.stringify(groups);
+    container.appendChild(hiddenGroups);
+  }
+
+  build();
 }
 
 /* ---- Step 5: Deeper questions per focus area ---- */
@@ -752,12 +845,13 @@ function initDeeperStep() {
         valid = false;
       }
     }
-    // Validate acts groups (if acts answered yes)
+    // Validate acts (if acts answered yes: need ≥1 item, and ≥1 completed value group)
     for (const k of selectedKeys) {
       if (_deeperState['deeper_' + k + '_acts_yn'] !== 'yes') continue;
+      const actItems = (_deeperState['deeper_' + k + '_acts_items'] || []).filter(i => i && i.trim());
       const groups = _deeperState['deeper_' + k + '_acts_groups'] || [];
-      const ok = groups.some(g => Array.isArray(g.selected) && g.selected.length > 0 && g.value && g.value.trim());
-      if (!ok) {
+      const groupOk = groups.some(g => Array.isArray(g.selected) && g.selected.length > 0 && g.value && g.value.trim());
+      if (!actItems.length || !groupOk) {
         const gc = document.getElementById('acts-groups-' + k);
         if (valid && gc) scrollToVisible(gc);
         valid = false;

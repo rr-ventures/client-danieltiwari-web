@@ -486,6 +486,10 @@
     window.advanceMainStep=function(){current++;showStep(current);};
     btnNext.addEventListener('click',()=>{if(validateStep(current)){current++;showStep(current);}});
     btnBack.addEventListener('click',()=>{current--;showStep(current);});
+    document.addEventListener('keydown',function(e){
+      if(e.key!=='Enter'||e.target.tagName==='TEXTAREA'||formNav.hidden)return;
+      e.preventDefault();btnNext.click();
+    });
     const _p=new URLSearchParams(location.search);
     const _s=parseInt(_p.get('step'));
     current=isNaN(_s)?0:_s;

@@ -822,10 +822,7 @@ function initDeeperStep() {
           </div>
           <p class="yn-error">Please select one.</p>
           <div class="yn-expand" ${controlYn !== 'yes' ? 'hidden' : ''}>
-            <div class="deeper-field" style="margin-top:.9rem">
-              <label>What are they?</label>
-              <div id="control-list-${key}"></div>
-            </div>
+            <div id="control-list-${key}" style="margin-top:.9rem"></div>
             <div id="control-attitude-${key}" ${controlItems.filter(i => i && i.trim()).length ? '' : 'hidden'}></div>
           </div>
         </div>

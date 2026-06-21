@@ -384,8 +384,9 @@ function initDeeperStep() {
       ? `What would need to be resolved, achieved, or in place…`
       : `Describe the version of this area that would feel fully alive…`;
     const causeVal = _deeperState[`deeper_${key}_cause`] || '';
-    const controlYn  = _deeperState[`deeper_${key}_control_yn`] || '';
-    const controlVal = _deeperState[`deeper_${key}_control`] || '';
+    const controlYn       = _deeperState[`deeper_${key}_control_yn`] || '';
+    const controlVal      = _deeperState[`deeper_${key}_control`] || '';
+    const controlAttitude = _deeperState[`deeper_${key}_control_attitude`] || '';
     const actsYn       = _deeperState[`deeper_${key}_acts_yn`] || '';
     const actsVal      = _deeperState[`deeper_${key}_acts`] || '';
     const actsValues   = _deeperState[`deeper_${key}_acts_values`] || '';
@@ -427,7 +428,7 @@ function initDeeperStep() {
           </div>
         </div>
         <div class="deeper-field yn-field" data-key="${key}" data-role="control">
-          <label>What are things that on the other hand feel like they're not in your control?</label>
+          <label>Is there anything that on the other hand you feel like is NOT in your control?</label>
           <div class="yn-btns">
             <button type="button" class="yn-btn${controlYn === 'yes' ? ' selected' : ''}" data-val="yes">Yes</button>
             <button type="button" class="yn-btn${controlYn === 'no'  ? ' selected' : ''}" data-val="no">No</button>
@@ -435,8 +436,14 @@ function initDeeperStep() {
           <p class="yn-error">Please select one.</p>
           <div class="yn-expand" ${controlYn !== 'yes' ? 'hidden' : ''}>
             <div class="deeper-field" style="margin-top:.9rem">
-              <label for="deeper_${key}_control">What specifically do you need to accept rather than try to fix?</label>
+              <label for="deeper_${key}_control">What are they?</label>
               <textarea id="deeper_${key}_control" name="deeper_${key}_control" ${controlYn === 'yes' ? 'required' : ''} placeholder="The things that are not yours to change…">${controlVal}</textarea>
+            </div>
+            <div class="values-reveal" ${controlVal ? '' : 'hidden'}>
+              <div class="deeper-field" style="margin-bottom:0">
+                <label for="deeper_${key}_control_attitude">Is your attitude towards and interpretation of these things serving you?</label>
+                <textarea id="deeper_${key}_control_attitude" name="deeper_${key}_control_attitude" ${(controlYn === 'yes' && controlVal) ? 'required' : ''} placeholder="Be honest — how are you relating to what you can't change?">${controlAttitude}</textarea>
+              </div>
             </div>
           </div>
         </div>

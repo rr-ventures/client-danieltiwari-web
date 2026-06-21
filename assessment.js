@@ -103,6 +103,7 @@ function renderFulfillmentCard(index, savedVal = null) {
   if (_fulfillmentKeyHandler) document.removeEventListener("keydown", _fulfillmentKeyHandler);
   _fulfillmentKeyHandler = (e) => {
     if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+    if (e.key === "Enter") { card.querySelector(".fulfillment-next-btn")?.click(); return; }
     const n = e.key === "0" ? 10 : (parseInt(e.key) >= 1 && parseInt(e.key) <= 9 ? parseInt(e.key) : null);
     if (!n) return;
     card.querySelector(`.number-btn[data-val="${n}"]`)?.click();

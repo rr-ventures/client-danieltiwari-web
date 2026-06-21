@@ -575,6 +575,10 @@ function renderItemValueGroups(key, type, itemPlaceholder, valueLabel) {
     const vgLbl = document.createElement('label');
     vgLbl.textContent = valueLabel;
     vgWrap.appendChild(vgLbl);
+    const vgError = document.createElement('p');
+    vgError.className = 'yn-error';
+    vgError.textContent = 'Every item needs at least one value attributed to it before continuing.';
+    vgWrap.appendChild(vgError);
     const vgInner = document.createElement('div');
     vgInner.className = type + '-vg-inner';
     buildValueGroups(vgInner);
@@ -957,18 +961,31 @@ function initDeeperStep() {
         valid = false;
       }
     }
-    // Validate acts (if acts answered yes: need ≥1 item, and ≥1 completed value group)
-    for (const k of selectedKeys) {
-      if (_deeperState['deeper_' + k + '_acts_yn'] !== 'yes') continue;
-      const actItems = (_deeperState['deeper_' + k + '_acts_items'] || []).filter(i => i && i.trim());
-      const groups = _deeperState['deeper_' + k + '_acts_groups'] || [];
-      const groupOk = groups.some(g => Array.isArray(g.selected) && g.selected.length > 0 && g.value && g.value.trim());
-      if (!actItems.length || !groupOk) {
-        const gc = document.getElementById('acts-groups-' + k);
+    // Validate acts + omits: every item must have ≥1 value group that covers it
+    function checkItemGroups(k, type) {
+      if (_deeperState['deeper_' + k + '_' + type + '_yn'] !== 'yes') return;
+      const filledItems = (_deeperState['deeper_' + k + '_' + type + '_items'] || []).filter(i => i && i.trim());
+      const groups = _deeperState['deeper_' + k + '_' + type + '_groups'] || [];
+      const gc = document.getElementById(type + '-groups-' + k);
+      const vgWrap = gc?.querySelector('.' + type + '-vg-wrap');
+      const vgError = vgWrap?.querySelector('.yn-error');
+      if (!filledItems.length) {
         if (valid && gc) scrollToVisible(gc);
         valid = false;
+        return;
+      }
+      const allCovered = filledItems.every(item =>
+        groups.some(g => Array.isArray(g.selected) && g.selected.includes(item) && g.value && g.value.trim())
+      );
+      if (!allCovered) {
+        if (vgError) vgError.classList.add('visible');
+        if (valid && vgWrap) scrollToVisible(vgWrap);
+        valid = false;
+      } else {
+        if (vgError) vgError.classList.remove('visible');
       }
     }
+    for (const k of selectedKeys) { checkItemGroups(k, 'acts'); checkItemGroups(k, 'omits'); }
     if (!valid) return false;
     for (const f of container.querySelectorAll('textarea[required]')) {
       if (!f.reportValidity()) return false;

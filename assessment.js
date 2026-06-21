@@ -616,6 +616,140 @@ function renderActsGroups(key) {
 }
 
 
+/* ---- Control bullet list ---- */
+function renderControlList(key) {
+  const container = document.getElementById('control-list-' + key);
+  if (!container) return;
+  if (!Array.isArray(_deeperState['deeper_' + key + '_control_items'])) {
+    _deeperState['deeper_' + key + '_control_items'] = [''];
+  }
+  const items = _deeperState['deeper_' + key + '_control_items'];
+
+  function syncAndUpdate() {
+    _deeperState['deeper_' + key + '_control_items'] = items;
+    const hidden = container.querySelector('input[type="hidden"]');
+    if (hidden) hidden.value = JSON.stringify(items);
+    renderControlAttitude(key);
+  }
+
+  function build() {
+    container.innerHTML = '';
+    const list = document.createElement('div');
+    list.className = 'cause-list';
+    items.forEach((val, i) => {
+      const row = document.createElement('div');
+      row.className = 'cause-item';
+      const bullet = document.createElement('span');
+      bullet.className = 'cause-bullet';
+      bullet.textContent = '—';
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.className = 'cause-input';
+      inp.value = val;
+      inp.placeholder = 'Something not in your control…';
+      inp.addEventListener('input', () => {
+        items[i] = inp.value;
+        syncAndUpdate();
+        container.querySelectorAll('.cause-remove').forEach(b => { b.hidden = items.length === 1; });
+      });
+      const rm = document.createElement('button');
+      rm.type = 'button';
+      rm.className = 'cause-remove';
+      rm.textContent = '×';
+      rm.hidden = items.length === 1;
+      rm.addEventListener('click', () => {
+        items.splice(i, 1);
+        _deeperState['deeper_' + key + '_control_items'] = items;
+        build();
+        syncAndUpdate();
+      });
+      row.appendChild(bullet); row.appendChild(inp); row.appendChild(rm);
+      list.appendChild(row);
+    });
+    const addBtn = document.createElement('button');
+    addBtn.type = 'button';
+    addBtn.className = 'list-add-btn';
+    addBtn.textContent = '+ Add another';
+    addBtn.addEventListener('click', () => {
+      items.push('');
+      _deeperState['deeper_' + key + '_control_items'] = items;
+      build();
+      const inputs = container.querySelectorAll('.cause-input');
+      if (inputs.length) inputs[inputs.length - 1].focus();
+    });
+    const hidden = document.createElement('input');
+    hidden.type = 'hidden';
+    hidden.name = 'deeper_' + key + '_control_items';
+    hidden.value = JSON.stringify(items);
+    container.appendChild(list);
+    container.appendChild(addBtn);
+    container.appendChild(hidden);
+  }
+  build();
+}
+
+/* ---- Control attitude per-item Yes/No ---- */
+function renderControlAttitude(key) {
+  const container = document.getElementById('control-attitude-' + key);
+  if (!container) return;
+  const items = (_deeperState['deeper_' + key + '_control_items'] || []).filter(i => i && i.trim());
+  container.hidden = items.length === 0;
+  if (!items.length) { container.innerHTML = ''; return; }
+  if (!_deeperState['deeper_' + key + '_control_attitude_answers'] ||
+      typeof _deeperState['deeper_' + key + '_control_attitude_answers'] !== 'object') {
+    _deeperState['deeper_' + key + '_control_attitude_answers'] = {};
+  }
+  const answers = _deeperState['deeper_' + key + '_control_attitude_answers'];
+
+  function sync() {
+    _deeperState['deeper_' + key + '_control_attitude_answers'] = answers;
+    const h = container.querySelector('input[type="hidden"]');
+    if (h) h.value = JSON.stringify(answers);
+  }
+
+  container.innerHTML = '';
+  const wrap = document.createElement('div');
+  wrap.className = 'deeper-field';
+  wrap.style.marginTop = '1.4rem';
+  const lbl = document.createElement('label');
+  lbl.textContent = 'Is your attitude towards and interpretation of each of these things serving you?';
+  wrap.appendChild(lbl);
+  const itemsDiv = document.createElement('div');
+  itemsDiv.style.marginTop = '.8rem';
+  items.forEach(item => {
+    const row = document.createElement('div');
+    row.className = 'control-attitude-item';
+    const text = document.createElement('span');
+    text.className = 'control-attitude-item-text';
+    text.textContent = item;
+    const btns = document.createElement('div');
+    btns.className = 'yn-btns';
+    ['yes', 'no'].forEach(val => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'yn-btn' + (answers[item] === val ? ' selected' : '');
+      btn.textContent = val.charAt(0).toUpperCase() + val.slice(1);
+      btn.addEventListener('click', () => {
+        btns.querySelectorAll('.yn-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        answers[item] = val;
+        sync();
+      });
+      btns.appendChild(btn);
+    });
+    row.appendChild(text);
+    row.appendChild(btns);
+    itemsDiv.appendChild(row);
+  });
+  wrap.appendChild(itemsDiv);
+  container.appendChild(wrap);
+  const hidden = document.createElement('input');
+  hidden.type = 'hidden';
+  hidden.name = 'deeper_' + key + '_control_attitude_answers';
+  hidden.value = JSON.stringify(answers);
+  container.appendChild(hidden);
+}
+
 /* ---- Step 5: Deeper questions per focus area ---- */
 function initDeeperStep() {
   const container = document.getElementById('deeper-questions');
@@ -649,8 +783,8 @@ function initDeeperStep() {
     const q3Expand = urgencyFocused
       ? `What would need to be resolved, achieved, or in place…`
       : `Describe the version of this area that would feel fully alive…`;
-    const controlYn         = _deeperState[`deeper_${key}_control_yn`] || '';
-    const controlAttitudeYn = _deeperState[`deeper_${key}_control_attitude_yn`] || '';
+    const controlYn    = _deeperState[`deeper_${key}_control_yn`] || '';
+    const controlItems = _deeperState[`deeper_${key}_control_items`] || [];
     const actsYn       = _deeperState[`deeper_${key}_acts_yn`] || '';
     const omitsYn      = _deeperState[`deeper_${key}_omits_yn`] || '';
     const omitsVal     = _deeperState[`deeper_${key}_omits`] || '';
@@ -689,13 +823,10 @@ function initDeeperStep() {
           <p class="yn-error">Please select one.</p>
           <div class="yn-expand" ${controlYn !== 'yes' ? 'hidden' : ''}>
             <div class="deeper-field" style="margin-top:.9rem">
-              <label>Is your attitude towards and interpretation of these things serving you?</label>
-              <div class="yn-btns attitude-yn" data-key="${key}" style="margin-top:.4rem">
-                <button type="button" class="yn-btn${controlAttitudeYn === 'yes' ? ' selected' : ''}" data-val="yes">Yes</button>
-                <button type="button" class="yn-btn${controlAttitudeYn === 'no' ? ' selected' : ''}" data-val="no">No</button>
-              </div>
-              <input type="hidden" name="deeper_${key}_control_attitude_yn" value="${controlAttitudeYn}">
+              <label>What are they?</label>
+              <div id="control-list-${key}"></div>
             </div>
+            <div id="control-attitude-${key}" ${controlItems.filter(i => i && i.trim()).length ? '' : 'hidden'}></div>
           </div>
         </div>
         <div class="deeper-field yn-field" data-key="${key}" data-role="vision">
@@ -747,20 +878,7 @@ function initDeeperStep() {
       </div>`;
   }).join('');
 
-  selectedKeys.forEach(k => { renderCauseList(k); renderActsGroups(k); });
-
-  container.querySelectorAll('.attitude-yn').forEach(group => {
-    const k = group.dataset.key;
-    const hidden = group.parentElement.querySelector('input[type="hidden"]');
-    group.querySelectorAll('.yn-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        group.querySelectorAll('.yn-btn').forEach(b => b.classList.remove('selected'));
-        btn.classList.add('selected');
-        _deeperState[`deeper_${k}_control_attitude_yn`] = btn.dataset.val;
-        if (hidden) hidden.value = btn.dataset.val;
-      });
-    });
-  });
+  selectedKeys.forEach(k => { renderCauseList(k); renderActsGroups(k); renderControlList(k); renderControlAttitude(k); });
 
   // Wire up toggle buttons
   container.querySelectorAll('.yn-field').forEach(field => {

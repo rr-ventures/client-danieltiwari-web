@@ -350,6 +350,174 @@ function initFocusStep() {
   render();
 }
 
+/* ---- Bullet cause list ---- */
+function renderCauseList(key) {
+  const container = document.getElementById('cause-list-' + key);
+  if (!container) return;
+  if (!Array.isArray(_deeperState['deeper_' + key + '_causes'])) {
+    _deeperState['deeper_' + key + '_causes'] = [''];
+  }
+  const causes = _deeperState['deeper_' + key + '_causes'];
+
+  function syncAndUpdate() {
+    const hidden = container.querySelector('input[type="hidden"]');
+    if (hidden) hidden.value = JSON.stringify(causes);
+    renderActsGroups(key);
+  }
+
+  function build() {
+    container.innerHTML = '';
+    const list = document.createElement('div');
+    list.className = 'cause-list';
+    causes.forEach((val, i) => {
+      const row = document.createElement('div');
+      row.className = 'cause-item';
+      const bullet = document.createElement('span');
+      bullet.className = 'cause-bullet';
+      bullet.textContent = '—';
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.className = 'cause-input';
+      inp.value = val;
+      inp.placeholder = 'Add a reason…';
+      inp.addEventListener('input', () => {
+        causes[i] = inp.value;
+        _deeperState['deeper_' + key + '_causes'] = causes;
+        syncAndUpdate();
+        container.querySelectorAll('.cause-remove').forEach(b => { b.hidden = causes.length === 1; });
+      });
+      const rm = document.createElement('button');
+      rm.type = 'button';
+      rm.className = 'cause-remove';
+      rm.textContent = '×';
+      rm.hidden = causes.length === 1;
+      rm.addEventListener('click', () => {
+        causes.splice(i, 1);
+        _deeperState['deeper_' + key + '_causes'] = causes;
+        build();
+        syncAndUpdate();
+      });
+      row.appendChild(bullet); row.appendChild(inp); row.appendChild(rm);
+      list.appendChild(row);
+    });
+    const addBtn = document.createElement('button');
+    addBtn.type = 'button';
+    addBtn.className = 'list-add-btn';
+    addBtn.textContent = '+ Add another';
+    addBtn.addEventListener('click', () => {
+      causes.push('');
+      _deeperState['deeper_' + key + '_causes'] = causes;
+      build();
+      const inputs = container.querySelectorAll('.cause-input');
+      if (inputs.length) inputs[inputs.length - 1].focus();
+    });
+    const hidden = document.createElement('input');
+    hidden.type = 'hidden';
+    hidden.name = 'deeper_' + key + '_causes';
+    hidden.value = JSON.stringify(causes);
+    container.appendChild(list);
+    container.appendChild(addBtn);
+    container.appendChild(hidden);
+  }
+  build();
+}
+
+/* ---- Acts value groups ---- */
+function renderActsGroups(key) {
+  const container = document.getElementById('acts-groups-' + key);
+  if (!container) return;
+  const causes = (_deeperState['deeper_' + key + '_causes'] || []).filter(c => c && c.trim());
+  if (!Array.isArray(_deeperState['deeper_' + key + '_acts_groups'])) {
+    _deeperState['deeper_' + key + '_acts_groups'] = [{ selected: [], value: '' }];
+  }
+  const groups = _deeperState['deeper_' + key + '_acts_groups'];
+
+  function sync() {
+    _deeperState['deeper_' + key + '_acts_groups'] = groups;
+    const hidden = container.querySelector('input[type="hidden"]');
+    if (hidden) hidden.value = JSON.stringify(groups);
+  }
+
+  function buildGroup(gi) {
+    const g = groups[gi];
+    if (!Array.isArray(g.selected)) g.selected = [];
+    const wrap = document.createElement('div');
+    wrap.className = 'acts-group';
+    const checks = document.createElement('div');
+    checks.className = 'acts-checkboxes';
+    if (!causes.length) {
+      const note = document.createElement('p');
+      note.style.cssText = 'font-size:.88rem;color:var(--muted)';
+      note.textContent = 'Fill in the reasons above first.';
+      checks.appendChild(note);
+    } else {
+      causes.forEach(cause => {
+        const lbl = document.createElement('label');
+        lbl.className = 'acts-check-label';
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.checked = g.selected.includes(cause);
+        cb.addEventListener('change', () => {
+          if (cb.checked) { if (!g.selected.includes(cause)) g.selected.push(cause); }
+          else { g.selected = g.selected.filter(c => c !== cause); }
+          reveal.hidden = g.selected.length === 0;
+          sync();
+        });
+        const span = document.createElement('span');
+        span.textContent = cause;
+        lbl.appendChild(cb); lbl.appendChild(span);
+        checks.appendChild(lbl);
+      });
+    }
+    wrap.appendChild(checks);
+    const reveal = document.createElement('div');
+    reveal.className = 'acts-value-reveal';
+    reveal.hidden = g.selected.length === 0;
+    const revLbl = document.createElement('label');
+    revLbl.textContent = 'What are the values that these actions are serving? Be brutally honest with yourself here, because they may be values that you don’t consciously approve of.';
+    const ta = document.createElement('textarea');
+    ta.placeholder = 'Security, comfort, belonging, control, avoiding failure…';
+    ta.value = g.value || '';
+    ta.addEventListener('input', () => { g.value = ta.value; sync(); });
+    reveal.appendChild(revLbl); reveal.appendChild(ta);
+    wrap.appendChild(reveal);
+    if (groups.length > 1) {
+      const footer = document.createElement('div');
+      footer.className = 'acts-group-footer';
+      const rmBtn = document.createElement('button');
+      rmBtn.type = 'button';
+      rmBtn.className = 'acts-group-remove';
+      rmBtn.textContent = 'Remove';
+      rmBtn.addEventListener('click', () => { groups.splice(gi, 1); buildAll(); sync(); });
+      footer.appendChild(rmBtn);
+      wrap.appendChild(footer);
+    }
+    return wrap;
+  }
+
+  function buildAll() {
+    container.innerHTML = '';
+    groups.forEach((_, gi) => container.appendChild(buildGroup(gi)));
+    const addBtn = document.createElement('button');
+    addBtn.type = 'button';
+    addBtn.className = 'list-add-btn';
+    addBtn.style.marginTop = '.8rem';
+    addBtn.textContent = '+ Add another value group';
+    addBtn.addEventListener('click', () => {
+      groups.push({ selected: [], value: '' });
+      buildAll();
+      sync();
+    });
+    const hidden = document.createElement('input');
+    hidden.type = 'hidden';
+    hidden.name = 'deeper_' + key + '_acts_groups';
+    hidden.value = JSON.stringify(groups);
+    container.appendChild(addBtn);
+    container.appendChild(hidden);
+  }
+  buildAll();
+}
+
 /* ---- Step 5: Deeper questions per focus area ---- */
 function initDeeperStep() {
   const container = document.getElementById('deeper-questions');
@@ -383,13 +551,10 @@ function initDeeperStep() {
     const q3Expand = urgencyFocused
       ? `What would need to be resolved, achieved, or in place…`
       : `Describe the version of this area that would feel fully alive…`;
-    const causeVal = _deeperState[`deeper_${key}_cause`] || '';
     const controlYn       = _deeperState[`deeper_${key}_control_yn`] || '';
     const controlVal      = _deeperState[`deeper_${key}_control`] || '';
     const controlAttitude = _deeperState[`deeper_${key}_control_attitude`] || '';
     const actsYn       = _deeperState[`deeper_${key}_acts_yn`] || '';
-    const actsVal      = _deeperState[`deeper_${key}_acts`] || '';
-    const actsValues   = _deeperState[`deeper_${key}_acts_values`] || '';
     const omitsYn      = _deeperState[`deeper_${key}_omits_yn`] || '';
     const omitsVal     = _deeperState[`deeper_${key}_omits`] || '';
     const omitsValues  = _deeperState[`deeper_${key}_omits_values`] || '';
@@ -404,8 +569,8 @@ function initDeeperStep() {
           ${desc ? `<p class="deeper-area-desc">${desc}</p>` : ''}
         </div>
         <div class="deeper-field">
-          <label for="deeper_${key}_cause">Why does ${label} only feel like a ${data.fulfillment}/10 right now? List everything you can come up with.</label>
-          <textarea id="deeper_${key}_cause" name="deeper_${key}_cause" required placeholder="Be specific — the pattern, the situation, the thing you keep coming back to…">${causeVal}</textarea>
+          <label>Why does ${label} only feel like a ${data.fulfillment}/10 right now? List everything you can come up with.</label>
+          <div id="cause-list-${key}"></div>
         </div>
         <div class="deeper-field yn-field" data-key="${key}" data-role="acts">
           <label>Is there anything <strong>you</strong> are doing that is contributing to the above? If multiple things, list them all.</label>
@@ -415,16 +580,7 @@ function initDeeperStep() {
           </div>
           <p class="yn-error">Please select one.</p>
           <div class="yn-expand" ${actsYn !== 'yes' ? 'hidden' : ''}>
-            <div class="deeper-field" style="margin-top:.9rem">
-              <label for="deeper_${key}_acts">What are they?</label>
-              <textarea id="deeper_${key}_acts" name="deeper_${key}_acts" ${actsYn === 'yes' ? 'required' : ''} placeholder="The honest version — not what you'd say out loud, what you actually know…">${actsVal}</textarea>
-            </div>
-            <div class="values-reveal" ${actsVal ? '' : 'hidden'}>
-              <div class="deeper-field" style="margin-bottom:0">
-                <label for="deeper_${key}_acts_values">What are the values that these actions are serving? Be brutally honest with yourself here, because they may be values that you don't consciously approve of.</label>
-                <textarea id="deeper_${key}_acts_values" name="deeper_${key}_acts_values" ${(actsYn === 'yes' && actsVal) ? 'required' : ''} placeholder="Security, comfort, belonging, control, avoiding failure…">${actsValues}</textarea>
-              </div>
-            </div>
+            <div id="acts-groups-${key}" style="margin-top:.5rem"></div>
           </div>
         </div>
         <div class="deeper-field yn-field" data-key="${key}" data-role="control">
@@ -495,6 +651,8 @@ function initDeeperStep() {
         </div>
       </div>`;
   }).join('');
+
+  selectedKeys.forEach(k => { renderCauseList(k); renderActsGroups(k); });
 
   // Wire up toggle buttons
   container.querySelectorAll('.yn-field').forEach(field => {
@@ -583,6 +741,28 @@ function initDeeperStep() {
         error.classList.remove('visible');
       }
     });
+    // Validate cause lists
+    for (const k of selectedKeys) {
+      const causes = (_deeperState['deeper_' + k + '_causes'] || []).filter(c => c && c.trim());
+      if (!causes.length) {
+        const cl = document.getElementById('cause-list-' + k);
+        const inp = cl?.querySelector('.cause-input');
+        if (inp) { inp.setCustomValidity('Please add at least one reason.'); inp.reportValidity(); inp.setCustomValidity(''); }
+        if (valid && cl) scrollToVisible(cl);
+        valid = false;
+      }
+    }
+    // Validate acts groups (if acts answered yes)
+    for (const k of selectedKeys) {
+      if (_deeperState['deeper_' + k + '_acts_yn'] !== 'yes') continue;
+      const groups = _deeperState['deeper_' + k + '_acts_groups'] || [];
+      const ok = groups.some(g => Array.isArray(g.selected) && g.selected.length > 0 && g.value && g.value.trim());
+      if (!ok) {
+        const gc = document.getElementById('acts-groups-' + k);
+        if (valid && gc) scrollToVisible(gc);
+        valid = false;
+      }
+    }
     if (!valid) return false;
     for (const f of container.querySelectorAll('textarea[required]')) {
       if (!f.reportValidity()) return false;

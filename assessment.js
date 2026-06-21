@@ -422,35 +422,30 @@ function renderCauseList(key) {
   build();
 }
 
-/* ---- Acts: bullet list + value groups ---- */
-function renderActsGroups(key) {
-  const container = document.getElementById('acts-groups-' + key);
+/* ---- Shared: bullet list + value groups (acts & omits) ---- */
+function renderItemValueGroups(key, type, itemPlaceholder, valueLabel) {
+  const container = document.getElementById(type + '-groups-' + key);
   if (!container) return;
+  const itemsKey  = 'deeper_' + key + '_' + type + '_items';
+  const groupsKey = 'deeper_' + key + '_' + type + '_groups';
 
-  if (!Array.isArray(_deeperState['deeper_' + key + '_acts_items'])) {
-    _deeperState['deeper_' + key + '_acts_items'] = [''];
-  }
-  const items = _deeperState['deeper_' + key + '_acts_items'];
-
-  if (!Array.isArray(_deeperState['deeper_' + key + '_acts_groups'])) {
-    _deeperState['deeper_' + key + '_acts_groups'] = [{ selected: [], value: '' }];
-  }
-  const groups = _deeperState['deeper_' + key + '_acts_groups'];
+  if (!Array.isArray(_deeperState[itemsKey])) _deeperState[itemsKey] = [''];
+  const items = _deeperState[itemsKey];
+  if (!Array.isArray(_deeperState[groupsKey])) _deeperState[groupsKey] = [{ selected: [], value: '' }];
+  const groups = _deeperState[groupsKey];
 
   function syncItems() {
-    _deeperState['deeper_' + key + '_acts_items'] = items;
-    const h = container.querySelector('input[name="deeper_' + key + '_acts_items"]');
+    _deeperState[itemsKey] = items;
+    const h = container.querySelector('input[name="' + itemsKey + '"]');
     if (h) h.value = JSON.stringify(items);
     refreshValueGroups();
   }
-
   function syncGroups() {
-    _deeperState['deeper_' + key + '_acts_groups'] = groups;
-    const h = container.querySelector('input[name="deeper_' + key + '_acts_groups"]');
+    _deeperState[groupsKey] = groups;
+    const h = container.querySelector('input[name="' + groupsKey + '"]');
     if (h) h.value = JSON.stringify(groups);
   }
 
-  // ── Section 1: bullet list of what they're doing ──
   function buildItemList(listEl) {
     listEl.innerHTML = '';
     const rows = document.createElement('div');
@@ -465,7 +460,7 @@ function renderActsGroups(key) {
       inp.type = 'text';
       inp.className = 'cause-input';
       inp.value = val;
-      inp.placeholder = 'Describe what you are doing…';
+      inp.placeholder = itemPlaceholder;
       inp.addEventListener('input', () => {
         items[i] = inp.value;
         syncItems();
@@ -476,11 +471,7 @@ function renderActsGroups(key) {
       rm.className = 'cause-remove';
       rm.textContent = '×';
       rm.hidden = items.length === 1;
-      rm.addEventListener('click', () => {
-        items.splice(i, 1);
-        buildItemList(listEl);
-        syncItems();
-      });
+      rm.addEventListener('click', () => { items.splice(i, 1); buildItemList(listEl); syncItems(); });
       row.appendChild(bullet); row.appendChild(inp); row.appendChild(rm);
       rows.appendChild(row);
     });
@@ -498,7 +489,6 @@ function renderActsGroups(key) {
     listEl.appendChild(addBtn);
   }
 
-  // ── Section 2: value groups (appears once items are filled) ──
   function buildGroup(gi, vgEl) {
     const g = groups[gi];
     if (!Array.isArray(g.selected)) g.selected = [];
@@ -559,60 +549,62 @@ function renderActsGroups(key) {
     addBtn.className = 'list-add-btn';
     addBtn.style.marginTop = '.8rem';
     addBtn.textContent = '+ Add another value group';
-    addBtn.addEventListener('click', () => {
-      groups.push({ selected: [], value: '' });
-      buildValueGroups(vgEl);
-      syncGroups();
-    });
+    addBtn.addEventListener('click', () => { groups.push({ selected: [], value: '' }); buildValueGroups(vgEl); syncGroups(); });
     vgEl.appendChild(addBtn);
   }
 
   function refreshValueGroups() {
     const filledItems = items.filter(it => it && it.trim());
-    const vgWrap = container.querySelector('.acts-vg-wrap');
+    const vgWrap = container.querySelector('.' + type + '-vg-wrap');
     if (!vgWrap) return;
     vgWrap.hidden = filledItems.length === 0;
-    if (filledItems.length) {
-      const vgEl = vgWrap.querySelector('.acts-vg-inner');
-      if (vgEl) buildValueGroups(vgEl);
-    }
+    if (filledItems.length) { const vgEl = vgWrap.querySelector('.' + type + '-vg-inner'); if (vgEl) buildValueGroups(vgEl); }
   }
 
-  // ── Full build ──
   function build() {
     container.innerHTML = '';
-
     const listEl = document.createElement('div');
     buildItemList(listEl);
     container.appendChild(listEl);
 
     const vgWrap = document.createElement('div');
-    vgWrap.className = 'acts-vg-wrap deeper-field';
+    vgWrap.className = type + '-vg-wrap deeper-field';
     vgWrap.hidden = items.filter(it => it && it.trim()).length === 0;
     vgWrap.style.marginTop = '1.4rem';
     const vgLbl = document.createElement('label');
-    vgLbl.textContent = "What values are each of those actions serving? Be brutally honest — they may be values you don't consciously approve of.";
+    vgLbl.textContent = valueLabel;
     vgWrap.appendChild(vgLbl);
     const vgInner = document.createElement('div');
-    vgInner.className = 'acts-vg-inner';
+    vgInner.className = type + '-vg-inner';
     buildValueGroups(vgInner);
     vgWrap.appendChild(vgInner);
     container.appendChild(vgWrap);
 
     const hiddenItems = document.createElement('input');
     hiddenItems.type = 'hidden';
-    hiddenItems.name = 'deeper_' + key + '_acts_items';
+    hiddenItems.name = itemsKey;
     hiddenItems.value = JSON.stringify(items);
     container.appendChild(hiddenItems);
-
     const hiddenGroups = document.createElement('input');
     hiddenGroups.type = 'hidden';
-    hiddenGroups.name = 'deeper_' + key + '_acts_groups';
+    hiddenGroups.name = groupsKey;
     hiddenGroups.value = JSON.stringify(groups);
     container.appendChild(hiddenGroups);
   }
 
   build();
+}
+
+function renderActsGroups(key) {
+  renderItemValueGroups(key, 'acts',
+    'Describe what you are doing…',
+    "What values are each of those actions serving? Be brutally honest — they may be values you don't consciously approve of.");
+}
+
+function renderOmitsGroups(key) {
+  renderItemValueGroups(key, 'omits',
+    'Describe what you are NOT doing…',
+    "What values are each of those inactions serving? Be brutally honest — they may be values you don't consciously approve of.");
 }
 
 
@@ -786,9 +778,7 @@ function initDeeperStep() {
     const controlYn    = _deeperState[`deeper_${key}_control_yn`] || '';
     const controlItems = _deeperState[`deeper_${key}_control_items`] || [];
     const actsYn       = _deeperState[`deeper_${key}_acts_yn`] || '';
-    const omitsYn      = _deeperState[`deeper_${key}_omits_yn`] || '';
-    const omitsVal     = _deeperState[`deeper_${key}_omits`] || '';
-    const omitsValues  = _deeperState[`deeper_${key}_omits_values`] || '';
+    const omitsYn = _deeperState[`deeper_${key}_omits_yn`] || '';
     const visionYn       = _deeperState[`deeper_${key}_vision_yn`] || '';
     const visionVal      = _deeperState[`deeper_${key}_vision`] || '';
     const visionValues   = _deeperState[`deeper_${key}_vision_values`] || '';
@@ -860,22 +850,13 @@ function initDeeperStep() {
           </div>
           <p class="yn-error">Please select one.</p>
           <div class="yn-expand" ${omitsYn !== 'yes' ? 'hidden' : ''}>
-            <div class="deeper-field" style="margin-top:.9rem">
-              <label for="deeper_${key}_omits">What is it?</label>
-              <textarea id="deeper_${key}_omits" name="deeper_${key}_omits" ${omitsYn === 'yes' ? 'required' : ''} placeholder="What do you know you should be doing but aren't…">${omitsVal}</textarea>
-            </div>
-            <div class="values-reveal" ${omitsVal ? '' : 'hidden'}>
-              <div class="deeper-field" style="margin-bottom:0">
-                <label for="deeper_${key}_omits_values">What value(s) of yours are you serving with this inaction?</label>
-                <textarea id="deeper_${key}_omits_values" name="deeper_${key}_omits_values" ${(omitsYn === 'yes' && omitsVal) ? 'required' : ''} placeholder="Security, comfort, belonging, control, avoiding failure…">${omitsValues}</textarea>
-              </div>
-            </div>
+            <div id="omits-groups-${key}" style="margin-top:.5rem"></div>
           </div>
         </div>
       </div>`;
   }).join('');
 
-  selectedKeys.forEach(k => { renderCauseList(k); renderActsGroups(k); renderControlList(k); renderControlAttitude(k); });
+  selectedKeys.forEach(k => { renderCauseList(k); renderActsGroups(k); renderOmitsGroups(k); renderControlList(k); renderControlAttitude(k); });
 
   // Wire up toggle buttons
   container.querySelectorAll('.yn-field').forEach(field => {

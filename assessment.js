@@ -529,7 +529,7 @@ function renderActsGroups(key) {
     reveal.className = ‘acts-value-reveal’;
     reveal.hidden = g.selected.length === 0;
     const revLbl = document.createElement(‘label’);
-    revLbl.textContent = ‘What are the values that these actions are serving? Be brutally honest with yourself here, because they may be values that you don’t consciously approve of.’;
+    revLbl.textContent = "What are the values that these actions are serving? Be brutally honest with yourself here, because they may be values that you don’t consciously approve of.";
     const ta = document.createElement(‘textarea’);
     ta.placeholder = ‘Security, comfort, belonging, control, avoiding failure…’;
     ta.value = g.value || ‘’;

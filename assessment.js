@@ -840,6 +840,10 @@ function renderControlAttitude(key) {
     itemsDiv.appendChild(row);
   });
   wrap.appendChild(itemsDiv);
+  const attError = document.createElement('p');
+  attError.className = 'yn-error';
+  attError.textContent = 'Please answer yes or no for each item before continuing.';
+  wrap.appendChild(attError);
   container.appendChild(wrap);
   const hidden = document.createElement('input');
   hidden.type = 'hidden';
@@ -1076,6 +1080,25 @@ function initDeeperStep() {
         if (inp) { inp.setCustomValidity('Please add at least one reason.'); inp.reportValidity(); inp.setCustomValidity(''); }
         if (valid && cl) scrollToVisible(cl);
         valid = false;
+      }
+    }
+
+    if (qtype === 'control') {
+      if (_deeperState['deeper_' + key + '_control_yn'] === 'yes') {
+        const filledItems = (_deeperState['deeper_' + key + '_control_items'] || []).filter(i => i && i.trim());
+        const answers = _deeperState['deeper_' + key + '_control_attitude_answers'] || {};
+        const attEl = document.getElementById('control-attitude-' + key);
+        const attErr = attEl?.querySelector('.yn-error');
+        if (filledItems.length) {
+          const allAnswered = filledItems.every(item => answers[item] === 'yes' || answers[item] === 'no');
+          if (!allAnswered) {
+            if (attErr) attErr.classList.add('visible');
+            if (valid && attEl) scrollToVisible(attEl);
+            valid = false;
+          } else {
+            if (attErr) attErr.classList.remove('visible');
+          }
+        }
       }
     }
 

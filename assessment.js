@@ -937,7 +937,7 @@ function initDeeperStep() {
                 <label class="confirm-check-wrap">
                   <input type="checkbox" class="vision-actual-check" name="deeper_${key}_vision_actual" value="yes" ${visionActualYn === 'yes' ? 'checked' : ''}>
                   <span class="confirm-check-box"></span>
-                  <span class="confirm-check-text">I genuinely want this</span>
+                  <span class="confirm-check-text">I genuinely want these</span>
                 </label>
                 <p class="yn-error">Please confirm before continuing.</p>
               </div>

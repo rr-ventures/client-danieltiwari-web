@@ -591,7 +591,7 @@ function renderActsGroups(key) {
     vgWrap.hidden = items.filter(it => it && it.trim()).length === 0;
     vgWrap.style.marginTop = '1.4rem';
     const vgLbl = document.createElement('label');
-    vgLbl.textContent = "What values are those actions serving? Be brutally honest — they may be values you don't consciously approve of.";
+    vgLbl.textContent = "What values are each of those actions serving? Be brutally honest — they may be values you don't consciously approve of.";
     vgWrap.appendChild(vgLbl);
     const vgInner = document.createElement('div');
     vgInner.className = 'acts-vg-inner';

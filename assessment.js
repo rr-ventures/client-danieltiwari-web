@@ -522,6 +522,7 @@ function renderItemValueGroups(key, type, itemPlaceholder, valueLabel) {
     valueInp.type = 'text';
     valueInp.className = 'cause-input';
     valueInp.style.marginTop = '.6rem';
+    valueInp.style.width = '100%';
     valueInp.placeholder = 'e.g. Security, comfort, avoiding failure…';
     valueInp.value = g.value || '';
     valueInp.addEventListener('input', () => { g.value = valueInp.value; syncGroups(); });

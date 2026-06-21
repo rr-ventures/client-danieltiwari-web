@@ -963,6 +963,7 @@ function initDeeperStep() {
       `<div class="deeper-subpage" id="deeper-sub-${key}-omits" hidden>
         ${head}
         <div id="recap-causes-${key}-omits" data-label="Why ${label} feels like a ${data.fulfillment}/10" class="recap-block" hidden></div>
+        <div id="recap-arrow-${key}" class="recap-arrow" hidden>↓</div>
         <div id="recap-vision-${key}" data-label="Your vision for a 10/10 ${label}" class="recap-block" hidden></div>
         <div class="deeper-field yn-field" data-key="${key}" data-role="omits">
           <label>Is there anything that <strong>you</strong> are NOT doing but COULD be doing that would improve ${label}?</label>
@@ -1013,6 +1014,8 @@ function initDeeperStep() {
         ? (_deeperState['deeper_' + key + '_vision_items'] || []).filter(i => i && i.trim())
         : [];
       fillRecapBlock(document.getElementById('recap-vision-' + key), vItems);
+      const arrowEl = document.getElementById('recap-arrow-' + key);
+      if (arrowEl) arrowEl.hidden = !causes.length || !vItems.length;
     }
   }
   window._deeperSubPageCount = allSubPages.length;

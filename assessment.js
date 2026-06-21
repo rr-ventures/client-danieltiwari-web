@@ -613,6 +613,107 @@ function renderOmitsGroups(key) {
 }
 
 
+/* ---- Vision bullet list ---- */
+function renderVisionList(key) {
+  const container = document.getElementById('vision-list-' + key);
+  if (!container) return;
+  if (!Array.isArray(_deeperState['deeper_' + key + '_vision_items'])) {
+    _deeperState['deeper_' + key + '_vision_items'] = [''];
+  }
+  const items = _deeperState['deeper_' + key + '_vision_items'];
+  const expand = container.closest('.yn-expand');
+  const valuesReveal = expand?.querySelector('.values-reveal');
+  const confirmCheck = valuesReveal?.querySelector('.vision-actual-check');
+  const confirmError = valuesReveal?.querySelector('.yn-error');
+
+  if (confirmCheck && !confirmCheck.dataset.wired) {
+    confirmCheck.dataset.wired = '1';
+    confirmCheck.addEventListener('change', () => {
+      _deeperState['deeper_' + key + '_vision_actual_yn'] = confirmCheck.checked ? 'yes' : '';
+      if (confirmError) confirmError.classList.remove('visible');
+    });
+  }
+
+  function updateReveal() {
+    const filled = items.filter(i => i && i.trim()).length > 0;
+    if (valuesReveal) valuesReveal.hidden = !filled;
+  }
+
+  function uncheck() {
+    if (confirmCheck && confirmCheck.checked) {
+      confirmCheck.checked = false;
+      _deeperState['deeper_' + key + '_vision_actual_yn'] = '';
+    }
+  }
+
+  function syncHidden() {
+    const h = container.querySelector('input[type="hidden"]');
+    if (h) h.value = JSON.stringify(items);
+  }
+
+  function build() {
+    container.innerHTML = '';
+    const placeholder = container.dataset.placeholder || 'What would need to be in place…';
+    const list = document.createElement('div');
+    list.className = 'cause-list';
+    items.forEach((val, i) => {
+      const row = document.createElement('div');
+      row.className = 'cause-item';
+      const bullet = document.createElement('span');
+      bullet.className = 'cause-bullet';
+      bullet.textContent = '—';
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.className = 'cause-input';
+      inp.value = val;
+      inp.placeholder = placeholder;
+      inp.addEventListener('input', () => {
+        items[i] = inp.value;
+        _deeperState['deeper_' + key + '_vision_items'] = items;
+        syncHidden();
+        updateReveal();
+        uncheck();
+        container.querySelectorAll('.cause-remove').forEach(b => { b.hidden = items.length === 1; });
+      });
+      const rm = document.createElement('button');
+      rm.type = 'button';
+      rm.className = 'cause-remove';
+      rm.textContent = '×';
+      rm.hidden = items.length === 1;
+      rm.addEventListener('click', () => {
+        items.splice(i, 1);
+        _deeperState['deeper_' + key + '_vision_items'] = items;
+        build();
+        syncHidden();
+        updateReveal();
+      });
+      row.appendChild(bullet); row.appendChild(inp); row.appendChild(rm);
+      list.appendChild(row);
+    });
+    const addBtn = document.createElement('button');
+    addBtn.type = 'button';
+    addBtn.className = 'list-add-btn';
+    addBtn.textContent = '+ Add another';
+    addBtn.addEventListener('click', () => {
+      items.push('');
+      _deeperState['deeper_' + key + '_vision_items'] = items;
+      build();
+      const inputs = container.querySelectorAll('.cause-input');
+      if (inputs.length) inputs[inputs.length - 1].focus();
+    });
+    const hidden = document.createElement('input');
+    hidden.type = 'hidden';
+    hidden.name = 'deeper_' + key + '_vision_items';
+    hidden.value = JSON.stringify(items);
+    container.appendChild(list);
+    container.appendChild(addBtn);
+    container.appendChild(hidden);
+  }
+
+  build();
+  updateReveal();
+}
+
 /* ---- Control bullet list ---- */
 function renderControlList(key) {
   const container = document.getElementById('control-list-' + key);
@@ -785,8 +886,7 @@ function initDeeperStep() {
     const actsYn       = _deeperState[`deeper_${key}_acts_yn`] || '';
     const omitsYn = _deeperState[`deeper_${key}_omits_yn`] || '';
     const visionYn       = _deeperState[`deeper_${key}_vision_yn`] || '';
-    const visionVal      = _deeperState[`deeper_${key}_vision`] || '';
-    const visionValues   = _deeperState[`deeper_${key}_vision_values`] || '';
+    const visionItems    = _deeperState[`deeper_${key}_vision_items`] || [];
     const visionActualYn = _deeperState[`deeper_${key}_vision_actual_yn`] || '';
     return `
       <div class="deeper-block">
@@ -830,11 +930,8 @@ function initDeeperStep() {
           </div>
           <p class="yn-error">Please select one.</p>
           <div class="yn-expand" ${(visionYn === 'yes' || visionYn === 'partially') ? '' : 'hidden'}>
-            <div class="deeper-field" style="margin-top:.9rem">
-              <label for="deeper_${key}_vision">Describe it.</label>
-              <textarea id="deeper_${key}_vision" name="deeper_${key}_vision" ${(visionYn === 'yes' || visionYn === 'partially') ? 'required' : ''} placeholder="${q3Expand}">${visionVal}</textarea>
-            </div>
-            <div class="values-reveal" ${visionVal ? '' : 'hidden'}>
+            <div id="vision-list-${key}" data-placeholder="${q3Expand}" style="margin-top:.9rem"></div>
+            <div class="values-reveal" ${visionItems.filter(i => i && i.trim()).length ? '' : 'hidden'}>
               <div class="deeper-field vision-actual-field" data-key="${key}">
                 <label>Are you sure you <strong>ACTUALLY WANT THIS?</strong> Or is this something you think you're <strong>SUPPOSED TO</strong> want, or <strong>WOULD LIKE TO</strong> want, but don't really?</label>
                 <label class="confirm-check-wrap">
@@ -861,7 +958,7 @@ function initDeeperStep() {
       </div>`;
   }).join('');
 
-  selectedKeys.forEach(k => { renderCauseList(k); renderActsGroups(k); renderOmitsGroups(k); renderControlList(k); renderControlAttitude(k); });
+  selectedKeys.forEach(k => { renderCauseList(k); renderActsGroups(k); renderOmitsGroups(k); renderControlList(k); renderControlAttitude(k); renderVisionList(k); });
 
   // Wire up toggle buttons
   container.querySelectorAll('.yn-field').forEach(field => {
@@ -986,6 +1083,19 @@ function initDeeperStep() {
       }
     }
     for (const k of selectedKeys) { checkItemGroups(k, 'acts'); checkItemGroups(k, 'omits'); }
+    // Validate vision list
+    for (const k of selectedKeys) {
+      const yn = _deeperState['deeper_' + k + '_vision_yn'];
+      if (yn !== 'yes' && yn !== 'partially') continue;
+      const vItems = (_deeperState['deeper_' + k + '_vision_items'] || []).filter(i => i && i.trim());
+      if (!vItems.length) {
+        const vc = document.getElementById('vision-list-' + k);
+        const inp = vc?.querySelector('.cause-input');
+        if (inp) { inp.setCustomValidity('Please describe what it would take.'); inp.reportValidity(); inp.setCustomValidity(''); }
+        if (valid && vc) scrollToVisible(vc);
+        valid = false;
+      }
+    }
     if (!valid) return false;
     for (const f of container.querySelectorAll('textarea[required]')) {
       if (!f.reportValidity()) return false;

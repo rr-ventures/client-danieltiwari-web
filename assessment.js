@@ -577,7 +577,7 @@ function renderItemValueGroups(key, type, itemPlaceholder, valueLabel) {
     vgWrap.appendChild(vgLbl);
     const vgError = document.createElement('p');
     vgError.className = 'yn-error';
-    vgError.textContent = 'Every item needs at least one value attributed to it before continuing.';
+    vgError.textContent = 'Every ' + (type === 'acts' ? 'action' : 'inaction') + ' needs at least one value attributed to it before continuing.';
     vgWrap.appendChild(vgError);
     const vgInner = document.createElement('div');
     vgInner.className = type + '-vg-inner';

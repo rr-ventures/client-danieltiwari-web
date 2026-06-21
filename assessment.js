@@ -403,7 +403,7 @@ function initDeeperStep() {
           ${desc ? `<p class="deeper-area-desc">${desc}</p>` : ''}
         </div>
         <div class="deeper-field">
-          <label for="deeper_${key}_cause">What's contributing to ${label} feeling only like a ${data.fulfillment}/10 right now?</label>
+          <label for="deeper_${key}_cause">Why does ${label} only feel like a ${data.fulfillment}/10 right now?</label>
           <textarea id="deeper_${key}_cause" name="deeper_${key}_cause" required placeholder="Be specific — the pattern, the situation, the thing you keep coming back to…">${causeVal}</textarea>
         </div>
         <div class="deeper-field yn-field" data-key="${key}" data-role="acts">

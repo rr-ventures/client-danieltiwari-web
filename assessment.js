@@ -407,7 +407,7 @@ function initDeeperStep() {
           <textarea id="deeper_${key}_cause" name="deeper_${key}_cause" required placeholder="Be specific — the pattern, the situation, the thing you keep coming back to…">${causeVal}</textarea>
         </div>
         <div class="deeper-field yn-field" data-key="${key}" data-role="acts">
-          <label>Is there anything that <strong>you</strong> are doing that is contributing to ${label} being only a ${data.fulfillment}/10?</label>
+          <label>Is there anything <strong>you</strong> are doing that is contributing to the above? If multiple things, list them all.</label>
           <div class="yn-btns">
             <button type="button" class="yn-btn${actsYn === 'yes' ? ' selected' : ''}" data-val="yes">Yes</button>
             <button type="button" class="yn-btn${actsYn === 'no'  ? ' selected' : ''}" data-val="no">No</button>

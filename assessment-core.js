@@ -7,17 +7,17 @@
    these top-level bindings are visible to the scripts that follow.
    ============================================================ */
 const AREAS = [
-  ["career", "Career", "Work, vocation, and your sense of professional purpose."],
-  ["relationships", "Romantic Relationship(s)", "The depth, honesty, and quality of your intimate partnership."],
-  ["friendships", "Friendships", "The closeness and quality of your friendships."],
-  ["family", "Family", "How connected, free, and fully yourself you feel around family."],
-  ["health", "Health", "Physical health, sleep, nutrition, and baseline energy."],
-  ["fitness", "Vitality", "Physical fitness, strength, and how alive you feel in your body."],
-  ["attractiveness", "Attractiveness", "How you feel about your appearance — in your own eyes, not just others'."],
-  ["money", "Finances", "Financial security, income, and your sense of freedom around money."],
-  ["adventure", "Adventure", "Novelty, aliveness, and how much you're actually experiencing life."],
-  ["spirituality", "Meaning", "Sense of purpose, spiritual life, and connection to something larger."],
-  ["lifestyle", "Lifestyle", "Your day-to-day environment, rhythms, and how intentionally you live."],
+  ["career", "Career & Vocation", "Placeholder text."],
+  ["relationships", "Romance", "Placeholder text."],
+  ["friendships", "Friendships", "Placeholder text."],
+  ["family", "Family", "Placeholder text."],
+  ["health", "Health & Vitality", "Placeholder text."],
+  ["attractiveness", "Attractiveness", "Placeholder text."],
+  ["money", "Finances", "Placeholder text."],
+  ["lifestyle", "Lifestyle & Environment", "Placeholder text."],
+  ["adventure", "Recreation & Adventure", "Placeholder text."],
+  ["growth", "Personal Growth", "Placeholder text."],
+  ["spirituality", "Meaning & Spirituality", "Placeholder text."],
 ];
 
 const CALENDLY = "https://cal.eu/danieltiwari/connect";
@@ -62,13 +62,13 @@ const AREA_READ = {
   relationships:{ looks: "being present in body but not fully in truth with someone close", shift: "say one true thing you've been carefully managing around." },
   friendships:  { looks: "people around you, and a quiet sense of going unmet by them", shift: "reach for one person you can be completely unedited with this week." },
   family:       { looks: "slipping into old roles that no longer fit who you've become", shift: "notice where you perform the version of yourself your family still expects." },
-  health:       { looks: "a body you negotiate with rather than actually inhabit", shift: "pick the one basic you keep abandoning, and protect it for a week." },
-  fitness:      { looks: "energy that doesn't match the life you're trying to live", shift: "move daily in a way you'd genuinely choose, not as punishment." },
+  health:       { looks: "a body you negotiate with rather than actually inhabit, with energy that doesn't match the life you're trying to live", shift: "pick the one basic you keep abandoning — sleep, movement, food — and protect it for a week." },
   attractiveness:{ looks: "a gap between how you present and how you feel underneath it", shift: "tend to one thing that's for you, not for being seen." },
   money:        { looks: "numbers quietly driving decisions you wouldn't otherwise make", shift: "separate what you actually need from what you're trying to prove." },
-  adventure:    { looks: "a life that's safe, ordered, and quietly under-lived", shift: "put one genuinely alive thing on the calendar, soon." },
+  lifestyle:    { looks: "surroundings and rhythms shaped by default rather than by intention", shift: "change one thing in your daily environment or routine to match who you're becoming." },
+  adventure:    { looks: "days that feel full on paper but thin on actual enjoyment or aliveness", shift: "put one thing on the calendar soon that you'd genuinely look forward to." },
+  growth:       { looks: "a sense of standing still while the person you could be waits", shift: "name one thing you've been meaning to learn or work on, and give it one hour this week." },
   spirituality: { looks: "competence without much sense of why any of it matters", shift: "make space for one question bigger than your to-do list." },
-  lifestyle:    { looks: "surroundings shaped by default rather than by intention", shift: "change one thing in your daily environment to match who you're becoming." },
 };
 
 function numeric(value, fallback = 0) {
@@ -79,7 +79,7 @@ function numeric(value, fallback = 0) {
 function wheelData(answers) {
   return AREAS.map(([key, label]) => ({
     key, label,
-    fulfillment: numeric(answers[`fulfillment_${key}`], 5),
+    fulfillment: numeric(answers[`fulfillment_${key}`], 3),
     importance: numeric(answers[`importance_${key}`], 5),
     urgency: numeric(answers[`urgency_${key}`], 5),
   }));
@@ -87,7 +87,7 @@ function wheelData(answers) {
 
 function topFocusAreas(wheel) {
   return wheel
-    .map((a) => ({ ...a, gap: a.importance - a.fulfillment, score: (11 - a.fulfillment) + a.importance + a.urgency }))
+    .map((a) => ({ ...a, gap: a.importance - a.fulfillment, score: (6 - a.fulfillment) * 2 + a.importance + a.urgency }))
     .sort((a, b) => b.score - a.score)
     .slice(0, 2);
 }
@@ -114,7 +114,7 @@ function rebelFactor(answers) {
 
 function fulfilmentScore(wheel) {
   const avg = wheel.reduce((s, a) => s + a.fulfillment, 0) / wheel.length;
-  const pct = Math.round(avg * 10);
+  const pct = Math.round((avg - 1) / 4 * 100);
   const tier = pct < 35 ? "Quietly depleted" : pct < 55 ? "Holding it together"
     : pct < 70 ? "Capable but unfulfilled" : pct < 85 ? "Coming into alignment" : "Largely aligned";
   return { pct, tier };
@@ -166,8 +166,8 @@ function renderWheel(wheel) {
     const anchor = Math.abs(lx - c) < 8 ? "middle" : lx < c ? "end" : "start";
     labels += `<text x="${lx.toFixed(1)}" y="${(ly + 3).toFixed(1)}" text-anchor="${anchor}" font-size="10" fill="var(--muted)" font-family="Alegreya SC, serif" letter-spacing="0.04em">${a.label}</text>`;
   });
-  const poly = wheel.map((a, i) => pt(i, R * (a.fulfillment / 10)).map((v) => v.toFixed(1)).join(",")).join(" ");
-  const dots = wheel.map((a, i) => { const [x, y] = pt(i, R * (a.fulfillment / 10)); return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.6" fill="var(--ink)"/>`; }).join("");
+  const poly = wheel.map((a, i) => pt(i, R * (a.fulfillment / 5)).map((v) => v.toFixed(1)).join(",")).join(" ");
+  const dots = wheel.map((a, i) => { const [x, y] = pt(i, R * (a.fulfillment / 5)); return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.6" fill="var(--ink)"/>`; }).join("");
   return `<svg viewBox="-72 -4 ${size + 144} ${size + 8}" class="wheel-svg" role="img" aria-label="Your Wheel of Life">
     ${rings}${axes}
     <polygon points="${poly}" fill="rgba(28,26,20,.12)" stroke="var(--ink)" stroke-width="1.5"/>
@@ -177,7 +177,7 @@ function renderWheel(wheel) {
 
 function rankAllAreas(wheel) {
   return wheel
-    .map((a) => ({ ...a, score: (11 - a.fulfillment) + a.importance + a.urgency }))
+    .map((a) => ({ ...a, score: (6 - a.fulfillment) * 2 + a.importance + a.urgency }))
     .sort((a, b) => b.score - a.score);
 }
 
@@ -191,7 +191,7 @@ function renderPieChart(wheel) {
     const x0 = (c + Math.cos(a0) * R).toFixed(1), y0 = (c + Math.sin(a0) * R).toFixed(1);
     const x1 = (c + Math.cos(a1) * R).toFixed(1), y1 = (c + Math.sin(a1) * R).toFixed(1);
     bg += `<path d="M${c},${c} L${x0},${y0} A${R},${R} 0 0,1 ${x1},${y1} Z" fill="var(--bg2)" stroke="var(--bg)" stroke-width="2"/>`;
-    const fr = Math.max(R * (area.fulfillment / 10), 2);
+    const fr = Math.max(R * (area.fulfillment / 5), 2);
     const fx0 = (c + Math.cos(a0) * fr).toFixed(1), fy0 = (c + Math.sin(a0) * fr).toFixed(1);
     const fx1 = (c + Math.cos(a1) * fr).toFixed(1), fy1 = (c + Math.sin(a1) * fr).toFixed(1);
     fill += `<path d="M${c},${c} L${fx0},${fy0} A${fr.toFixed(1)},${fr.toFixed(1)} 0 0,1 ${fx1},${fy1} Z" fill="var(--ink)" opacity="0.72" stroke="var(--bg)" stroke-width="2"/>`;
@@ -214,7 +214,7 @@ function renderResult(result, emailState = "pending") {
     return `
     <li>
       <strong>${f.label}</strong>
-      <span class="nums">fulfilment ${f.fulfillment}/10 · importance ${f.importance}/10 · urgency ${f.urgency}/10</span>
+      <span class="nums">fulfilment ${f.fulfillment}/5 · importance ${f.importance}/10 · urgency ${f.urgency}/10</span>
       <p class="read">${read.looks ? `It can look like ${read.looks}.` : ""} <em>First shift —</em> ${read.shift || ""}</p>
     </li>`;
   }).join("");

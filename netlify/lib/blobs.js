@@ -80,4 +80,16 @@ function changeGateStore() {
     : getStore("change-gate");
 }
 
-module.exports = { resultsStore, dripStore, subscribersStore, pendingEditsStore, changesetStore, threadStore, changeGateStore };
+
+// Per-user session accumulator: staged changes queued across multiple Telegram
+// messages, held until Dan signals done/publish. One blob per user id:
+// { changes: [{path, before, after}], summaries: [string], createdAt, lastUpdated }
+function sessionStore() {
+  const siteID = process.env.BLOBS_SITE_ID;
+  const token = process.env.BLOBS_TOKEN;
+  return siteID && token
+    ? getStore({ name: "agent-sessions", siteID, token })
+    : getStore("agent-sessions");
+}
+
+module.exports = { resultsStore, sessionStore, dripStore, subscribersStore, pendingEditsStore, changesetStore, threadStore, changeGateStore };

@@ -14,6 +14,35 @@ const SITE = (process.env.URL || "https://danieltiwari.com").replace(/\/$/, "");
 const SELF = `${SITE}/.netlify/functions/telegram-bot`;
 const HISTORY_TURNS = 8;
 
+
+// True when Dan's message is a done/publish signal (end of session).
+function isDone(text) {
+  const t = String(text || '').toLowerCase();
+  return /(done|publish|ship it?|push it?|send it?|that'?s (it|all)|all done|finished|i'?m done|go live|looks good|send for (review|approval)|submit|that'll do)/.test(t);
+}
+
+// Merge new agent changes into an existing session array. Last write wins per
+// path, but the original  is preserved so the full diff stays accurate.
+function mergeChanges(session, incoming) {
+  const map = new Map((session || []).map((c) => [c.path, { ...c }]));
+  for (const c of incoming) {
+    if (map.has(c.path)) map.get(c.path).after = c.after;
+    else map.set(c.path, { ...c });
+  }
+  return [...map.values()];
+}
+
+async function loadSession(userId) {
+  try { return (await sessionStore().get(String(userId), { type: 'json' })) || null; }
+  catch { return null; }
+}
+async function saveSession(userId, data) {
+  try { await sessionStore().setJSON(String(userId), data); } catch { /* best effort */ }
+}
+async function clearSession(userId) {
+  try { await sessionStore().delete(String(userId)); } catch { /* best effort */ }
+}
+
 async function loadThread(userId) {
   try { return (await threadStore().get(String(userId), { type: "json" })) || []; }
   catch { return []; }

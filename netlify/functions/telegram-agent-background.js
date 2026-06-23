@@ -14,6 +14,35 @@ const SITE = (process.env.URL || "https://danieltiwari.com").replace(/\/$/, "");
 const SELF = `${SITE}/.netlify/functions/telegram-bot`;
 const HISTORY_TURNS = 8;
 
+
+// True when Dan's message is a done/publish signal (end of session).
+function isDone(text) {
+  const t = String(text || '').toLowerCase();
+  return /(done|publish|ship it?|push it?|send it?|that'?s (it|all)|all done|finished|i'?m done|go live|looks good|send for (review|approval)|submit|that'll do)/.test(t);
+}
+
+// Merge new agent changes into an existing session array. Last write wins per
+// path, but the original  is preserved so the full diff stays accurate.
+function mergeChanges(session, incoming) {
+  const map = new Map((session || []).map((c) => [c.path, { ...c }]));
+  for (const c of incoming) {
+    if (map.has(c.path)) map.get(c.path).after = c.after;
+    else map.set(c.path, { ...c });
+  }
+  return [...map.values()];
+}
+
+async function loadSession(userId) {
+  try { return (await sessionStore().get(String(userId), { type: 'json' })) || null; }
+  catch { return null; }
+}
+async function saveSession(userId, data) {
+  try { await sessionStore().setJSON(String(userId), data); } catch { /* best effort */ }
+}
+async function clearSession(userId) {
+  try { await sessionStore().delete(String(userId)); } catch { /* best effort */ }
+}
+
 async function loadThread(userId) {
   try { return (await threadStore().get(String(userId), { type: "json" })) || []; }
   catch { return []; }
@@ -103,11 +132,39 @@ exports.handler = async (event) => {
     return { statusCode: 200, body: "answered" };
   }
 
-  // Stage the changeset for approval.
+  // Accumulate changes into the session; only send for approval when Dan says done.
+  const session = await loadSession(userId);
+  const prevChanges = session ? session.changes : [];
+  const prevSummaries = session ? session.summaries : [];
+
+  const allChanges = mergeChanges(prevChanges, result.changes);
+  const allSummaries = result.changes.length
+    ? [...prevSummaries, result.reply]
+    : prevSummaries;
+
+  const sendNow = isDone(text) && allChanges.length > 0;
+
+  if (!sendNow) {
+    await saveSession(userId, {
+      changes: allChanges,
+      summaries: allSummaries,
+      createdAt: session ? session.createdAt : new Date().toISOString(),
+      lastUpdated: new Date().toISOString(),
+    });
+    const n = allChanges.length;
+    const queued = n === 0 ? "" : `\n\n_${n} change${n === 1 ? "" : "s"} queued. Say "done" or "publish" when you're finished and I'll send one approval email._`;
+    await send(chatId, escapeHtml(result.reply) + queued);
+    return { statusCode: 200, body: "queued" };
+  }
+
+  // Dan said done -- send one approval email for everything accumulated this session.
+  await clearSession(userId);
+
   const token = crypto.randomBytes(18).toString("base64url");
+  const combinedSummary = allSummaries.join(" | ") || result.reply;
   await changesetStore().setJSON(token, {
-    changes: result.changes,
-    summary: result.reply,
+    changes: allChanges,
+    summary: combinedSummary,
     requestedBy: requestedBy || String(userId),
     chatId,
     createdAt: new Date().toISOString(),
@@ -116,26 +173,22 @@ exports.handler = async (event) => {
   const approve = `${SELF}?approve=${token}`;
   const discard = `${SELF}?discard=${token}`;
 
-  // Email BOTH Dan and Reece the approve/discard links — approval is email-only.
   const { from } = mailConfig();
   const recipients = [
     process.env.DAN_NOTIFY_EMAIL || "email@danieltiwari.com",
     process.env.REECE_NOTIFY_EMAIL || "reece.j.rainer@gmail.com",
   ].filter(Boolean);
-  const html = approvalEmail({ summary: result.reply, changes: result.changes, approve, discard, requestedBy: requestedBy || String(userId) });
+  const html = approvalEmail({ summary: combinedSummary, changes: allChanges, approve, discard, requestedBy: requestedBy || String(userId) });
+  const total = allChanges.length;
   const mail = await sendResendEmail({
-    from, to: recipients, subject: `Approve a change to danieltiwari.com (${result.changes.length} file${result.changes.length > 1 ? "s" : ""})`,
+    from, to: recipients,
+    subject: `Approve ${total} change${total > 1 ? "s" : ""} to danieltiwari.com`,
     html, tags: [{ name: "source", value: "agent_approval" }],
   }).catch((e) => ({ error: e.message }));
 
-  // Telegram: a friendly heads-up; the full before/after lives in the email.
-  const n = result.changes.length;
-  const what = n === 1 ? "1 thing" : `${n} things`;
-  const tgText =
-    `${escapeHtml(result.reply)}\n\n` +
-    (mail && mail.error
-      ? `⚠️ I couldn't send the approval email (${escapeHtml(mail.error)}), so nothing will go live yet. Want me to try again?`
-      : `📧 I've emailed you the exact before/after (${what} changing). Tap Approve in that email and it's live in ~2 min. Nothing changes until you do 👍`);
+  const tgText = mail && mail.error
+    ? `⚠️ Couldn't send the approval email (${escapeHtml(mail.error)}). Nothing is live yet -- try saying "publish" again.`
+    : `📧 Sent for approval -- ${total} change${total === 1 ? "" : "s"} across this session. Tap Approve in the email and everything goes live in ~2 min. 👍`;
   await send(chatId, tgText);
 
   return { statusCode: 200, body: "staged" };

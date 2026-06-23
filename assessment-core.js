@@ -7,17 +7,17 @@
    these top-level bindings are visible to the scripts that follow.
    ============================================================ */
 const AREAS = [
-  ["career", "Career", "Work, vocation, and your sense of professional purpose"],
-  ["relationships", "Romantic Relationship(s)", "The depth, honesty, and quality of your intimate partnership"],
-  ["friendships", "Friendships", "The closeness and quality of your friendships"],
-  ["family", "Family", "How connected, free, and fully yourself you feel around family"],
-  ["health", "Health", "Physical health, sleep, nutrition, and baseline energy"],
-  ["fitness", "Vitality", "Physical fitness, strength, and how alive you feel in your body"],
-  ["attractiveness", "Attractiveness", "How you feel about your appearance — in your own eyes, not just others'"],
-  ["money", "Finances", "Financial security, income, and your sense of freedom around money"],
-  ["adventure", "Adventure", "Novelty, aliveness, and how much you're actually experiencing life"],
-  ["spirituality", "Meaning", "Sense of purpose, spiritual life, and connection to something larger"],
-  ["lifestyle", "Lifestyle", "Your day-to-day environment, rhythms, and how intentionally you live"],
+  ["career", "Career", "Work, vocation, and your sense of professional purpose."],
+  ["relationships", "Romantic Relationship(s)", "The depth, honesty, and quality of your intimate partnership."],
+  ["friendships", "Friendships", "The closeness and quality of your friendships."],
+  ["family", "Family", "How connected, free, and fully yourself you feel around family."],
+  ["health", "Health", "Physical health, sleep, nutrition, and baseline energy."],
+  ["fitness", "Vitality", "Physical fitness, strength, and how alive you feel in your body."],
+  ["attractiveness", "Attractiveness", "How you feel about your appearance — in your own eyes, not just others'."],
+  ["money", "Finances", "Financial security, income, and your sense of freedom around money."],
+  ["adventure", "Adventure", "Novelty, aliveness, and how much you're actually experiencing life."],
+  ["spirituality", "Meaning", "Sense of purpose, spiritual life, and connection to something larger."],
+  ["lifestyle", "Lifestyle", "Your day-to-day environment, rhythms, and how intentionally you live."],
 ];
 
 const CALENDLY = "https://cal.eu/danieltiwari/connect";

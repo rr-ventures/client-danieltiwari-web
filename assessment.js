@@ -8,8 +8,18 @@
 const _scaleState = {};       // "urgency_career": "2"
 const _fulfillmentState = {}; // "career": "7"
 const _deeperState = {};      // "career_cause": "...", "career_vision": "..."
+const _fsState = {};          // fit signals answers
 let _fulfillmentKeyHandler = null;
 let _spilloverState = null;
+
+function setFormErr(msg) {
+  const el = document.getElementById('form-step-error');
+  if (el) { el.textContent = msg; el.classList.add('visible'); document.getElementById('form-nav').scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+}
+function clearFormErr() {
+  const el = document.getElementById('form-step-error');
+  if (el) el.classList.remove('visible');
+}
 
 function collectAnswers(form) {
   return Object.fromEntries(new FormData(form).entries());
@@ -73,7 +83,7 @@ function renderFulfillmentCard(index, savedVal = null) {
   if (!savedVal) savedVal = _fulfillmentState[key] || null;
   const card = document.getElementById("fulfillment-card");
   card.innerHTML = `
-    <h3 class="fulfillment-area-label">${label}</h3>
+    <h3 class="deeper-area-name">${label}</h3>
     ${desc ? `<p class="fulfillment-area-desc">${desc}</p>` : ""}
     <div class="number-scale">
       ${[1,2,3,4,5,6,7,8,9,10].map(n => `<button type="button" class="number-btn" data-val="${n}">${n}</button>`).join("")}
@@ -81,10 +91,12 @@ function renderFulfillmentCard(index, savedVal = null) {
     <div class="scale-legend-card"><span>not fulfilled</span><span>fully fulfilled</span></div>
     <p class="area-counter sc">${index + 1} / ${AREAS.length}</p>
     <div class="fulfillment-nav">
-      ${!isFirst ? `<button type="button" class="btn btn-ghost fulfillment-back-btn">← Back</button>` : ""}
-      <button type="button" class="btn btn-primary fulfillment-next-btn">${isLast ? "Continue →" : "Next →"}</button>
+      <p class="fulfillment-error">Please select a number first.</p>
+      <div class="fulfillment-nav-buttons">
+        ${!isFirst ? `<button type="button" class="btn btn-ghost fulfillment-back-btn">← Back</button>` : ""}
+        <button type="button" class="btn btn-primary fulfillment-next-btn">${isLast ? "Continue →" : "Next →"}</button>
+      </div>
     </div>
-    <p class="fulfillment-error">Please select a number first.</p>
   `;
   let selected = savedVal;
   if (savedVal) {
@@ -112,11 +124,7 @@ function renderFulfillmentCard(index, savedVal = null) {
   if (!isFirst) {
     card.querySelector(".fulfillment-back-btn").addEventListener("click", () => {
       if (selected) _fulfillmentState[key] = selected;
-      const prevKey = AREAS[index - 1][0];
-      const prevInput = document.querySelector(`#fulfillment-inputs input[name="fulfillment_${prevKey}"]`);
-      const prevVal = prevInput?.value || null;
-      if (prevInput) prevInput.remove();
-      renderFulfillmentCard(index - 1, prevVal);
+      history.back();
     });
   }
   card.querySelector(".fulfillment-next-btn").addEventListener("click", () => {
@@ -133,6 +141,7 @@ function renderFulfillmentCard(index, savedVal = null) {
     }
     hidden.value = selected;
     if (!isLast) {
+      if (!window._historyNav) history.pushState({ step: 0, sub: index + 1 }, '');
       renderFulfillmentCard(index + 1);
     } else {
       window.advanceMainStep();
@@ -153,6 +162,7 @@ function initFulfillmentStep() {
       document.getElementById("fulfillment-intro").hidden = true;
       document.getElementById("fulfillment-areas").hidden = false;
       window.scrollTo({ top: 0, behavior: "smooth" });
+      if (!window._historyNav) history.pushState({ step: 0, sub: 0 }, '');
       renderFulfillmentCard(0);
     }, { once: true });
   }
@@ -226,11 +236,7 @@ function buildRankingRows(containerId, hiddenContainerId, type) {
 
   window._validateRanking = window._validateRanking || {};
   window._validateRanking[containerId] = function() {
-    if (!hasMoved) {
-      warning.classList.add("visible");
-      warning.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      return false;
-    }
+    if (!hasMoved) { return false; }
     return true;
   };
 
@@ -276,6 +282,7 @@ function initSpilloverStep() {
       item.addEventListener('click', () => {
         _spilloverState = item.dataset.key;
         warning.classList.remove('visible');
+        if (window.clearFormError) window.clearFormError();
         updateInput();
         render();
       });
@@ -386,6 +393,17 @@ function renderCauseList(key) {
         syncAndUpdate();
         container.querySelectorAll('.cause-remove').forEach(b => { b.hidden = causes.length === 1; });
       });
+      inp.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          e.stopPropagation();
+          causes.push('');
+          _deeperState['deeper_' + key + '_causes'] = causes;
+          build();
+          const inputs = container.querySelectorAll('.cause-input');
+          if (inputs.length) inputs[inputs.length - 1].focus();
+        }
+      });
       const rm = document.createElement('button');
       rm.type = 'button';
       rm.className = 'cause-remove';
@@ -418,6 +436,9 @@ function renderCauseList(key) {
     container.appendChild(list);
     container.appendChild(addBtn);
     container.appendChild(hidden);
+    const listErr = document.createElement('p');
+    listErr.className = 'yn-error list-error';
+    container.appendChild(listErr);
   }
   build();
 }
@@ -466,6 +487,16 @@ function renderItemValueGroups(key, type, itemPlaceholder, valueLabel) {
         syncItems();
         listEl.querySelectorAll('.cause-remove').forEach(b => { b.hidden = items.length === 1; });
       });
+      inp.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          e.stopPropagation();
+          items.push('');
+          buildItemList(listEl);
+          const inputs = listEl.querySelectorAll('.cause-input');
+          if (inputs.length) inputs[inputs.length - 1].focus();
+        }
+      });
       const rm = document.createElement('button');
       rm.type = 'button';
       rm.className = 'cause-remove';
@@ -487,6 +518,9 @@ function renderItemValueGroups(key, type, itemPlaceholder, valueLabel) {
     });
     listEl.appendChild(rows);
     listEl.appendChild(addBtn);
+    const listErr = document.createElement('p');
+    listErr.className = 'yn-error list-error';
+    listEl.appendChild(listErr);
   }
 
   function buildGroup(gi, vgEl) {
@@ -609,7 +643,7 @@ function renderActsGroups(key) {
 function renderOmitsGroups(key) {
   renderItemValueGroups(key, 'omits',
     'Describe what you are NOT doing…',
-    "What values are each of those inactions serving? Be brutally honest — they may be values you don't consciously approve of.");
+    "What value of yours are you serving by not taking that action? Be brutally honest here — they may be values you don't consciously approve of.");
 }
 
 
@@ -675,6 +709,17 @@ function renderVisionList(key) {
         uncheck();
         container.querySelectorAll('.cause-remove').forEach(b => { b.hidden = items.length === 1; });
       });
+      inp.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          e.stopPropagation();
+          items.push('');
+          _deeperState['deeper_' + key + '_vision_items'] = items;
+          build();
+          const inputs = container.querySelectorAll('.cause-input');
+          if (inputs.length) inputs[inputs.length - 1].focus();
+        }
+      });
       const rm = document.createElement('button');
       rm.type = 'button';
       rm.className = 'cause-remove';
@@ -708,6 +753,9 @@ function renderVisionList(key) {
     container.appendChild(list);
     container.appendChild(addBtn);
     container.appendChild(hidden);
+    const listErr = document.createElement('p');
+    listErr.className = 'yn-error list-error';
+    container.appendChild(listErr);
   }
 
   build();
@@ -750,6 +798,17 @@ function renderControlList(key) {
         syncAndUpdate();
         container.querySelectorAll('.cause-remove').forEach(b => { b.hidden = items.length === 1; });
       });
+      inp.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          e.stopPropagation();
+          items.push('');
+          _deeperState['deeper_' + key + '_control_items'] = items;
+          build();
+          const inputs = container.querySelectorAll('.cause-input');
+          if (inputs.length) inputs[inputs.length - 1].focus();
+        }
+      });
       const rm = document.createElement('button');
       rm.type = 'button';
       rm.className = 'cause-remove';
@@ -782,6 +841,9 @@ function renderControlList(key) {
     container.appendChild(list);
     container.appendChild(addBtn);
     container.appendChild(hidden);
+    const listErr = document.createElement('p');
+    listErr.className = 'yn-error list-error';
+    container.appendChild(listErr);
   }
   build();
 }
@@ -810,7 +872,7 @@ function renderControlAttitude(key) {
   wrap.className = 'deeper-field';
   wrap.style.marginTop = '1.4rem';
   const lbl = document.createElement('label');
-  lbl.textContent = 'Is your attitude towards and interpretation of each of these things serving you?';
+  lbl.textContent = 'Are both your attitude towards and interpretation of these circumstances making your situation better or worse? Think of the impact they might be having on your feelings? Thoughts? Actions? And what repercussions are those actions then in turn having on the circumstances?';
   wrap.appendChild(lbl);
   const itemsDiv = document.createElement('div');
   itemsDiv.style.marginTop = '.8rem';
@@ -822,11 +884,11 @@ function renderControlAttitude(key) {
     text.textContent = item;
     const btns = document.createElement('div');
     btns.className = 'yn-btns';
-    ['yes', 'no'].forEach(val => {
+    [['better', 'Better'], ['worse', 'Worse'], ['neutral', 'Neutral/Not Sure']].forEach(([val, label]) => {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'yn-btn' + (answers[item] === val ? ' selected' : '');
-      btn.textContent = val.charAt(0).toUpperCase() + val.slice(1);
+      btn.textContent = label;
       btn.addEventListener('click', () => {
         btns.querySelectorAll('.yn-btn').forEach(b => b.classList.remove('selected'));
         btn.classList.add('selected');
@@ -842,7 +904,7 @@ function renderControlAttitude(key) {
   wrap.appendChild(itemsDiv);
   const attError = document.createElement('p');
   attError.className = 'yn-error';
-  attError.textContent = 'Please answer yes or no for each item before continuing.';
+  attError.textContent = 'Please answer for each circumstance before continuing.';
   wrap.appendChild(attError);
   container.appendChild(wrap);
   const hidden = document.createElement('input');
@@ -894,12 +956,12 @@ function initDeeperStep() {
     const visionYn       = _deeperState[`deeper_${key}_vision_yn`] || '';
     const visionItems    = _deeperState[`deeper_${key}_vision_items`] || [];
     const visionActualYn = _deeperState[`deeper_${key}_vision_actual_yn`] || '';
-    const head = `<div class="deeper-block-head"><p class="deeper-area-name">${label}</p>${desc ? `<p class="deeper-area-desc">${desc}</p>` : ''}</div>`;
+    const head = `<h3 class="deeper-area-name">${label}</h3>${desc ? `<p class="fulfillment-area-desc">${desc}</p>` : ''}`;
     return [
       `<div class="deeper-subpage" id="deeper-sub-${key}-cause" hidden>
         ${head}
         <div class="deeper-field">
-          <label>Why does ${label} only feel like a ${data.fulfillment}/10 right now? List everything you can come up with.</label>
+          <label>Why does ${label} only feel like a ${data.fulfillment}/10 right now? List the most important things you can come up with.</label>
           <div id="cause-list-${key}"></div>
         </div>
       </div>`,
@@ -907,7 +969,7 @@ function initDeeperStep() {
         ${head}
         <div id="recap-causes-${key}-acts" data-label="Why ${label} feels like a ${data.fulfillment}/10" class="recap-block" hidden></div>
         <div class="deeper-field yn-field" data-key="${key}" data-role="acts">
-          <label>Is there anything <strong>you</strong> are doing that is contributing to the above? If multiple things, list them all.</label>
+          <label>Think of the ways in which you might be contributing to the above through things you are actively doing. If multiple things, list them all.</label>
           <div class="yn-btns">
             <button type="button" class="yn-btn${actsYn === 'yes' ? ' selected' : ''}" data-val="yes">Yes</button>
             <button type="button" class="yn-btn${actsYn === 'no'  ? ' selected' : ''}" data-val="no">No</button>
@@ -922,7 +984,7 @@ function initDeeperStep() {
         ${head}
         <div id="recap-causes-${key}-control" data-label="Why ${label} feels like a ${data.fulfillment}/10" class="recap-block" hidden></div>
         <div class="deeper-field yn-field" data-key="${key}" data-role="control">
-          <label>Is there anything above that on the other hand you feel like is NOT in your control?</label>
+          <label>Is there anything playing into the above that you on the other hand feel like you cannot change and must therefore accept?</label>
           <div class="yn-btns">
             <button type="button" class="yn-btn${controlYn === 'yes' ? ' selected' : ''}" data-val="yes">Yes</button>
             <button type="button" class="yn-btn${controlYn === 'no'  ? ' selected' : ''}" data-val="no">No</button>
@@ -966,7 +1028,7 @@ function initDeeperStep() {
         <div id="recap-arrow-${key}" class="recap-arrow" hidden>↓</div>
         <div id="recap-vision-${key}" data-label="Your vision for a 10/10 ${label}" class="recap-block" hidden></div>
         <div class="deeper-field yn-field" data-key="${key}" data-role="omits">
-          <label>Is there anything that <strong>you</strong> are NOT doing but COULD be doing that would improve ${label}?</label>
+          <label>Is there anything that you would like to be doing but are <strong>NOT</strong> doing that would get you closer to your 10/10?</label>
           <div class="yn-btns">
             <button type="button" class="yn-btn${omitsYn === 'yes' ? ' selected' : ''}" data-val="yes">Yes</button>
             <button type="button" class="yn-btn${omitsYn === 'no'  ? ' selected' : ''}" data-val="no">No</button>
@@ -1000,6 +1062,7 @@ function initDeeperStep() {
     container.querySelectorAll('.deeper-subpage').forEach((el, i) => { el.hidden = i !== idx; });
     window._deeperSubPageIdx = idx;
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (!window._historyNav) history.pushState({ step: 5, sub: idx }, '');
     const sp = allSubPages[idx];
     if (!sp) return;
     const { key, qtype } = sp;
@@ -1064,67 +1127,60 @@ function initDeeperStep() {
     const { key, qtype } = sp;
     const subEl = document.getElementById('deeper-sub-' + key + '-' + qtype);
     if (!subEl) return true;
-    let valid = true;
+    clearFormErr();
 
-    subEl.querySelectorAll('.yn-field').forEach(field => {
-      const error = field.querySelector('.yn-error');
-      if (!field.querySelector('.yn-btn.selected')) {
-        error.classList.add('visible');
-        if (valid) scrollToVisible(field);
-        valid = false;
-      } else { error.classList.remove('visible'); }
-    });
+    const unansweredYn = [...subEl.querySelectorAll('.yn-field')].find(f => !f.querySelector('.yn-btn.selected'));
+    if (unansweredYn) {
+      scrollToVisible(unansweredYn);
+      setFormErr('Please select an answer before continuing.');
+      return false;
+    }
 
     if (qtype === 'cause') {
       const causes = (_deeperState['deeper_' + key + '_causes'] || []).filter(c => c && c.trim());
       if (!causes.length) {
         const cl = document.getElementById('cause-list-' + key);
-        const inp = cl?.querySelector('.cause-input');
-        if (inp) { inp.setCustomValidity('Please add at least one reason.'); inp.reportValidity(); inp.setCustomValidity(''); }
-        if (valid && cl) scrollToVisible(cl);
-        valid = false;
+        if (cl) scrollToVisible(cl);
+        setFormErr('Please add at least one reason before continuing.');
+        return false;
       }
     }
 
-    if (qtype === 'control') {
-      if (_deeperState['deeper_' + key + '_control_yn'] === 'yes') {
-        const filledItems = (_deeperState['deeper_' + key + '_control_items'] || []).filter(i => i && i.trim());
-        const answers = _deeperState['deeper_' + key + '_control_attitude_answers'] || {};
+    if (qtype === 'control' && _deeperState['deeper_' + key + '_control_yn'] === 'yes') {
+      const filledItems = (_deeperState['deeper_' + key + '_control_items'] || []).filter(i => i && i.trim());
+      if (!filledItems.length) {
+        const cl = document.getElementById('control-list-' + key);
+        if (cl) scrollToVisible(cl);
+        setFormErr('Please add at least one circumstance before continuing.');
+        return false;
+      }
+      const answers = _deeperState['deeper_' + key + '_control_attitude_answers'] || {};
+      const allAnswered = filledItems.every(item => answers[item] === 'better' || answers[item] === 'worse' || answers[item] === 'neutral');
+      if (!allAnswered) {
         const attEl = document.getElementById('control-attitude-' + key);
-        const attErr = attEl?.querySelector('.yn-error');
-        if (filledItems.length) {
-          const allAnswered = filledItems.every(item => answers[item] === 'yes' || answers[item] === 'no');
-          if (!allAnswered) {
-            if (attErr) attErr.classList.add('visible');
-            if (valid && attEl) scrollToVisible(attEl);
-            valid = false;
-          } else {
-            if (attErr) attErr.classList.remove('visible');
-          }
-        }
+        if (attEl) scrollToVisible(attEl);
+        setFormErr('Please answer for each circumstance before continuing.');
+        return false;
       }
     }
 
-    if (qtype === 'acts' || qtype === 'omits') {
-      if (_deeperState['deeper_' + key + '_' + qtype + '_yn'] === 'yes') {
-        const filledItems = (_deeperState['deeper_' + key + '_' + qtype + '_items'] || []).filter(i => i && i.trim());
-        const groups = _deeperState['deeper_' + key + '_' + qtype + '_groups'] || [];
-        const gc = document.getElementById(qtype + '-groups-' + key);
+    if ((qtype === 'acts' || qtype === 'omits') && _deeperState['deeper_' + key + '_' + qtype + '_yn'] === 'yes') {
+      const filledItems = (_deeperState['deeper_' + key + '_' + qtype + '_items'] || []).filter(i => i && i.trim());
+      const gc = document.getElementById(qtype + '-groups-' + key);
+      if (!filledItems.length) {
+        if (gc) scrollToVisible(gc);
+        setFormErr(qtype === 'acts' ? 'Please add at least one action before continuing.' : 'Please add at least one thing you could be doing before continuing.');
+        return false;
+      }
+      const groups = _deeperState['deeper_' + key + '_' + qtype + '_groups'] || [];
+      const allCovered = filledItems.every(item =>
+        groups.some(g => Array.isArray(g.selected) && g.selected.includes(item) && g.value && g.value.trim())
+      );
+      if (!allCovered) {
         const vgWrap = gc?.querySelector('.' + qtype + '-vg-wrap');
-        const vgError = vgWrap?.querySelector('.yn-error');
-        if (!filledItems.length) {
-          if (valid && gc) scrollToVisible(gc);
-          valid = false;
-        } else {
-          const allCovered = filledItems.every(item =>
-            groups.some(g => Array.isArray(g.selected) && g.selected.includes(item) && g.value && g.value.trim())
-          );
-          if (!allCovered) {
-            if (vgError) vgError.classList.add('visible');
-            if (valid && vgWrap) scrollToVisible(vgWrap);
-            valid = false;
-          } else { if (vgError) vgError.classList.remove('visible'); }
-        }
+        if (vgWrap) scrollToVisible(vgWrap);
+        setFormErr('Every ' + (qtype === 'acts' ? 'action' : 'inaction') + ' needs at least one value attributed to it before continuing.');
+        return false;
       }
     }
 
@@ -1134,25 +1190,19 @@ function initDeeperStep() {
         const vItems = (_deeperState['deeper_' + key + '_vision_items'] || []).filter(i => i && i.trim());
         if (!vItems.length) {
           const vc = document.getElementById('vision-list-' + key);
-          const inp = vc?.querySelector('.cause-input');
-          if (inp) { inp.setCustomValidity('Please describe what it would take.'); inp.reportValidity(); inp.setCustomValidity(''); }
-          if (valid && vc) scrollToVisible(vc);
-          valid = false;
+          if (vc) scrollToVisible(vc);
+          setFormErr('Please describe what it would take before continuing.');
+          return false;
         }
       }
-      subEl.querySelectorAll('.vision-actual-field').forEach(field => {
-        if (field.closest('[hidden]')) return;
-        const check = field.querySelector('.vision-actual-check');
-        const error = field.querySelector('.yn-error');
-        if (check && !check.checked) {
-          if (error) error.classList.add('visible');
-          if (valid) scrollToVisible(field);
-          valid = false;
-        } else if (error) { error.classList.remove('visible'); }
-      });
+      const unchecked = [...subEl.querySelectorAll('.vision-actual-field')].find(f => !f.closest('[hidden]') && !f.querySelector('.vision-actual-check')?.checked);
+      if (unchecked) {
+        scrollToVisible(unchecked);
+        setFormErr('Please confirm before continuing.');
+        return false;
+      }
     }
 
-    if (!valid) return false;
     for (const f of subEl.querySelectorAll('textarea[required]')) {
       if (!f.reportValidity()) return false;
     }
@@ -1162,6 +1212,322 @@ function initDeeperStep() {
   window._validateDeeper = function() {
     return window._validateDeeperSubPage(window._deeperSubPageIdx);
   };
+}
+
+/* ---- Step 6: Fit Signals ---- */
+function initFitSignalsStep() {
+  const container = document.getElementById('fit-signals-container');
+  if (!container) return;
+
+  const questions = [
+    { id: 'q1', type: 'yesno', headline: 'Belief',
+      label: 'Do you believe that meaningful change in your focus areas is possible for you?' },
+    { id: 'q2', type: 'yesno', headline: 'Readiness',
+      label: 'Do you feel like you have the mental and emotional capacity to tackle your challenges and create change right now?' },
+    { id: 'q3', type: 'multiselect', headline: 'Inner state',
+      label: 'Are you bothered by any of these on a regular basis?',
+      options: ['Anxiety', 'Depression', 'Apathy', 'Anger or resentment', 'Frustration or pressure', 'Meaninglessness', 'Panic attacks', 'Hypochondria', 'Other'],
+      other: 'Other' },
+    { id: 'q4', type: 'multiselect', headline: 'Compulsive patterns',
+      label: 'Are you bothered by any addictions or compulsive habits?',
+      options: ['Alcohol', 'Drugs', 'Pornography', 'Gambling', 'Social media', 'Gaming', 'Food', 'Shopping', 'Other'],
+      other: 'Other' },
+    { id: 'q5', type: 'scale5', headline: 'The mainstream',
+      label: 'How do you feel when you imagine living the life of mainstream society — a steady job, a mortgage, blending in?',
+      low: 'Totally fine with it', high: "Can't think of anything worse" },
+    { id: 'q6', type: 'multiselect', headline: 'Track record',
+      label: 'In the past year, which of these have you actually done?',
+      options: ["Had a difficult conversation I'd been avoiding", 'Changed a habit or routine', 'Sought professional help', 'Invested money in my own development', 'Left something behind to grow', 'None of the above'],
+      none: 'None of the above' },
+    { id: 'q7', type: 'singleselect', headline: 'The stakes',
+      label: 'If your life looks exactly the same in 3 years, how does that sit with you?',
+      options: ["I'd be fine with it", "Disappointing, but I'd manage", "Like I'd wasted something important", "Unacceptable — it cannot happen"] },
+    { id: 'q8', type: 'tried', headline: 'Prior attempts',
+      label: 'Have you tried to address your challenges before?' },
+    { id: 'q9', type: 'textarea', headline: 'The cost',
+      label: 'What is staying where you are costing you?' },
+    { id: 'q10', type: 'scale5', headline: 'Truth and directness',
+      label: 'How much do you actually want honesty over comfort?',
+      low: 'Comfort over honesty', high: 'Honesty above all' },
+  ];
+
+  container.innerHTML = '';
+
+  questions.forEach(q => {
+    const page = document.createElement('div');
+    page.className = 'deeper-subpage';
+    page.id = 'fs-sub-' + q.id;
+    page.hidden = true;
+
+    const headTitle = document.createElement('h3');
+    headTitle.className = 'deeper-area-name';
+    headTitle.textContent = q.headline;
+    page.appendChild(headTitle);
+
+    const qlbl = document.createElement('p');
+    qlbl.className = 'fulfillment-area-desc';
+    qlbl.textContent = q.label;
+    page.appendChild(qlbl);
+
+    const field = document.createElement('div');
+    field.className = 'deeper-field';
+
+    if (q.type === 'yesno') {
+      const btns = document.createElement('div');
+      btns.className = 'yn-btns';
+      ['yes', 'no'].forEach(val => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'yn-btn' + (_fsState['fs_' + q.id] === val ? ' selected' : '');
+        btn.textContent = val === 'yes' ? 'Yes' : 'No';
+        btn.addEventListener('click', () => {
+          btns.querySelectorAll('.yn-btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          _fsState['fs_' + q.id] = val;
+          if (window.clearFormError) window.clearFormError();
+        });
+        btns.appendChild(btn);
+      });
+      field.appendChild(btns);
+    }
+
+    if (q.type === 'singleselect') {
+      const btns = document.createElement('div');
+      btns.className = 'yn-btns';
+      btns.style.flexWrap = 'wrap';
+      q.options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'yn-btn' + (_fsState['fs_' + q.id] === opt ? ' selected' : '');
+        btn.textContent = opt;
+        btn.addEventListener('click', () => {
+          btns.querySelectorAll('.yn-btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          _fsState['fs_' + q.id] = opt;
+          if (window.clearFormError) window.clearFormError();
+        });
+        btns.appendChild(btn);
+      });
+      field.appendChild(btns);
+    }
+
+    if (q.type === 'multiselect') {
+      if (!Array.isArray(_fsState['fs_' + q.id])) _fsState['fs_' + q.id] = [];
+      const checks = document.createElement('div');
+      checks.className = 'acts-checkboxes';
+      checks.style.cssText = 'margin-top:.8rem;max-width:fit-content;margin-left:auto;margin-right:auto';
+      const cbEls = [];
+      let otherWrap = null;
+      q.options.forEach((opt, i) => {
+        const row = document.createElement('label');
+        row.className = 'acts-check-label';
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.checked = _fsState['fs_' + q.id].includes(opt);
+        cbEls.push(cb);
+        cb.addEventListener('change', () => {
+          const arr = _fsState['fs_' + q.id];
+          if (opt === q.none) {
+            if (cb.checked) {
+              cbEls.forEach(c => { if (c !== cb) c.checked = false; });
+              _fsState['fs_' + q.id] = [opt];
+              if (otherWrap) otherWrap.hidden = true;
+            } else {
+              _fsState['fs_' + q.id] = arr.filter(o => o !== opt);
+            }
+          } else {
+            const noneIdx = q.options.indexOf(q.none);
+            if (noneIdx >= 0) { cbEls[noneIdx].checked = false; _fsState['fs_' + q.id] = arr.filter(o => o !== q.none); }
+            if (cb.checked) {
+              if (!_fsState['fs_' + q.id].includes(opt)) _fsState['fs_' + q.id].push(opt);
+              if (opt === q.other && otherWrap) otherWrap.hidden = false;
+            } else {
+              _fsState['fs_' + q.id] = _fsState['fs_' + q.id].filter(o => o !== opt);
+              if (opt === q.other && otherWrap) otherWrap.hidden = true;
+            }
+          }
+          if (window.clearFormError) window.clearFormError();
+        });
+        const span = document.createElement('span');
+        span.textContent = opt;
+        row.appendChild(cb); row.appendChild(span);
+        checks.appendChild(row);
+      });
+      if (q.other) {
+        otherWrap = document.createElement('div');
+        otherWrap.hidden = !_fsState['fs_' + q.id].includes(q.other);
+        otherWrap.style.cssText = 'margin-left:1.6rem;margin-top:.4rem';
+        const otherInp = document.createElement('input');
+        otherInp.type = 'text';
+        otherInp.className = 'cause-input';
+        otherInp.placeholder = 'Please specify...';
+        otherInp.style.width = '100%';
+        otherInp.value = _fsState['fs_' + q.id + '_other'] || '';
+        otherInp.addEventListener('input', () => { _fsState['fs_' + q.id + '_other'] = otherInp.value; });
+        otherWrap.appendChild(otherInp);
+        checks.appendChild(otherWrap);
+      }
+      field.appendChild(checks);
+    }
+
+    if (q.type === 'scale5') {
+      const scaleWrap = document.createElement('div');
+      scaleWrap.style.cssText = 'width:100%;max-width:36rem;margin:0 auto';
+      const btnRow = document.createElement('div');
+      btnRow.style.cssText = 'display:flex;gap:.4rem;margin-bottom:1rem';
+      for (let i = 1; i <= 5; i++) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'number-btn' + (_fsState['fs_' + q.id] === i ? ' selected' : '');
+        btn.style.cssText = 'flex:1;height:2.8rem';
+        btn.textContent = i;
+        btn.addEventListener('click', () => {
+          btnRow.querySelectorAll('.number-btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          _fsState['fs_' + q.id] = i;
+          if (window.clearFormError) window.clearFormError();
+        });
+        btnRow.appendChild(btn);
+      }
+      const legend = document.createElement('div');
+      legend.style.cssText = 'display:flex;justify-content:space-between;font-family:var(--sc);font-size:.65rem;letter-spacing:.2em;color:var(--muted)';
+      const lowEl = document.createElement('span'); lowEl.textContent = q.low;
+      const highEl = document.createElement('span'); highEl.textContent = q.high;
+      legend.appendChild(lowEl); legend.appendChild(highEl);
+      scaleWrap.appendChild(btnRow);
+      scaleWrap.appendChild(legend);
+      field.appendChild(scaleWrap);
+    }
+
+    if (q.type === 'tried') {
+      const btns = document.createElement('div');
+      btns.className = 'yn-btns';
+      const expand = document.createElement('div');
+      expand.hidden = _fsState['fs_q8_yn'] !== 'yes';
+      expand.style.marginTop = '1.4rem';
+
+      const mkTaField = (label, key) => {
+        const wrap = document.createElement('div');
+        wrap.className = 'deeper-field';
+        wrap.style.marginTop = '1.2rem';
+        const l = document.createElement('label'); l.textContent = label;
+        const ta = document.createElement('textarea');
+        ta.className = 'cause-input';
+        ta.style.cssText = 'width:100%;min-height:3.5rem;resize:vertical;margin-top:.5rem;box-sizing:border-box';
+        ta.value = _fsState[key] || '';
+        ta.addEventListener('input', () => { _fsState[key] = ta.value; });
+        wrap.appendChild(l); wrap.appendChild(ta);
+        return wrap;
+      };
+      expand.appendChild(mkTaField('What did you try?', 'fs_q8_what'));
+
+      const hwWrap = document.createElement('div');
+      hwWrap.className = 'deeper-field';
+      hwWrap.style.marginTop = '1.2rem';
+      const hwLbl = document.createElement('label'); hwLbl.textContent = 'How well did it work? (1–10)';
+      const hwRow = document.createElement('div');
+      hwRow.className = 'number-scale';
+      hwRow.style.marginTop = '.5rem';
+      for (let i = 1; i <= 10; i++) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'number-btn' + (_fsState['fs_q8_how_well'] === i ? ' selected' : '');
+        btn.textContent = i;
+        btn.addEventListener('click', () => {
+          hwRow.querySelectorAll('.number-btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          _fsState['fs_q8_how_well'] = i;
+        });
+        hwRow.appendChild(btn);
+      }
+      hwWrap.appendChild(hwLbl); hwWrap.appendChild(hwRow);
+      expand.appendChild(hwWrap);
+      expand.appendChild(mkTaField("Why didn't it fully work?", 'fs_q8_why'));
+
+      ['yes', 'no'].forEach(val => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'yn-btn' + (_fsState['fs_q8_yn'] === val ? ' selected' : '');
+        btn.textContent = val === 'yes' ? 'Yes' : 'No';
+        btn.addEventListener('click', () => {
+          btns.querySelectorAll('.yn-btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          _fsState['fs_q8_yn'] = val;
+          expand.hidden = val !== 'yes';
+          if (window.clearFormError) window.clearFormError();
+        });
+        btns.appendChild(btn);
+      });
+      field.appendChild(btns);
+      field.appendChild(expand);
+    }
+
+    if (q.type === 'textarea') {
+      const ta = document.createElement('textarea');
+      ta.className = 'cause-input';
+      ta.style.cssText = 'width:100%;min-height:5rem;resize:vertical;margin-top:.8rem;box-sizing:border-box';
+      ta.value = _fsState['fs_' + q.id] || '';
+      ta.addEventListener('input', () => { _fsState['fs_' + q.id] = ta.value; });
+      field.appendChild(ta);
+    }
+
+    page.appendChild(field);
+    container.appendChild(page);
+  });
+
+  window._fitSubPageCount = questions.length;
+  window._fitSubPageIdx = 0;
+
+  const fsSections = [
+    { num: '07', title: 'Inner State.', desc: 'A look at your emotional and psychological baseline — the internal conditions shaping everything else.', maxIdx: 3 },
+    { num: '08', title: 'Personality.', desc: 'A look at who you are and what actually drives you — beneath the surface-level goals.', maxIdx: Infinity }
+  ];
+
+  function updateFsHeader(idx) {
+    const sec = fsSections.find(s => idx <= s.maxIdx);
+    const el = document.getElementById('fs-section-head');
+    if (!el || !sec) return;
+    el.innerHTML = `<span class="num">${sec.num}</span><div><h2>${sec.title}</h2><p>${sec.desc}</p></div>`;
+  }
+
+  window._showFitSubPage = function(idx) {
+    container.querySelectorAll('.deeper-subpage').forEach((el, i) => { el.hidden = i !== idx; });
+    window._fitSubPageIdx = idx;
+    updateFsHeader(idx);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (!window._historyNav) history.pushState({ step: 6, sub: idx }, '');
+  };
+
+  window._validateFitSubPage = function(idx) {
+    const q = questions[idx];
+    clearFormErr();
+    if (q.type === 'yesno' && !_fsState['fs_' + q.id]) {
+      setFormErr('Please select an answer before continuing.'); return false;
+    }
+    if (q.type === 'singleselect' && !_fsState['fs_' + q.id]) {
+      setFormErr('Please select an answer before continuing.'); return false;
+    }
+    if (q.type === 'multiselect' && !_fsState['fs_' + q.id]?.length) {
+      setFormErr('Please select at least one option before continuing.'); return false;
+    }
+    if (q.type === 'scale5' && !_fsState['fs_' + q.id]) {
+      setFormErr('Please select a number before continuing.'); return false;
+    }
+    if (q.type === 'tried') {
+      if (!_fsState['fs_q8_yn']) { setFormErr('Please select an answer before continuing.'); return false; }
+      if (_fsState['fs_q8_yn'] === 'yes') {
+        if (!_fsState['fs_q8_what']?.trim()) { setFormErr('Please describe what you tried before continuing.'); return false; }
+        if (!_fsState['fs_q8_how_well']) { setFormErr('Please rate how well it worked before continuing.'); return false; }
+        if (!_fsState['fs_q8_why']?.trim()) { setFormErr("Please explain why it didn't fully work before continuing."); return false; }
+      }
+    }
+    if (q.type === 'textarea' && !_fsState['fs_' + q.id]?.trim()) {
+      setFormErr('Please write your answer before continuing.'); return false;
+    }
+    return true;
+  };
+
+  window._showFitSubPage(0);
 }
 
 /* ---- Step change hook ---- */
@@ -1176,6 +1542,7 @@ window.onStepChange = function(step) {
   if (step === 3) initSpilloverStep();
   if (step === 4) initFocusStep();
   if (step === 5) initDeeperStep();
+  if (step === 6) initFitSignalsStep();
 };
 
 // Initialize step 0 — showStep(0) ran before this script loaded

@@ -57,7 +57,7 @@
   .assessment-section-head{text-align:center;margin-bottom:2.4rem}
   .assessment-section-head .num{display:block;font-family:var(--sc);font-size:.72rem;letter-spacing:.2em;color:var(--accent);margin-bottom:.6rem}
   .assessment-section-head h2{margin-bottom:.5rem}
-  .assessment-section-head p{color:#7a7268;font-size:.95rem}
+  .assessment-section-head p{color:#7a7268;font-size:clamp(1.05rem,1.7vw,1.2rem);line-height:1.8}
   .question-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.6rem}
   .field{display:flex;flex-direction:column;gap:.6rem}
   .field.wide{grid-column:1/-1}
@@ -87,7 +87,8 @@
   /* multi-step */
   .assessment-section{display:none}
   .assessment-section.active{display:block}
-  .form-nav{display:flex;gap:1rem;justify-content:center;align-items:center;padding-top:2rem;border-top:1px solid var(--hair)}
+  .form-nav{display:flex;flex-direction:column;align-items:center;padding-top:2rem;border-top:1px solid var(--hair)}
+  .form-nav-buttons{display:flex;gap:1rem;justify-content:center;align-items:center;width:100%}
   .btn-ghost{background:transparent;color:var(--muted);border-color:var(--hair)}
   .btn-ghost:hover{color:var(--ink);border-color:var(--ink)}
 
@@ -102,7 +103,7 @@
   .transcript-toggle:hover{color:var(--ink)}
   .transcript-body{display:none;margin-top:1rem;font-size:.88rem;line-height:1.85;color:var(--accent)}
   .transcript-body.open{display:block}
-  .guide-text{font-size:.95rem;line-height:1.85;color:var(--accent)}
+  .guide-text{font-size:clamp(1.05rem,1.7vw,1.2rem);line-height:1.85;color:var(--accent)}
   .guide-text p+p{margin-top:.9rem}
 
   /* reveal */
@@ -119,10 +120,11 @@
   .number-btn:hover{border-color:var(--accent)}
   .number-btn.selected{background:var(--ink);color:var(--bg);border-color:var(--ink)}
   .scale-legend-card{display:flex;justify-content:space-between;max-width:36rem;margin:0 auto 2.4rem;font-family:var(--sc);font-size:.65rem;letter-spacing:.2em;color:var(--muted)}
-  .fulfillment-nav{display:flex;gap:1rem;justify-content:center;align-items:center}
-  .fulfillment-error{visibility:hidden;text-align:center;font-family:var(--sc);font-size:.68rem;letter-spacing:.15em;color:#c0392b;margin-top:.8rem}
-  .fulfillment-error.visible{visibility:visible}
-  .fulfillment-area-desc{text-align:center;font-size:.88rem;color:var(--muted);margin-top:-.8rem;margin-bottom:1.8rem;line-height:1.6}
+  .fulfillment-nav{display:flex;flex-direction:column;align-items:center;padding-top:2rem;border-top:1px solid var(--hair);margin-top:2rem}
+  .fulfillment-nav-buttons{display:flex;gap:1rem;justify-content:center;align-items:center;width:100%}
+  .fulfillment-error{display:none;width:100%;text-align:center;font-family:var(--sc);font-size:.68rem;letter-spacing:.15em;color:#c0392b;margin:0 0 .8rem}
+  .fulfillment-error.visible{display:block}
+  .fulfillment-area-desc{text-align:center;font-size:.95rem;color:var(--muted);margin-top:-.2rem;margin-bottom:1.8rem;line-height:1.75}
 
   /* pie chart */
   .pie-wrap{max-width:480px;margin:1.6rem auto 2rem}
@@ -158,11 +160,11 @@
   .deeper-block{padding:2rem 0;border-bottom:1px solid var(--hair)}
   .deeper-block:last-child{border-bottom:none;padding-bottom:0}
   .deeper-block-head{margin-bottom:1.6rem}
-  .deeper-area-name{font-family:var(--display);font-size:clamp(1.2rem,2.2vw,1.5rem);font-weight:400;line-height:1.2;margin-bottom:.3rem}
-  .deeper-area-desc{font-size:.82rem;color:var(--muted);line-height:1.5}
+  .deeper-area-name{font-family:var(--display);font-size:clamp(1.2rem,2.2vw,1.5rem);font-weight:400;line-height:1.2;margin-bottom:.3rem;text-align:center}
+  .deeper-area-desc{font-size:.95rem;color:var(--muted);line-height:1.75;text-align:center}
   .deeper-field{display:flex;flex-direction:column;gap:.5rem;margin-bottom:1.2rem}
   .deeper-field:last-child{margin-bottom:0}
-  .deeper-field label{font-family:var(--sc);font-size:.68rem;letter-spacing:.2em;color:var(--accent)}
+  .deeper-field label{font-family:var(--sc);font-size:.68rem;letter-spacing:.2em;color:var(--accent);text-align:center}
   .deeper-field label strong{font-weight:700}
   .vision-actual-check{position:absolute;opacity:0;width:0;height:0}
   .confirm-check-wrap{display:flex;align-items:center;gap:.7rem;cursor:pointer;margin-top:.5rem;user-select:none}
@@ -174,7 +176,7 @@
   .deeper-field textarea:focus{border-color:var(--accent)}
   .deeper-field textarea::placeholder{color:var(--muted)}
   .yn-expand{border-left:2px solid var(--hair);padding-left:1.2rem;margin-top:.2rem}
-  .yn-btns{display:flex;gap:.6rem;margin-top:.4rem}
+  .yn-btns{display:flex;gap:.6rem;margin-top:.4rem;justify-content:center}
   .yn-btn{padding:.55rem 1.8rem;border:1px solid var(--hair);border-radius:2px;background:transparent;font-family:var(--sc);font-size:.75rem;letter-spacing:.15em;color:var(--ink);cursor:pointer;transition:background .15s,border-color .15s,color .15s}
   .yn-btn:hover{border-color:var(--accent)}
   .yn-btn.selected{background:var(--ink);color:var(--bg);border-color:var(--ink)}
@@ -194,8 +196,9 @@
   /* acts value groups */
   .acts-group{border:1px solid var(--hair);border-radius:2px;padding:.9rem 1.1rem;margin-top:.8rem}
   .acts-checkboxes{display:flex;flex-direction:column;gap:.45rem}
-  .acts-check-label{display:flex;align-items:flex-start;gap:.65rem;cursor:pointer;font-size:.92rem;line-height:1.55;color:var(--ink);font-family:var(--body);font-weight:300}
+  .acts-check-label{display:flex;align-items:flex-start;gap:.65rem;cursor:pointer;font-size:.92rem;line-height:1.55;color:var(--ink);font-family:var(--body);font-weight:300;overflow-wrap:break-word;min-width:0}
   .acts-check-label input[type="checkbox"]{margin-top:.25rem;flex-shrink:0;accent-color:var(--ink);cursor:pointer;width:.95rem;height:.95rem}
+  .acts-check-label span{min-width:0;overflow-wrap:break-word}
   .acts-value-reveal{margin-top:.9rem}
   .acts-value-reveal label{font-family:var(--sc);font-size:.68rem;letter-spacing:.2em;color:var(--accent);display:block;margin-bottom:.5rem}
   .acts-value-reveal textarea{background:transparent;border:1px solid var(--hair);color:var(--ink);padding:.85rem 1.2rem;font-family:var(--body);font-size:.95rem;font-weight:300;border-radius:2px;outline:none;transition:border-color .2s;width:100%;min-height:4rem;resize:vertical;line-height:1.7}
@@ -212,22 +215,22 @@
   .recap-list li::before{content:'—';position:absolute;left:0;color:var(--hair)}
   .recap-arrow{text-align:center;font-size:1.4rem;color:var(--hair);margin:.6rem 0;line-height:1;letter-spacing:0}
   /* control attitude per-item rows */
-  .control-attitude-item{display:flex;align-items:center;justify-content:space-between;gap:1.2rem;padding:.6rem 0;border-bottom:1px solid var(--hair)}
+  .control-attitude-item{display:flex;align-items:flex-start;justify-content:space-between;gap:1.2rem;padding:.6rem 0;border-bottom:1px solid var(--hair)}
   .control-attitude-item:last-child{border-bottom:none}
-  .control-attitude-item-text{flex:1;font-size:.92rem;font-family:var(--body);font-weight:300;color:var(--ink)}
+  .control-attitude-item-text{flex:1;min-width:0;overflow-wrap:break-word;font-size:.92rem;font-family:var(--body);font-weight:300;color:var(--ink)}
 
   /* focus reveal header */
   .focus-reveal-head{text-align:center;padding:2.4rem 0 3rem}
   .focus-reveal-eyebrow{font-size:.72rem;letter-spacing:.3em;color:var(--accent);margin-bottom:1.2rem}
   .focus-reveal-title{font-family:var(--display);font-size:clamp(2rem,4vw,3.2rem);font-weight:400;line-height:1.1;margin-bottom:1.2rem}
-  .focus-reveal-sub{color:var(--muted);font-size:.95rem;max-width:28rem;margin:0 auto;line-height:1.75}
+  .focus-reveal-sub{color:var(--muted);font-size:clamp(1.05rem,1.7vw,1.2rem);max-width:28rem;margin:0 auto;line-height:1.8}
 
   /* focus recommendation */
   .rec-list{display:flex;flex-direction:column}
   .rec-item{display:flex;align-items:center;gap:1rem;padding:.9rem 0;border-bottom:1px solid var(--hair);cursor:pointer;transition:opacity .2s,background .15s}
   .rec-item:last-child{border-bottom:none}
   .rec-item:not(.selected){opacity:.25}
-  .rec-item.selected{background:var(--bg2);border-left:2px solid var(--ink);padding-left:.8rem;border-radius:2px}
+  .rec-item.selected{background:var(--bg2);border-left:2px solid var(--ink);padding-left:.8rem;padding-right:.8rem;border-radius:2px}
   .rec-num{font-family:var(--sc);font-size:.65rem;letter-spacing:.2em;color:var(--muted);width:1.4rem;flex-shrink:0}
   .rec-info{flex:1}
   .rec-label{display:block;font-size:.95rem;font-weight:600}
@@ -378,56 +381,16 @@
           <span class="num">06</span>
           <div>
             <h2>Going deeper.</h2>
-            <p>Two questions for each area you chose to focus on. Write the version you would usually edit out.</p>
+            <p>A thorough look at each area you chose to focus on. Be as honest as you can — the quality of your results depends on it.</p>
           </div>
         </div>
         <div id="deeper-questions"></div>
       </section>
 
-      <!-- 04 · fit signals -->
+      <!-- 07-08 · inner state + personality -->
       <section class="assessment-section">
-        <div class="assessment-section-head">
-          <span class="num">04</span>
-          <div>
-            <h2>Fit signals.</h2>
-            <p>This section helps separate real readiness from curiosity.</p>
-          </div>
-        </div>
-        <div class="section-guide">
-          <div class="guide-video-wrap">
-            <div class="play-btn">
-              <svg width="13" height="15" viewBox="0 0 13 15"><path d="M0 0l13 7.5L0 15V0z"/></svg>
-            </div>
-            <p class="guide-video-caption sc">How to answer this section — Daniel Tiwari</p>
-          </div>
-          <button type="button" class="transcript-toggle" onclick="toggleTranscript(this)">Show text</button>
-          <div class="transcript-body">
-            <p>[Transcript placeholder — fill in once video is recorded.]</p>
-          </div>
-          <p class="guide-label sc">How to answer</p>
-          <div class="guide-text">
-            <p>This section is not about qualifying yourself. It is about getting honest with yourself about what you actually want and what you are actually willing to do.</p>
-            <p>For the open questions at the end, write the version you would usually edit out. The unfiltered answer is almost always the more useful one — and the one I actually read.</p>
-          </div>
-        </div>
-
-        <p style="font-weight:600;margin-bottom:0.5rem">Section A — Insight fuel</p>
-        <ol style="line-height:2;padding-left:1.5rem;margin-bottom:2rem">
-          <li>Do you experience any of these symptoms on a regular basis? (multi-select) — Anxiety / Depression / Apathy / Anger or Resentment / Frustration or Pressure</li>
-          <li>Do you believe that meaningful change in your focus areas is possible for you?</li>
-          <li>Do you feel like you have the mental and emotional resources to tackle your challenges and create change right now?</li>
-          <li>Relationship to the mainstream — how willing are you to stand apart? (1–5 scale)</li>
-
-          <li>How high would you rate your commitment to living your best life?</li>
-          <li>How high would you rate your current motivation and energy levels when it comes to tackling your current obstacles?</li>
-          <li>Have you tried to address your challenges before? (Yes/No) — if Yes: What did you try? / How well did it work? (1–10) / Why didn't it fully work?</li>
-          <li>What is staying where you are costing you?</li>
-        </ol>
-
-        <p style="font-weight:600;margin-bottom:0.5rem">Section B — Fit filter</p>
-        <ol style="line-height:2;padding-left:1.5rem">
-          <li>Truth and directness — how much do you actually want honesty over comfort? (1–5 scale)</li>
-        </ol>
+        <div id="fs-section-head" class="assessment-section-head"></div>
+        <div id="fit-signals-container"></div>
       </section>
 
       <!-- 04 · you -->
@@ -453,9 +416,13 @@
       </section>
 
       <div class="form-nav" id="form-nav" hidden>
-        <button type="button" class="btn btn-ghost" id="btn-back" hidden>← Back</button>
-        <button type="button" class="btn btn-primary" id="btn-next">Next →</button>
+        <p id="form-step-error" class="yn-error" style="width:100%;text-align:center;margin:0 0 .8rem"></p>
+        <div class="form-nav-buttons">
+          <button type="button" class="btn btn-ghost" id="btn-back" hidden>← Back</button>
+          <button type="button" class="btn btn-primary" id="btn-next">Next →</button>
+        </div>
       </div>
+      <div style="text-align:center;margin-top:1.2rem"><a href="mailto:email@danieltiwari.com?subject=Bug%20report" style="font-family:var(--sc);font-size:.68rem;letter-spacing:.15em;color:var(--muted);text-decoration:none;transition:color .2s" onmouseover="this.style.color='var(--ink)'" onmouseout="this.style.color='var(--muted)'">Report a bug</a></div>
 
     </form>
 
@@ -480,6 +447,7 @@
   }else{document.querySelectorAll('.obs-fade,.rise').forEach(el=>el.classList.add('is-in','in'))}
 
   (function(){
+    window._historyNav=false;
     const sections=Array.from(document.querySelectorAll('#assessment-form .assessment-section'));
     const btnBack=document.getElementById('btn-back');
     const btnNext=document.getElementById('btn-next');
@@ -495,23 +463,32 @@
       btnBack.hidden=n<=1;
       btnNext.hidden=false;
       window.scrollTo({top:0,behavior:'smooth'});
+      if(!window._historyNav&&n!==5&&n!==6) history.pushState({step:n,sub:-1},'');
       if(window.onStepChange) window.onStepChange(n);
     }
 
+    const formStepErr=document.getElementById('form-step-error');
+    function showFormError(msg){if(formStepErr){formStepErr.textContent=msg;formStepErr.classList.add('visible');document.getElementById('form-nav').scrollIntoView({behavior:'smooth',block:'nearest'});}}
+    function clearFormError(){if(formStepErr)formStepErr.classList.remove('visible');}
+    window.showFormError=showFormError;
+    window.clearFormError=clearFormError;
+
     function validateStep(n){
-      if(n===1&&window._validateRanking?.['importance-rows']){if(!window._validateRanking['importance-rows']())return false;}
-      if(n===2&&window._validateRanking?.['urgency-rows']){if(!window._validateRanking['urgency-rows']())return false;}
+      clearFormError();
+      if(n===1&&window._validateRanking?.['importance-rows']){if(!window._validateRanking['importance-rows']()){showFormError('Please rank these before continuing.');return false;}}
+      if(n===2&&window._validateRanking?.['urgency-rows']){if(!window._validateRanking['urgency-rows']()){showFormError('Please rank these before continuing.');return false;}}
       if(n===3){
         const input=document.querySelector('#spillover-hidden-input input');
-        if(!input){const w=document.getElementById('spillover-warning');w.classList.add('visible');w.scrollIntoView({behavior:'smooth',block:'nearest'});return false;}
+        if(!input){showFormError('Please select one area before continuing.');return false;}
         return true;
       }
       if(n===4){
         const inputs=sections[n].querySelectorAll('input[name="focus_area"]');
-        if(!inputs.length){alert('Please select at least one area.');return false;}
+        if(!inputs.length){showFormError('Please select at least one focus area.');return false;}
         return true;
       }
       if(n===5&&window._validateDeeper){return window._validateDeeper();}
+      if(n===6&&window._validateFitSubPage){return window._validateFitSubPage(window._fitSubPageIdx||0);}
       const fields=sections[n].querySelectorAll('input[required],select[required],textarea[required]');
       for(const f of fields){if(!f.reportValidity())return false;}
       return true;
@@ -522,28 +499,53 @@
     btnNext.addEventListener('click',()=>{
       if(current===5&&window._showDeeperSubPage&&window._deeperSubPageIdx<window._deeperSubPageCount-1){
         if(window._validateDeeperSubPage&&window._validateDeeperSubPage(window._deeperSubPageIdx)){
-          window._showDeeperSubPage(window._deeperSubPageIdx+1);
+          clearFormError();window._showDeeperSubPage(window._deeperSubPageIdx+1);
+        }
+      } else if(current===6&&window._showFitSubPage&&window._fitSubPageIdx<window._fitSubPageCount-1){
+        if(window._validateFitSubPage&&window._validateFitSubPage(window._fitSubPageIdx)){
+          clearFormError();window._showFitSubPage(window._fitSubPageIdx+1);
         }
       } else {
-        if(validateStep(current)){current++;showStep(current);}
+        if(validateStep(current)){clearFormError();current++;showStep(current);}
       }
     });
-    btnBack.addEventListener('click',()=>{
-      if(current===5&&window._deeperSubPageIdx>0){
-        window._showDeeperSubPage(window._deeperSubPageIdx-1);
-      } else {
-        current--;showStep(current);
-        if(current===5&&window._showDeeperSubPage){window._showDeeperSubPage(window._deeperSubPageCount-1);}
-      }
-    });
+    btnBack.addEventListener('click',()=>{ history.back(); });
     document.addEventListener('keydown',function(e){
-      if(e.key!=='Enter'||e.target.tagName==='TEXTAREA'||formNav.hidden)return;
-      e.preventDefault();btnNext.click();
+      if(e.key!=='Enter'||e.target.tagName==='TEXTAREA'||e.target.tagName==='INPUT')return;
+      e.preventDefault();
+      const getStarted=document.getElementById('btn-get-started');
+      if(getStarted&&!getStarted.closest('[hidden]')&&getStarted.offsetParent!==null){getStarted.click();return;}
+      if(!formNav.hidden){btnNext.click();}
     });
     const _p=new URLSearchParams(location.search);
     const _s=parseInt(_p.get('step'));
     current=isNaN(_s)?0:_s;
     showStep(current);
+    history.replaceState({step:current,sub:-1},'');
+    window.addEventListener('popstate',function(e){
+      const st=e.state;
+      if(!st)return;
+      window._historyNav=true;
+      if(st.step===5&&st.sub>=0&&window._showDeeperSubPage){
+        current=5;
+        sections.forEach((s,i)=>s.classList.toggle('active',i===5));
+        formNav.hidden=false;
+        btnBack.hidden=false;
+        window._showDeeperSubPage(st.sub);
+      } else if(st.step===6&&st.sub>=0&&window._showFitSubPage){
+        window._showFitSubPage(st.sub);
+      } else if(st.step===0&&st.sub>=0){
+        current=0;
+        showStep(0);
+        document.getElementById('fulfillment-intro').hidden=true;
+        document.getElementById('fulfillment-areas').hidden=false;
+        renderFulfillmentCard(st.sub);
+      } else {
+        current=st.step;
+        showStep(st.step);
+      }
+      window._historyNav=false;
+    });
     if(_p.get('view')==='rating'&&current===1)document.getElementById('importance-intro-next').click();
   })();
 </script>

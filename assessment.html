@@ -63,7 +63,7 @@
   .field.wide{grid-column:1/-1}
   .field label{font-family:var(--sc);font-size:.68rem;letter-spacing:.2em;color:var(--accent);display:flex;align-items:center;gap:.6rem}
   .field label .num{color:var(--muted)}
-  .field input,.field select,.field textarea{background:transparent;border:1px solid var(--hair);color:var(--ink);padding:.85rem 1.2rem;font-family:var(--body);font-size:.95rem;font-weight:300;border-radius:2px;outline:none;transition:border-color .2s;width:100%}
+  .field input,.field select,.field textarea{background:#fff;border:1px solid var(--hair);color:var(--ink);padding:.85rem 1.2rem;font-family:var(--body);font-size:.95rem;font-weight:300;border-radius:2px;outline:none;transition:border-color .2s;width:100%}
   .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent)}
   .field input::placeholder,.field textarea::placeholder{color:var(--muted)}
   .field select{appearance:none;cursor:pointer}
@@ -103,7 +103,7 @@
   .transcript-toggle:hover{color:var(--ink)}
   .transcript-body{display:none;margin-top:1rem;font-size:.88rem;line-height:1.85;color:var(--accent)}
   .transcript-body.open{display:block}
-  .guide-text{font-size:clamp(1.05rem,1.7vw,1.2rem);line-height:1.85;color:var(--accent)}
+  .guide-text{font-size:clamp(1.05rem,1.7vw,1.2rem);line-height:1.85;color:var(--accent);text-align:center}
   .guide-text p+p{margin-top:.9rem}
 
   /* reveal */
@@ -172,7 +172,7 @@
   .vision-actual-check:checked+.confirm-check-box{background:var(--ink);border-color:var(--ink)}
   .vision-actual-check:checked+.confirm-check-box::after{content:'✓';color:var(--bg);font-size:.65rem;line-height:1}
   .confirm-check-text{font-family:var(--sc);font-size:.78rem;letter-spacing:.15em;color:var(--ink)}
-  .deeper-field textarea{background:transparent;border:1px solid var(--hair);color:var(--ink);padding:.85rem 1.2rem;font-family:var(--body);font-size:.95rem;font-weight:300;border-radius:2px;outline:none;transition:border-color .2s;width:100%;min-height:5.5rem;resize:vertical;line-height:1.7}
+  .deeper-field textarea{background:#fff;border:1px solid var(--hair);color:var(--ink);padding:.85rem 1.2rem;font-family:var(--body);font-size:.95rem;font-weight:300;border-radius:2px;outline:none;transition:border-color .2s;width:100%;min-height:5.5rem;resize:vertical;line-height:1.7}
   .deeper-field textarea:focus{border-color:var(--accent)}
   .deeper-field textarea::placeholder{color:var(--muted)}
   .yn-expand{border-left:2px solid var(--hair);padding-left:1.2rem;margin-top:.2rem}
@@ -186,7 +186,7 @@
   .cause-list{display:flex;flex-direction:column;gap:.5rem;margin-top:.5rem}
   .cause-item{display:flex;align-items:center;gap:.6rem}
   .cause-bullet{color:var(--muted);flex-shrink:0;font-size:.95rem;user-select:none}
-  .cause-input{flex:1;background:transparent;border:1px solid var(--hair);color:var(--ink);padding:.7rem 1rem;font-family:var(--body);font-size:.92rem;font-weight:300;border-radius:2px;outline:none;transition:border-color .2s}
+  .cause-input{flex:1;background:#fff;border:1px solid var(--hair);color:var(--ink);padding:.7rem 1rem;font-family:var(--body);font-size:.92rem;font-weight:300;border-radius:2px;outline:none;transition:border-color .2s}
   .cause-input:focus{border-color:var(--accent)}
   .cause-input::placeholder{color:var(--muted)}
   .cause-remove{background:none;border:none;color:var(--hair);cursor:pointer;font-size:1.1rem;padding:.2rem .3rem;transition:color .2s;line-height:1;flex-shrink:0}
@@ -201,7 +201,7 @@
   .acts-check-label span{min-width:0;overflow-wrap:break-word}
   .acts-value-reveal{margin-top:.9rem}
   .acts-value-reveal label{font-family:var(--sc);font-size:.68rem;letter-spacing:.2em;color:var(--accent);display:block;margin-bottom:.5rem}
-  .acts-value-reveal textarea{background:transparent;border:1px solid var(--hair);color:var(--ink);padding:.85rem 1.2rem;font-family:var(--body);font-size:.95rem;font-weight:300;border-radius:2px;outline:none;transition:border-color .2s;width:100%;min-height:4rem;resize:vertical;line-height:1.7}
+  .acts-value-reveal textarea{background:#fff;border:1px solid var(--hair);color:var(--ink);padding:.85rem 1.2rem;font-family:var(--body);font-size:.95rem;font-weight:300;border-radius:2px;outline:none;transition:border-color .2s;width:100%;min-height:4rem;resize:vertical;line-height:1.7}
   .acts-value-reveal textarea:focus{border-color:var(--accent)}
   .acts-value-reveal textarea::placeholder{color:var(--muted)}
   .acts-group-footer{display:flex;justify-content:flex-end;margin-top:.7rem;padding-top:.7rem;border-top:1px solid var(--hair)}
@@ -358,22 +358,15 @@
         <div class="focus-reveal-head">
           <p class="focus-reveal-eyebrow sc">Based on your answers</p>
           <h2 class="focus-reveal-title">Here's where to focus.</h2>
-          <p class="focus-reveal-sub">These are the two areas the assessment has surfaced for you. Tap either to swap it out.</p>
+          <p class="focus-reveal-sub">This is the area the assessment has surfaced for you. Tap to swap it out.</p>
         </div>
         <div id="rec-list" class="rec-list"></div>
-        <p class="rec-hint sc">Selected areas will be the focus of the next section.</p>
+        <p class="rec-hint sc">The selected area will be the focus of the next section.</p>
         <div id="focus-hidden-inputs"></div>
       </section>
 
       <!-- 05 · deeper questions (area-specific) -->
       <section class="assessment-section">
-        <div class="assessment-section-head">
-          <span class="num">05</span>
-          <div>
-            <h2>Going deeper.</h2>
-            <p>A thorough look at each area you chose to focus on. Be as honest as you can — the quality of your results depends on it.</p>
-          </div>
-        </div>
         <div id="deeper-questions"></div>
       </section>
 
@@ -474,7 +467,7 @@
       sections.forEach((s,i)=>s.classList.toggle('active',i===n));
       const isFulfillment=n===0;
       formNav.hidden=isFulfillment;
-      btnBack.hidden=n<=1;
+      btnBack.hidden=n<=0;
       btnNext.hidden=false;
       window.scrollTo({top:0,behavior:'smooth'});
       if(!window._historyNav&&n!==4&&n!==5) history.pushState({step:n,sub:-1},'');

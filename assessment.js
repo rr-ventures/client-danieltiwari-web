@@ -1148,35 +1148,49 @@ function renderVisionAchievableCheck(key) {
     container.appendChild(achBlock);
   }
 
+  const allNotAchievable = vItems.length > 0 && notAchievable.length === vItems.length;
+
+  if (allNotAchievable && _deeperState[checkKey] !== 'revise') {
+    _deeperState[checkKey] = 'revise';
+    syncHidden();
+  }
+
   const qWrap = document.createElement('div');
   qWrap.className = 'deeper-field yn-field';
 
-  const qLbl = document.createElement('label');
-  qLbl.textContent = 'Is this still a vision worth working towards?';
-  qWrap.appendChild(qLbl);
+  if (allNotAchievable) {
+    qWrap.classList.remove('yn-field');
+    const msg = document.createElement('label');
+    msg.textContent = 'None of your vision points are achievable as stated — you will need to revise your vision in the next step.';
+    qWrap.appendChild(msg);
+  } else {
+    const qLbl = document.createElement('label');
+    qLbl.textContent = 'Is this still a vision worth working towards?';
+    qWrap.appendChild(qLbl);
 
-  const btns = document.createElement('div');
-  btns.className = 'yn-btns';
-  btns.style.flexWrap = 'wrap';
-  [{ val: 'yes', label: 'Yes, this is my vision' }, { val: 'revise', label: "I'd like to add to or revise it" }].forEach(opt => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'yn-btn' + (_deeperState[checkKey] === opt.val ? ' selected' : '');
-    btn.textContent = opt.label;
-    btn.addEventListener('click', () => {
-      btns.querySelectorAll('.yn-btn').forEach(b => b.classList.remove('selected'));
-      btn.classList.add('selected');
-      _deeperState[checkKey] = opt.val;
-      syncHidden();
-      if (window.clearFormError) window.clearFormError();
+    const btns = document.createElement('div');
+    btns.className = 'yn-btns';
+    btns.style.flexWrap = 'wrap';
+    [{ val: 'yes', label: 'Yes, this is my vision' }, { val: 'revise', label: "I'd like to add to or revise it" }].forEach(opt => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'yn-btn' + (_deeperState[checkKey] === opt.val ? ' selected' : '');
+      btn.textContent = opt.label;
+      btn.addEventListener('click', () => {
+        btns.querySelectorAll('.yn-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        _deeperState[checkKey] = opt.val;
+        syncHidden();
+        if (window.clearFormError) window.clearFormError();
+      });
+      btns.appendChild(btn);
     });
-    btns.appendChild(btn);
-  });
-  qWrap.appendChild(btns);
+    qWrap.appendChild(btns);
 
-  const err = document.createElement('p');
-  err.className = 'yn-error';
-  qWrap.appendChild(err);
+    const err = document.createElement('p');
+    err.className = 'yn-error';
+    qWrap.appendChild(err);
+  }
 
   container.appendChild(qWrap);
 
@@ -1187,21 +1201,46 @@ function renderVisionAchievableCheck(key) {
   container.appendChild(hidden);
 }
 
-function renderVisionRevised(key) {
-  const container = document.getElementById('vision-revised-' + key);
-  if (!container) return;
-  const revisedKey = 'deeper_' + key + '_vision_revised_items';
-
-  // Pre-populate with achievable items if empty
-  if (!Array.isArray(_deeperState[revisedKey]) || !_deeperState[revisedKey].length) {
+function renderVisionCommitment(key) {
+  const el = document.getElementById('vision-commitment-recap-' + key);
+  if (!el) return;
+  const isRevised = _deeperState['deeper_' + key + '_vision_achievable_check'] === 'revise';
+  let items;
+  if (isRevised) {
+    items = (_deeperState['deeper_' + key + '_vision_revised_items'] || []).filter(i => i && i.trim());
+  } else {
     const vYn = _deeperState['deeper_' + key + '_vision_yn'];
     const vItems = (vYn === 'yes' || vYn === 'partially')
       ? (_deeperState['deeper_' + key + '_vision_items'] || []).filter(i => i && i.trim())
       : [];
     const achievable = _deeperState['deeper_' + key + '_vision_item_achievable'] || {};
-    const stillAchievable = vItems.filter((_, i) => achievable[i] !== 'no');
-    _deeperState[revisedKey] = stillAchievable.length ? [...stillAchievable] : [''];
+    items = vItems.filter((_, i) => achievable[i] !== 'no');
   }
+  if (!items.length) { el.hidden = true; return; }
+  el.hidden = false;
+  el.innerHTML = '';
+  const lbl = document.createElement('p');
+  lbl.className = 'recap-label';
+  lbl.textContent = 'Your vision:';
+  el.appendChild(lbl);
+  const ul = document.createElement('ul');
+  ul.className = 'recap-list';
+  items.forEach(item => { const li = document.createElement('li'); li.textContent = item; ul.appendChild(li); });
+  el.appendChild(ul);
+}
+
+function renderVisionRevised(key) {
+  const container = document.getElementById('vision-revised-' + key);
+  if (!container) return;
+  const revisedKey = 'deeper_' + key + '_vision_revised_items';
+
+  const vYn = _deeperState['deeper_' + key + '_vision_yn'];
+  const vItems = (vYn === 'yes' || vYn === 'partially')
+    ? (_deeperState['deeper_' + key + '_vision_items'] || []).filter(i => i && i.trim())
+    : [];
+  const achievable = _deeperState['deeper_' + key + '_vision_item_achievable'] || {};
+  const stillAchievable = vItems.filter((_, i) => achievable[i] !== 'no');
+  _deeperState[revisedKey] = stillAchievable.length ? [...stillAchievable] : [''];
 
   renderSimpleBulletList('vision-revised-' + key, revisedKey, 'Describe your revised vision…');
 }
@@ -1232,7 +1271,7 @@ function initDeeperStep() {
   const wheelMap = Object.fromEntries(wheel.map(a => [a.key, a]));
 
   // Sub-pages: 5 per area
-  const qtypes = ['cause', 'vision', 'vision-describe', 'vision-item-achievable', 'vision-achievable-check', 'vision-revised', 'acts', 'acts-list', 'acts-values', 'control', 'control-attitude'];
+  const qtypes = ['cause', 'vision', 'vision-describe', 'vision-item-achievable', 'vision-achievable-check', 'vision-revised', 'vision-commitment', 'acts', 'acts-list', 'acts-values', 'control', 'control-attitude'];
   const allSubPages = selectedKeys.flatMap(key => qtypes.map(qtype => ({ key, qtype })));
 
   container.innerHTML = selectedKeys.flatMap(key => {
@@ -1246,6 +1285,7 @@ function initDeeperStep() {
     const actsYn         = _deeperState[`deeper_${key}_acts_yn`] || '';
     const visionYn       = _deeperState[`deeper_${key}_vision_yn`] || '';
     const visionItems    = _deeperState[`deeper_${key}_vision_items`] || [];
+    const commitmentYn   = _deeperState[`deeper_${key}_commitment_yn`] || '';
     const visionActualYn  = _deeperState[`deeper_${key}_vision_actual_yn`] || '';
     const head = `<h3 class="deeper-area-name">${label}</h3>${desc ? `<p class="fulfillment-area-desc">${desc}</p>` : ''}`;
     return [
@@ -1307,11 +1347,23 @@ function initDeeperStep() {
           <div id="vision-revised-${key}" style="margin-top:.9rem"></div>
         </div>
       </div>`,
+      `<div class="deeper-subpage" id="deeper-sub-${key}-vision-commitment" hidden>
+        ${head}
+        <div id="vision-commitment-recap-${key}" class="recap-block" style="margin-top:1.4rem;margin-bottom:1.6rem" hidden></div>
+        <div class="deeper-field yn-field" data-key="${key}" data-role="commitment">
+          <label><strong>WILL</strong> you achieve it?</label>
+          <div class="yn-btns">
+            <button type="button" class="yn-btn${commitmentYn === 'certain'  ? ' selected' : ''}" data-val="certain">There is no other way</button>
+            <button type="button" class="yn-btn${commitmentYn === 'doubtful' ? ' selected' : ''}" data-val="doubtful">I have doubts</button>
+          </div>
+          <p class="yn-error">Please select one.</p>
+        </div>
+      </div>`,
       `<div class="deeper-subpage" id="deeper-sub-${key}-acts" hidden>
         ${head}
         <div id="recap-causes-${key}-acts" data-label="Why ${label} feels like a ${data.fulfillment}/5" class="recap-block" hidden></div>
         <div class="deeper-field yn-field" data-key="${key}" data-role="acts">
-          <label>Are there ways in which you are contributing to the above?</label>
+          <label>Are there ways in which <strong>YOU</strong> are contributing to the above?</label>
           <div class="yn-btns">
             <button type="button" class="yn-btn${actsYn === 'yes' ? ' selected' : ''}" data-val="yes">Yes</button>
             <button type="button" class="yn-btn${actsYn === 'no'  ? ' selected' : ''}" data-val="no">No</button>
@@ -1323,11 +1375,11 @@ function initDeeperStep() {
         ${head}
         <div id="recap-causes-${key}-acts-list" data-label="Why ${label} feels like a ${data.fulfillment}/5" class="recap-block" hidden></div>
         <div class="deeper-field" style="margin-top:1.4rem">
-          <label>What are you doing that is contributing to the situation?</label>
+          <label>What are <strong>YOU DOING</strong> that is contributing to the situation?</label>
           <div id="acts-doing-${key}" style="margin-top:.5rem"></div>
         </div>
         <div class="deeper-field" style="margin-top:1.4rem">
-          <label>What could you be doing to improve the situation but are NOT doing?</label>
+          <label>What <strong>COULD</strong> you be doing to improve the situation but are <strong>NOT</strong> doing?</label>
           <div id="acts-not-doing-${key}" style="margin-top:.5rem"></div>
         </div>
         <div id="acts-groups-${key}" hidden></div>
@@ -1429,10 +1481,23 @@ function initDeeperStep() {
         : [];
       const achievable = _deeperState['deeper_' + sp.key + '_vision_item_achievable'] || {};
       const hasNotAchievable = vItems.some((_, i) => achievable[i] === 'no');
-      if (!hasNotAchievable) { showDeeperSubPage(idx + direction, direction); return; }
+      if (!hasNotAchievable) {
+        _deeperState['deeper_' + sp.key + '_vision_achievable_check'] = '';
+        showDeeperSubPage(idx + direction, direction);
+        return;
+      }
     }
     if (sp.qtype === 'vision-revised') {
       if (_deeperState['deeper_' + sp.key + '_vision_achievable_check'] !== 'revise') {
+        showDeeperSubPage(idx + direction, direction);
+        return;
+      }
+    }
+    if (sp.qtype === 'vision-commitment') {
+      const vYn = _deeperState['deeper_' + sp.key + '_vision_yn'];
+      const vActual = _deeperState['deeper_' + sp.key + '_vision_actual_yn'];
+      const vItems = (_deeperState['deeper_' + sp.key + '_vision_items'] || []).filter(i => i && i.trim());
+      if ((vYn !== 'yes' && vYn !== 'partially') || !vItems.length || vActual !== 'yes') {
         showDeeperSubPage(idx + direction, direction);
         return;
       }
@@ -1522,6 +1587,9 @@ function initDeeperStep() {
     }
     if (qtype === 'vision-revised') {
       renderVisionRevised(key);
+    }
+    if (qtype === 'vision-commitment') {
+      renderVisionCommitment(key);
     }
   }
   window._deeperSubPageCount = allSubPages.length;
@@ -1684,7 +1752,15 @@ function initDeeperStep() {
     }
 
     if (qtype === 'vision-achievable-check') {
-      if (!_deeperState['deeper_' + key + '_vision_achievable_check']) {
+      const _vYnChk = _deeperState['deeper_' + key + '_vision_yn'];
+      const _vItemsChk = (_vYnChk === 'yes' || _vYnChk === 'partially')
+        ? (_deeperState['deeper_' + key + '_vision_items'] || []).filter(i => i && i.trim())
+        : [];
+      const _achChk = _deeperState['deeper_' + key + '_vision_item_achievable'] || {};
+      const _allNotAch = _vItemsChk.length > 0 && _vItemsChk.every((_, i) => _achChk[i] === 'no');
+      if (_allNotAch) {
+        _deeperState['deeper_' + key + '_vision_achievable_check'] = 'revise';
+      } else if (!_deeperState['deeper_' + key + '_vision_achievable_check']) {
         const gc = document.getElementById('vision-achievable-check-' + key);
         if (gc) scrollToVisible(gc);
         setFormErr('Please answer before continuing.');
@@ -1698,6 +1774,15 @@ function initDeeperStep() {
         const gc = document.getElementById('vision-revised-' + key);
         if (gc) scrollToVisible(gc);
         setFormErr('Please describe your revised vision before continuing.');
+        return false;
+      }
+    }
+
+    if (qtype === 'vision-commitment') {
+      if (!_deeperState['deeper_' + key + '_commitment_yn']) {
+        const gc = document.getElementById('deeper-sub-' + key + '-vision-commitment');
+        if (gc) scrollToVisible(gc);
+        setFormErr('Please select one before continuing.');
         return false;
       }
     }
@@ -1720,22 +1805,22 @@ function initFitSignalsStep() {
 
   const questions = [
     { id: 'q7', type: 'singleselect', headline: 'The stakes',
-      label: 'If your life looks exactly the same in 3 years, how does that sit with you?',
+      label: 'If your life looks exactly the same in 3 years from now, how would you feel?',
       options: ["I'd be fine with it", "Disappointing, but I'd manage", "Like I'd wasted something important", "Unacceptable — it cannot happen"] },
-    { id: 'q1', type: 'yesno', headline: 'Belief',
-      label: 'Do you believe that meaningful change in your focus areas is possible for you?',
-      followup: { label: 'Do you think that it will actually happen?', options: ['Yes', 'No', 'Not Sure'], stateKey: 'fs_q1_followup' } },
     { id: 'q2', type: 'singleselect', headline: 'Readiness',
       label: 'Do you feel like you have the mental and emotional capacity to tackle your challenges and create change right now?',
-      options: ['Yes, whatever it takes', 'No, not right now', 'It depends'] },
+      options: ['Yes, whatever it takes', 'Yes, but I need to go easy on myself', "No, I'm exhausted"] },
     { id: 'q3', type: 'multiselect', headline: 'Inner state',
-      label: 'Are you bothered by any of these on a regular basis?',
+      label: 'Do you struggle with any of these on a regular basis?',
       options: ['Anxiety', 'Depression', 'Apathy', 'Anger or resentment', 'Frustration or pressure', 'Meaninglessness', 'Panic attacks', 'Hypochondria', 'Other'],
       other: 'Other' },
     { id: 'q4', type: 'multiselect', headline: 'Compulsive patterns',
-      label: 'Are you bothered by any addictions or compulsive habits?',
+      label: 'Do you struggle with any addictions or compulsive habits?',
       options: ['Alcohol', 'Drugs', 'Pornography', 'Gambling', 'Social media', 'Gaming', 'Food', 'Shopping', 'Other'],
       other: 'Other' },
+    { id: 'q5l', type: 'multiselect', headline: 'Lifestyle',
+      label: 'Which of the following do you struggle to maintain consistently?',
+      options: ['Sleep', 'Exercise', 'Healthy eating', 'Social connection', 'Time outdoors', 'Downtime / switching off', 'Hobbies or creative outlets', 'None of the above'] },
     { id: 'q5', type: 'scale5', headline: 'The mainstream',
       label: 'How do you feel when you imagine living the life of mainstream society — a steady job, a mortgage, blending in?',
       low: 'Totally fine with it', high: "Can't think of anything worse" },

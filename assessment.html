@@ -392,8 +392,19 @@
             <input id="age" name="age" type="number" min="16" max="100" required placeholder="Your age">
           </div>
           <div class="field">
-            <label for="work_status"><span class="num">04</span> Work / life context</label>
-            <input id="work_status" name="work_status" type="text" placeholder="Founder, employed, studying, between things…">
+            <label for="work_status"><span class="num">04</span> Occupation</label>
+            <select id="work_status" name="work_status" required>
+              <option value="" disabled selected>Select your occupation…</option>
+              <option>Employed — full time</option>
+              <option>Employed — part time</option>
+              <option>Self-employed / Freelancer</option>
+              <option>Business owner / Entrepreneur</option>
+              <option>Executive / Senior leadership</option>
+              <option>Student</option>
+              <option>Between jobs / Searching</option>
+              <option>Retired</option>
+              <option>Other</option>
+            </select>
           </div>
         </div>
       </section>
@@ -507,6 +518,8 @@
         if(window._validateFitSubPage&&window._validateFitSubPage(window._fitSubPageIdx)){
           clearFormError();window._showFitSubPage(window._fitSubPageIdx+1);
         }
+      } else if(current===total-1){
+        if(validateStep(current)){clearFormError();if(window.submitAssessment)window.submitAssessment(form,btnNext);}
       } else {
         if(validateStep(current)){clearFormError();current++;showStep(current);}
       }

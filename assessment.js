@@ -643,7 +643,7 @@ function renderItemValueGroups(key, type, itemPlaceholder, valueLabel, vgContain
   build();
 }
 
-function renderSimpleBulletList(containerId, stateKey, placeholder) {
+function renderSimpleBulletList(containerId, stateKey, placeholder, nothingStateKey) {
   const container = document.getElementById(containerId);
   if (!container) return;
   if (!Array.isArray(_deeperState[stateKey])) _deeperState[stateKey] = [''];
@@ -656,8 +656,11 @@ function renderSimpleBulletList(containerId, stateKey, placeholder) {
 
   function build() {
     container.innerHTML = '';
+    const isNothing = nothingStateKey && !!_deeperState[nothingStateKey];
+
     const list = document.createElement('div');
     list.className = 'cause-list';
+    list.hidden = isNothing;
     items.forEach((val, i) => {
       const row = document.createElement('div');
       row.className = 'cause-item';
@@ -703,6 +706,7 @@ function renderSimpleBulletList(containerId, stateKey, placeholder) {
     addBtn.type = 'button';
     addBtn.className = 'list-add-btn';
     addBtn.textContent = '+ Add another';
+    addBtn.hidden = isNothing;
     addBtn.addEventListener('click', () => {
       items.push('');
       _deeperState[stateKey] = items;
@@ -717,6 +721,136 @@ function renderSimpleBulletList(containerId, stateKey, placeholder) {
     hidden.name = stateKey;
     hidden.value = JSON.stringify(items);
     container.appendChild(hidden);
+
+    if (nothingStateKey) {
+      const nothingWrap = document.createElement('label');
+      nothingWrap.className = 'nothing-checkbox-label';
+      nothingWrap.style.cssText = 'display:flex;align-items:center;gap:.5rem;margin-top:.75rem;cursor:pointer;font-size:.9rem;';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = isNothing;
+      cb.addEventListener('change', () => {
+        _deeperState[nothingStateKey] = cb.checked;
+        if (window.clearFormError) window.clearFormError();
+        build();
+      });
+      const lbl = document.createElement('span');
+      lbl.textContent = 'Nothing';
+      nothingWrap.appendChild(cb);
+      nothingWrap.appendChild(lbl);
+      container.appendChild(nothingWrap);
+    }
+  }
+
+  build();
+}
+
+function renderTrackRecordList(containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  if (!Array.isArray(_fsState['fs_q6_items']) || !_fsState['fs_q6_items'].length) {
+    _fsState['fs_q6_items'] = [{ what: '', howWell: null, why: '' }];
+  }
+  const items = _fsState['fs_q6_items'];
+
+  function whyLabel(howWell) {
+    if (howWell === 10) return 'What made it work so well?';
+    if (howWell >= 6)   return 'What could have made it even better?';
+    return 'What do you think got in the way?';
+  }
+
+  function build() {
+    container.innerHTML = '';
+    items.forEach((item, i) => {
+      const card = document.createElement('div');
+      card.style.cssText = 'border:1px solid var(--hair);border-radius:4px;padding:1rem 1.2rem;margin-bottom:1rem';
+
+      // What row
+      const whatRow = document.createElement('div');
+      whatRow.style.cssText = 'display:flex;align-items:center;gap:.6rem';
+      const bullet = document.createElement('span');
+      bullet.className = 'cause-bullet';
+      bullet.textContent = '—';
+      const whatInp = document.createElement('input');
+      whatInp.type = 'text';
+      whatInp.className = 'cause-input';
+      whatInp.style.flex = '1';
+      whatInp.value = item.what;
+      whatInp.placeholder = 'Describe what you tried…';
+      const rm = document.createElement('button');
+      rm.type = 'button';
+      rm.className = 'cause-remove';
+      rm.textContent = '×';
+      rm.hidden = items.length === 1;
+      rm.addEventListener('click', () => { items.splice(i, 1); build(); });
+      whatRow.appendChild(bullet); whatRow.appendChild(whatInp); whatRow.appendChild(rm);
+      card.appendChild(whatRow);
+
+      // Scale — hidden until text is entered
+      const scaleSec = document.createElement('div');
+      scaleSec.style.marginTop = '1rem';
+      scaleSec.hidden = !item.what?.trim();
+      const scaleLbl = document.createElement('label');
+      scaleLbl.style.cssText = 'font-size:.8rem;font-family:var(--sc);letter-spacing:.12em;display:block;margin-bottom:.5rem';
+      scaleLbl.textContent = 'How well did it work?';
+      const scaleRow = document.createElement('div');
+      scaleRow.className = 'number-scale';
+      const scaleLegend = document.createElement('div');
+      scaleLegend.style.cssText = 'display:flex;justify-content:space-between;font-size:.68rem;letter-spacing:.1em;font-family:var(--sc);color:var(--muted);margin-top:.3rem';
+      scaleLegend.innerHTML = '<span>Not at all</span><span>Very well</span>';
+
+      // Why textarea — hidden until scale is selected
+      const taSec = document.createElement('div');
+      taSec.style.marginTop = '1rem';
+      taSec.hidden = !item.howWell;
+      const taLbl = document.createElement('label');
+      taLbl.style.cssText = 'font-size:.8rem;font-family:var(--sc);letter-spacing:.12em;display:block;margin-bottom:.5rem';
+      taLbl.textContent = whyLabel(item.howWell);
+      const ta = document.createElement('textarea');
+      ta.className = 'cause-input';
+      ta.style.cssText = 'width:100%;min-height:3.5rem;resize:vertical;box-sizing:border-box';
+      ta.value = item.why;
+      ta.addEventListener('input', () => { items[i].why = ta.value; if (window.clearFormError) window.clearFormError(); });
+      taSec.appendChild(taLbl); taSec.appendChild(ta);
+
+      for (let n = 1; n <= 10; n++) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'number-btn' + (item.howWell === n ? ' selected' : '');
+        btn.textContent = n;
+        btn.addEventListener('click', () => {
+          scaleRow.querySelectorAll('.number-btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          items[i].howWell = n;
+          taLbl.textContent = whyLabel(n);
+          taSec.hidden = false;
+          if (window.clearFormError) window.clearFormError();
+        });
+        scaleRow.appendChild(btn);
+      }
+      scaleSec.appendChild(scaleLbl); scaleSec.appendChild(scaleRow); scaleSec.appendChild(scaleLegend);
+      card.appendChild(scaleSec);
+      card.appendChild(taSec);
+
+      whatInp.addEventListener('input', () => {
+        items[i].what = whatInp.value;
+        scaleSec.hidden = !whatInp.value.trim();
+        if (window.clearFormError) window.clearFormError();
+      });
+
+      container.appendChild(card);
+    });
+
+    const addBtn = document.createElement('button');
+    addBtn.type = 'button';
+    addBtn.className = 'list-add-btn';
+    addBtn.textContent = '+ Add another';
+    addBtn.addEventListener('click', () => {
+      items.push({ what: '', howWell: null, why: '' });
+      build();
+      container.querySelectorAll('.cause-input')[items.length * 2 - 2]?.focus();
+    });
+    container.appendChild(addBtn);
   }
 
   build();
@@ -1271,7 +1405,7 @@ function initDeeperStep() {
   const wheelMap = Object.fromEntries(wheel.map(a => [a.key, a]));
 
   // Sub-pages: 5 per area
-  const qtypes = ['cause', 'vision', 'vision-describe', 'vision-item-achievable', 'vision-achievable-check', 'vision-revised', 'vision-commitment', 'acts', 'acts-list', 'acts-values', 'control', 'control-attitude'];
+  const qtypes = ['cause', 'vision', 'vision-describe', 'vision-item-achievable', 'vision-achievable-check', 'vision-revised', 'vision-commitment', 'acts-list', 'acts-values', 'control', 'control-attitude'];
   const allSubPages = selectedKeys.flatMap(key => qtypes.map(qtype => ({ key, qtype })));
 
   container.innerHTML = selectedKeys.flatMap(key => {
@@ -1282,7 +1416,6 @@ function initDeeperStep() {
     const q3Expand = urgencyFocused ? `What would need to be resolved, achieved, or in place…` : `Describe the version of this area that would feel fully alive…`;
     const controlYn      = _deeperState[`deeper_${key}_control_yn`] || '';
     const controlItems   = _deeperState[`deeper_${key}_control_items`] || [];
-    const actsYn         = _deeperState[`deeper_${key}_acts_yn`] || '';
     const visionYn       = _deeperState[`deeper_${key}_vision_yn`] || '';
     const visionItems    = _deeperState[`deeper_${key}_vision_items`] || [];
     const commitmentYn   = _deeperState[`deeper_${key}_commitment_yn`] || '';
@@ -1351,22 +1484,10 @@ function initDeeperStep() {
         ${head}
         <div id="vision-commitment-recap-${key}" class="recap-block" style="margin-top:1.4rem;margin-bottom:1.6rem" hidden></div>
         <div class="deeper-field yn-field" data-key="${key}" data-role="commitment">
-          <label><strong>WILL</strong> you achieve it?</label>
+          <label><strong>WILL</strong> you achieve this?</label>
           <div class="yn-btns">
             <button type="button" class="yn-btn${commitmentYn === 'certain'  ? ' selected' : ''}" data-val="certain">There is no other way</button>
             <button type="button" class="yn-btn${commitmentYn === 'doubtful' ? ' selected' : ''}" data-val="doubtful">I have doubts</button>
-          </div>
-          <p class="yn-error">Please select one.</p>
-        </div>
-      </div>`,
-      `<div class="deeper-subpage" id="deeper-sub-${key}-acts" hidden>
-        ${head}
-        <div id="recap-causes-${key}-acts" data-label="Why ${label} feels like a ${data.fulfillment}/5" class="recap-block" hidden></div>
-        <div class="deeper-field yn-field" data-key="${key}" data-role="acts">
-          <label>Are there ways in which <strong>YOU</strong> are contributing to the above?</label>
-          <div class="yn-btns">
-            <button type="button" class="yn-btn${actsYn === 'yes' ? ' selected' : ''}" data-val="yes">Yes</button>
-            <button type="button" class="yn-btn${actsYn === 'no'  ? ' selected' : ''}" data-val="no">No</button>
           </div>
           <p class="yn-error">Please select one.</p>
         </div>
@@ -1395,6 +1516,7 @@ function initDeeperStep() {
       `<div class="deeper-subpage" id="deeper-sub-${key}-control" hidden>
         ${head}
         <div id="recap-causes-${key}-control" data-label="Why ${label} feels like a ${data.fulfillment}/5" class="recap-block" hidden></div>
+        <div id="recap-not-achievable-${key}" class="recap-block" style="margin-bottom:1.4rem" hidden></div>
         <div class="deeper-field yn-field" data-key="${key}" data-role="control">
           <label>Is there anything about the above that you cannot change and must therefore accept?</label>
           <div class="yn-btns">
@@ -1438,15 +1560,10 @@ function initDeeperStep() {
       showDeeperSubPage(idx + direction, direction);
       return;
     }
-    if (sp.qtype === 'acts-list') {
-      const actsYn = _deeperState['deeper_' + sp.key + '_acts_yn'];
-      if (actsYn !== 'yes') { showDeeperSubPage(idx + direction, direction); return; }
-    }
     if (sp.qtype === 'acts-values') {
-      const actsYn = _deeperState['deeper_' + sp.key + '_acts_yn'];
       const doing    = (_deeperState['deeper_' + sp.key + '_acts_doing_items'] || []).filter(i => i && i.trim());
       const notDoing = (_deeperState['deeper_' + sp.key + '_acts_not_doing_items'] || []).filter(i => i && i.trim());
-      if (actsYn !== 'yes' || (!doing.length && !notDoing.length)) {
+      if (!doing.length && !notDoing.length) {
         showDeeperSubPage(idx + direction, direction);
         return;
       }
@@ -1508,7 +1625,7 @@ function initDeeperStep() {
     if (!window._historyNav) history.pushState({ step: 4, sub: idx }, '');
     const { key, qtype } = sp;
     const causes = (_deeperState['deeper_' + key + '_causes'] || []).filter(c => c && c.trim());
-    if (qtype === 'acts' || qtype === 'acts-list' || qtype === 'control') {
+    if (qtype === 'acts-list' || qtype === 'control') {
       fillRecapBlock(document.getElementById('recap-causes-' + key + '-' + qtype), causes);
     }
     if (qtype === 'acts-values') {
@@ -1516,64 +1633,57 @@ function initDeeperStep() {
       fillRecapBlock(document.getElementById('recap-acts-' + key), actsItems);
     }
     if (qtype === 'control') {
-      const controlItemsKey  = 'deeper_' + key + '_control_items';
-      const controlPrePopKey = 'deeper_' + key + '_control_prepopulated';
+      const controlItemsKey = 'deeper_' + key + '_control_items';
 
-      // Recompute current non-achievable vision items
       const vYn = _deeperState['deeper_' + key + '_vision_yn'];
       const vItems = (vYn === 'yes' || vYn === 'partially')
         ? (_deeperState['deeper_' + key + '_vision_items'] || []).filter(i => i && i.trim())
         : [];
       const achievable    = _deeperState['deeper_' + key + '_vision_item_achievable'] || {};
       const notAchievable = vItems.filter((_, i) => achievable[i] === 'no');
-      const prevPrePop    = _deeperState[controlPrePopKey] || [];
 
-      // Remove previously pre-populated items that are no longer non-achievable
-      if (prevPrePop.length) {
-        const removed = prevPrePop.filter(item => !notAchievable.includes(item));
-        if (removed.length) {
-          _deeperState[controlItemsKey] = (_deeperState[controlItemsKey] || []).filter(i => !removed.includes(i));
+      const recapEl = document.getElementById('recap-not-achievable-' + key);
+      if (recapEl) {
+        if (notAchievable.length) {
+          recapEl.hidden = false;
+          recapEl.innerHTML = '';
+          const lbl = document.createElement('p');
+          lbl.className = 'recap-label';
+          lbl.textContent = 'From your vision — not achievable:';
+          recapEl.appendChild(lbl);
+          const ul = document.createElement('ul');
+          ul.className = 'recap-list';
+          notAchievable.forEach(item => { const li = document.createElement('li'); li.textContent = item; ul.appendChild(li); });
+          recapEl.appendChild(ul);
+        } else {
+          recapEl.hidden = true;
         }
       }
 
-      // Add any new non-achievable items not already in the list
-      const existing = (_deeperState[controlItemsKey] || []).filter(i => i && i.trim());
-      const toAdd = notAchievable.filter(item => !existing.includes(item));
-      if (toAdd.length) {
-        _deeperState[controlItemsKey] = [...existing, ...toAdd, ''];
-        renderControlList(key);
-      } else if (!existing.length && !prevPrePop.length) {
-        // first visit, nothing to pre-populate
-      } else {
-        renderControlList(key);
-      }
-      _deeperState[controlPrePopKey] = notAchievable;
+      renderControlList(key);
 
-      const subEl     = document.getElementById('deeper-sub-' + key + '-control');
-      const ynField   = subEl?.querySelector('.yn-field');
-      const expand    = subEl?.querySelector('.yn-expand');
-      const ynBtns    = ynField?.querySelector('.yn-btns');
-      const ynErr     = ynField?.querySelector('.yn-error');
-      const ynLabel   = ynField?.querySelector('label');
+      const subEl   = document.getElementById('deeper-sub-' + key + '-control');
+      const ynField = subEl?.querySelector('.yn-field');
+      const expand  = subEl?.querySelector('.yn-expand');
+      const ynBtns  = ynField?.querySelector('.yn-btns');
+      const ynErr   = ynField?.querySelector('.yn-error');
+      const ynLabel = ynField?.querySelector('label');
 
       if (notAchievable.length) {
-        // Pre-populated mode: hide Yes/No, show list directly
-        if (ynLabel) ynLabel.textContent = 'These things cannot be changed and must therefore be accepted. Are there any others?';
+        if (ynLabel) ynLabel.textContent = 'Based on the above, what realities must you accept?';
         if (ynBtns) ynBtns.hidden = true;
         if (ynErr)  ynErr.hidden  = true;
         if (ynField) ynField.dataset.noValidate = '1';
         _deeperState['deeper_' + key + '_control_yn'] = 'yes';
         if (expand) expand.hidden = false;
       } else {
-        // Normal mode: restore Yes/No question
         if (ynLabel) ynLabel.textContent = 'Is there anything about the above that you cannot change and must therefore accept?';
         if (ynBtns) ynBtns.hidden = false;
         if (ynErr)  ynErr.hidden  = false;
         if (ynField) delete ynField.dataset.noValidate;
-        if (expand) expand.hidden = _deeperState['deeper_' + key + '_control_yn'] !== 'yes';
-        // Reset answer only if list is empty
         const remaining = (_deeperState[controlItemsKey] || []).filter(i => i && i.trim());
         if (!remaining.length) _deeperState['deeper_' + key + '_control_yn'] = '';
+        if (expand) expand.hidden = _deeperState['deeper_' + key + '_control_yn'] !== 'yes';
       }
     }
     if (qtype === 'control-attitude') {
@@ -1597,7 +1707,7 @@ function initDeeperStep() {
   window._showDeeperSubPage = showDeeperSubPage;
   showDeeperSubPage(0);
 
-  selectedKeys.forEach(k => { renderCauseList(k); renderSimpleBulletList('acts-doing-' + k, 'deeper_' + k + '_acts_doing_items', 'Describe what you are doing…'); renderSimpleBulletList('acts-not-doing-' + k, 'deeper_' + k + '_acts_not_doing_items', 'Describe what you could be doing…'); renderActsGroups(k); renderControlList(k); renderControlAttitude(k); renderVisionList(k); });
+  selectedKeys.forEach(k => { renderCauseList(k); renderSimpleBulletList('acts-doing-' + k, 'deeper_' + k + '_acts_doing_items', 'Describe what you are doing…', 'deeper_' + k + '_acts_doing_nothing'); renderSimpleBulletList('acts-not-doing-' + k, 'deeper_' + k + '_acts_not_doing_items', 'Describe what you could be doing…', 'deeper_' + k + '_acts_not_doing_nothing'); renderActsGroups(k); renderControlList(k); renderControlAttitude(k); renderVisionList(k); });
 
   // Wire up yn-field toggles
   container.querySelectorAll('.yn-field').forEach(field => {
@@ -1657,10 +1767,15 @@ function initDeeperStep() {
       }
     }
 
-    if (qtype === 'control' && _deeperState['deeper_' + key + '_control_yn'] === 'no' &&
-        _deeperState['deeper_' + key + '_acts_yn'] === 'no') {
-      setFormErr("Hold on — your situation has to consist of things you're contributing to, things that are outside your control and must be accepted, or both. There is no situation in which it's neither. Please go back and reconsider one of your answers.");
-      return false;
+    if (qtype === 'control' && _deeperState['deeper_' + key + '_control_yn'] === 'no') {
+      const doing    = (_deeperState['deeper_' + key + '_acts_doing_items'] || []).filter(i => i && i.trim());
+      const notDoing = (_deeperState['deeper_' + key + '_acts_not_doing_items'] || []).filter(i => i && i.trim());
+      const doingNothing    = !!_deeperState['deeper_' + key + '_acts_doing_nothing'];
+      const notDoingNothing = !!_deeperState['deeper_' + key + '_acts_not_doing_nothing'];
+      if (!doing.length && !notDoing.length && doingNothing && notDoingNothing) {
+        setFormErr("Hold on — your situation has to consist of things you're contributing to, things that are outside your control and must be accepted, or both. There is no situation in which it's neither. Please go back and reconsider one of your answers.");
+        return false;
+      }
     }
 
     if (qtype === 'control' && _deeperState['deeper_' + key + '_control_yn'] === 'yes') {
@@ -1693,10 +1808,16 @@ function initDeeperStep() {
     }
 
     if (qtype === 'acts-list') {
-      const doing    = (_deeperState['deeper_' + key + '_acts_doing_items'] || []).filter(i => i && i.trim());
-      const notDoing = (_deeperState['deeper_' + key + '_acts_not_doing_items'] || []).filter(i => i && i.trim());
-      if (!doing.length && !notDoing.length) {
-        setFormErr('Please add at least one item before continuing.');
+      const doing           = (_deeperState['deeper_' + key + '_acts_doing_items'] || []).filter(i => i && i.trim());
+      const notDoing        = (_deeperState['deeper_' + key + '_acts_not_doing_items'] || []).filter(i => i && i.trim());
+      const doingNothing    = !!_deeperState['deeper_' + key + '_acts_doing_nothing'];
+      const notDoingNothing = !!_deeperState['deeper_' + key + '_acts_not_doing_nothing'];
+      if (!doing.length && !doingNothing) {
+        setFormErr('Please add at least one item or select "Nothing" for what you are doing.');
+        return false;
+      }
+      if (!notDoing.length && !notDoingNothing) {
+        setFormErr('Please add at least one item or select "Nothing" for what you are not doing.');
         return false;
       }
     }
@@ -1804,37 +1925,31 @@ function initFitSignalsStep() {
   if (!container) return;
 
   const questions = [
-    { id: 'q7', type: 'singleselect', headline: 'The stakes',
-      label: 'If your life looks exactly the same in 3 years from now, how would you feel?',
-      options: ["I'd be fine with it", "Disappointing, but I'd manage", "Like I'd wasted something important", "Unacceptable — it cannot happen"] },
     { id: 'q2', type: 'singleselect', headline: 'Readiness',
       label: 'Do you feel like you have the mental and emotional capacity to tackle your challenges and create change right now?',
-      options: ['Yes, whatever it takes', 'Yes, but I need to go easy on myself', "No, I'm exhausted"] },
+      options: ['Yes, whatever it takes', 'Yes, but I need to go easy on myself', "No, I'm exhausted"],
+      followup: { triggerValue: "No, I'm exhausted", label: 'What do you think you need right now?', stateKey: 'fs_q2_needs' } },
     { id: 'q3', type: 'multiselect', headline: 'Inner state',
       label: 'Do you struggle with any of these on a regular basis?',
-      options: ['Anxiety', 'Depression', 'Apathy', 'Anger or resentment', 'Frustration or pressure', 'Meaninglessness', 'Panic attacks', 'Hypochondria', 'Other'],
-      other: 'Other' },
+      options: ['Anxiety', 'Depression', 'PTSD', 'Apathy', 'Anger or resentment', 'Frustration or pressure', 'Meaninglessness', 'Panic attacks', 'Hypochondria', 'Other', 'None of the above'],
+      other: 'Other', none: 'None of the above' },
     { id: 'q4', type: 'multiselect', headline: 'Compulsive patterns',
       label: 'Do you struggle with any addictions or compulsive habits?',
-      options: ['Alcohol', 'Drugs', 'Pornography', 'Gambling', 'Social media', 'Gaming', 'Food', 'Shopping', 'Other'],
-      other: 'Other' },
+      options: ['Alcohol', 'Drugs', 'Pharmaceuticals', 'Pornography', 'Gambling', 'Social media', 'Gaming', 'Food', 'Other', 'None of the above'],
+      other: 'Other', none: 'None of the above' },
     { id: 'q5l', type: 'multiselect', headline: 'Lifestyle',
       label: 'Which of the following do you struggle to maintain consistently?',
-      options: ['Sleep', 'Exercise', 'Healthy eating', 'Social connection', 'Time outdoors', 'Downtime / switching off', 'Hobbies or creative outlets', 'None of the above'] },
+      options: ['Sleep', 'Exercise', 'Healthy eating', 'Social connection', 'Time outdoors', 'Downtime / switching off', 'Hobbies or creative outlets', 'None of the above'],
+      none: 'None of the above' },
     { id: 'q5', type: 'scale5', headline: 'The mainstream',
       label: 'How do you feel when you imagine living the life of mainstream society — a steady job, a mortgage, blending in?',
-      low: 'Totally fine with it', high: "Can't think of anything worse" },
-    { id: 'q6', type: 'multiselect', headline: 'Track record',
-      label: 'In the past year, which of these have you actually done?',
-      options: ["Had a difficult conversation I'd been avoiding", 'Changed a habit or routine', 'Sought professional help', 'Invested money in my own development', 'Left something behind to grow', 'None of the above'],
-      none: 'None of the above' },
-    { id: 'q8', type: 'tried', headline: 'Prior attempts',
-      label: 'Have you tried to address your challenges before?' },
-    { id: 'q9', type: 'textarea', headline: 'The cost',
-      label: 'What is staying where you are costing you?' },
-    { id: 'q10', type: 'scale5', headline: 'Truth and directness',
-      label: 'How much do you actually want honesty over comfort?',
-      low: 'Comfort over honesty', high: 'Honesty above all' },
+      low: "Can't think of anything worse", high: "It's exactly what I want" },
+    { id: 'q6', type: 'track-record', headline: 'Track record',
+      label: 'What have you tried in the past to deal with your situation(s)?' },
+    { id: 'q7', type: 'singleselect', headline: 'The stakes',
+      label: 'If your life looks exactly the same in 3 years from now, how would you feel?',
+      note: 'Remember. This isn\'t about passing a test. There are no "right" or "wrong" answers. The only right answer is the honest one.',
+      options: ["I'd be fine with it", "Disappointing, but I'd manage", "Like I'd wasted something important", "Unacceptable — it cannot happen"] },
   ];
 
   container.innerHTML = '';
@@ -1854,6 +1969,14 @@ function initFitSignalsStep() {
     qlbl.className = 'fulfillment-area-desc';
     qlbl.textContent = q.label;
     page.appendChild(qlbl);
+
+    if (q.note) {
+      const qnote = document.createElement('p');
+      qnote.className = 'guide-text';
+      qnote.style.marginTop = '0.75rem';
+      qnote.textContent = q.note;
+      page.appendChild(qnote);
+    }
 
     const field = document.createElement('div');
     field.className = 'deeper-field';
@@ -1912,6 +2035,21 @@ function initFitSignalsStep() {
       const btns = document.createElement('div');
       btns.className = 'yn-btns';
       btns.style.flexWrap = 'wrap';
+
+      let followupEl = null;
+      if (q.followup) {
+        followupEl = document.createElement('div');
+        followupEl.style.marginTop = '1.4rem';
+        followupEl.hidden = _fsState['fs_' + q.id] !== q.followup.triggerValue;
+        const fLbl = document.createElement('label');
+        fLbl.style.cssText = 'font-family:var(--sc);font-size:.78rem;letter-spacing:.15em;color:var(--ink);display:block;margin-bottom:.7rem;text-align:center';
+        fLbl.textContent = q.followup.label;
+        const fList = document.createElement('div');
+        fList.id = 'fs-followup-' + q.id;
+        followupEl.appendChild(fLbl);
+        followupEl.appendChild(fList);
+      }
+
       q.options.forEach(opt => {
         const btn = document.createElement('button');
         btn.type = 'button';
@@ -1921,11 +2059,13 @@ function initFitSignalsStep() {
           btns.querySelectorAll('.yn-btn').forEach(b => b.classList.remove('selected'));
           btn.classList.add('selected');
           _fsState['fs_' + q.id] = opt;
+          if (followupEl) followupEl.hidden = opt !== q.followup.triggerValue;
           if (window.clearFormError) window.clearFormError();
         });
         btns.appendChild(btn);
       });
       field.appendChild(btns);
+      if (followupEl) field.appendChild(followupEl);
     }
 
     if (q.type === 'multiselect') {
@@ -2016,67 +2156,10 @@ function initFitSignalsStep() {
       field.appendChild(scaleWrap);
     }
 
-    if (q.type === 'tried') {
-      const btns = document.createElement('div');
-      btns.className = 'yn-btns';
-      const expand = document.createElement('div');
-      expand.hidden = _fsState['fs_q8_yn'] !== 'yes';
-      expand.style.marginTop = '1.4rem';
-
-      const mkTaField = (label, key) => {
-        const wrap = document.createElement('div');
-        wrap.className = 'deeper-field';
-        wrap.style.marginTop = '1.2rem';
-        const l = document.createElement('label'); l.textContent = label;
-        const ta = document.createElement('textarea');
-        ta.className = 'cause-input';
-        ta.style.cssText = 'width:100%;min-height:3.5rem;resize:vertical;margin-top:.5rem;box-sizing:border-box';
-        ta.value = _fsState[key] || '';
-        ta.addEventListener('input', () => { _fsState[key] = ta.value; });
-        wrap.appendChild(l); wrap.appendChild(ta);
-        return wrap;
-      };
-      expand.appendChild(mkTaField('What did you try?', 'fs_q8_what'));
-
-      const hwWrap = document.createElement('div');
-      hwWrap.className = 'deeper-field';
-      hwWrap.style.marginTop = '1.2rem';
-      const hwLbl = document.createElement('label'); hwLbl.textContent = 'How well did it work? (1–10)';
-      const hwRow = document.createElement('div');
-      hwRow.className = 'number-scale';
-      hwRow.style.marginTop = '.5rem';
-      for (let i = 1; i <= 10; i++) {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'number-btn' + (_fsState['fs_q8_how_well'] === i ? ' selected' : '');
-        btn.textContent = i;
-        btn.addEventListener('click', () => {
-          hwRow.querySelectorAll('.number-btn').forEach(b => b.classList.remove('selected'));
-          btn.classList.add('selected');
-          _fsState['fs_q8_how_well'] = i;
-        });
-        hwRow.appendChild(btn);
-      }
-      hwWrap.appendChild(hwLbl); hwWrap.appendChild(hwRow);
-      expand.appendChild(hwWrap);
-      expand.appendChild(mkTaField("Why didn't it fully work?", 'fs_q8_why'));
-
-      ['yes', 'no'].forEach(val => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'yn-btn' + (_fsState['fs_q8_yn'] === val ? ' selected' : '');
-        btn.textContent = val === 'yes' ? 'Yes' : 'No';
-        btn.addEventListener('click', () => {
-          btns.querySelectorAll('.yn-btn').forEach(b => b.classList.remove('selected'));
-          btn.classList.add('selected');
-          _fsState['fs_q8_yn'] = val;
-          expand.hidden = val !== 'yes';
-          if (window.clearFormError) window.clearFormError();
-        });
-        btns.appendChild(btn);
-      });
-      field.appendChild(btns);
-      field.appendChild(expand);
+    if (q.type === 'track-record') {
+      const listContainer = document.createElement('div');
+      listContainer.id = 'fs-track-record-list';
+      field.appendChild(listContainer);
     }
 
     if (q.type === 'textarea') {
@@ -2090,6 +2173,14 @@ function initFitSignalsStep() {
 
     page.appendChild(field);
     container.appendChild(page);
+
+    if (q.type === 'singleselect' && q.followup) {
+      if (!Array.isArray(_fsState[q.followup.stateKey])) _fsState[q.followup.stateKey] = [''];
+      renderSimpleBulletList('fs-followup-' + q.id, q.followup.stateKey, 'Describe what you need…');
+    }
+    if (q.type === 'track-record') {
+      renderTrackRecordList('fs-track-record-list');
+    }
   });
 
   window._fitSubPageCount = questions.length;
@@ -2107,12 +2198,26 @@ function initFitSignalsStep() {
     el.innerHTML = `<span class="num">${sec.num}</span><div><h2>${sec.title}</h2><p>${sec.desc}</p></div>`;
   }
 
+  let _fsKeyHandler = null;
+
   window._showFitSubPage = function(idx) {
     container.querySelectorAll('.deeper-subpage').forEach((el, i) => { el.hidden = i !== idx; });
     window._fitSubPageIdx = idx;
     updateFsHeader(idx);
     window.scrollTo({ top: 0, behavior: 'smooth' });
     if (!window._historyNav) history.pushState({ step: 5, sub: idx }, '');
+
+    if (_fsKeyHandler) { document.removeEventListener('keydown', _fsKeyHandler); _fsKeyHandler = null; }
+    const q = questions[idx];
+    if (q.type === 'scale5') {
+      const page = document.getElementById('fs-sub-' + q.id);
+      _fsKeyHandler = (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        const n = parseInt(e.key);
+        if (n >= 1 && n <= 5) page?.querySelector(`.number-btn:nth-child(${n})`)?.click();
+      };
+      document.addEventListener('keydown', _fsKeyHandler);
+    }
   };
 
   window._validateFitSubPage = function(idx) {
@@ -2124,22 +2229,26 @@ function initFitSignalsStep() {
     if (q.type === 'singleselect' && !_fsState['fs_' + q.id]) {
       setFormErr('Please select an answer before continuing.'); return false;
     }
+    if (q.type === 'singleselect' && q.followup && _fsState['fs_' + q.id] === q.followup.triggerValue) {
+      const items = (_fsState[q.followup.stateKey] || []).filter(i => i && i.trim());
+      if (!items.length) { setFormErr('Please describe what you need before continuing.'); return false; }
+    }
     if (q.type === 'multiselect' && !_fsState['fs_' + q.id]?.length) {
       setFormErr('Please select at least one option before continuing.'); return false;
     }
     if (q.type === 'scale5' && !_fsState['fs_' + q.id]) {
       setFormErr('Please select a number before continuing.'); return false;
     }
-    if (q.type === 'tried') {
-      if (!_fsState['fs_q8_yn']) { setFormErr('Please select an answer before continuing.'); return false; }
-      if (_fsState['fs_q8_yn'] === 'yes') {
-        if (!_fsState['fs_q8_what']?.trim()) { setFormErr('Please describe what you tried before continuing.'); return false; }
-        if (!_fsState['fs_q8_how_well']) { setFormErr('Please rate how well it worked before continuing.'); return false; }
-        if (!_fsState['fs_q8_why']?.trim()) { setFormErr("Please explain why it didn't fully work before continuing."); return false; }
-      }
-    }
     if (q.type === 'textarea' && !_fsState['fs_' + q.id]?.trim()) {
       setFormErr('Please write your answer before continuing.'); return false;
+    }
+    if (q.type === 'track-record') {
+      const items = (_fsState['fs_q6_items'] || []).filter(item => item.what?.trim());
+      if (!items.length) { setFormErr('Please describe at least one thing you have tried.'); return false; }
+      for (const item of items) {
+        if (!item.howWell) { setFormErr('Please rate how well each attempt worked before continuing.'); return false; }
+        if (!item.why?.trim()) { setFormErr('Please explain what got in the way for each attempt before continuing.'); return false; }
+      }
     }
     return true;
   };
@@ -2159,6 +2268,8 @@ window.onStepChange = function(step) {
   if (step === 3) initFocusStep();
   if (step === 4) initDeeperStep();
   if (step === 5) initFitSignalsStep();
+  const btnNext = document.getElementById('btn-next');
+  if (btnNext) btnNext.textContent = step === 6 ? 'Get my results →' : 'Next →';
 };
 
 // Initialize step 0 — showStep(0) ran before this script loaded
@@ -2175,8 +2286,31 @@ function revealShareLink(resultUrl) {
   actions.appendChild(wrap);
 }
 
-async function submitAssessment(form, submitButton) {
+window.submitAssessment = async function submitAssessment(form, submitButton) {
   const answers = collectAnswers(form);
+
+  // Fit signals live in _fsState (plain JS object, not form fields) — derive scoring signals here
+  const q2 = _fsState['fs_q2'] || '';
+  const q5 = typeof _fsState['fs_q5'] === 'number' ? _fsState['fs_q5'] : 3;
+  const q7 = _fsState['fs_q7'] || '';
+  const q6items = (_fsState['fs_q6_items'] || []).filter(i => i.what?.trim());
+
+  const r6 = { 'Yes, whatever it takes': 6, 'Yes, but I need to go easy on myself': 4, "No, I'm exhausted": 2 };
+  const s6 = { "Unacceptable — it cannot happen": 6, "Like I'd wasted something important": 5, "Disappointing, but I'd manage": 3, "I'd be fine with it": 1 };
+  const r5 = { 'Yes, whatever it takes': 5, 'Yes, but I need to go easy on myself': 3, "No, I'm exhausted": 1 };
+  const s5 = { "Unacceptable — it cannot happen": 5, "Like I'd wasted something important": 4, "Disappointing, but I'd manage": 2, "I'd be fine with it": 1 };
+
+  answers.path_signal          = r6[q2] ?? 3;
+  answers.decision_signal      = s6[q7] ?? 3;
+  answers.previous_attempts    = Math.min(q6items.length + 1, 5);
+  answers.help_openness        = r5[q2] ?? 3;
+  answers.change_timeline      = s5[q7] ?? 3;
+  answers.investment_readiness = r5[q2] ?? 3;
+  answers.vision_scale         = Math.max(1, 6 - q5);
+  answers.conformity_signal    = answers.vision_scale;
+  answers.truth_directness     = s5[q7] ?? 3;
+  answers.potential_signal     = s5[q7] ?? 3;
+
   const result = calculateResult(answers);
   if (window.stopStopwatch) window.stopStopwatch();
   renderResult(result, "pending");

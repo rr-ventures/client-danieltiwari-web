@@ -12,7 +12,7 @@ const AREAS = [
   ["friendships", "Friendships", "Placeholder text."],
   ["family", "Family", "Placeholder text."],
   ["health", "Health & Vitality", "Placeholder text."],
-  ["attractiveness", "Attractiveness", "Placeholder text."],
+  ["attractiveness", "Attractiveness/Appearance", "Placeholder text."],
   ["money", "Finances", "Placeholder text."],
   ["lifestyle", "Lifestyle & Environment", "Placeholder text."],
   ["adventure", "Recreation & Adventure", "Placeholder text."],

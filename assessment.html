@@ -106,6 +106,21 @@
   .guide-text{font-size:clamp(1.05rem,1.7vw,1.2rem);line-height:1.85;color:var(--accent);text-align:center}
   .guide-text p+p{margin-top:.9rem}
 
+  /* ---- print / PDF ---- */
+  .print-result{display:none}
+  .pr-page{max-width:680px;margin:0 auto;padding:3rem 2rem}
+  .pr-eyebrow{font-family:var(--sc);font-size:.72rem;letter-spacing:.3em;color:var(--accent);margin-bottom:1.2rem;display:block;text-align:center}
+  .pr-wheel-section{text-align:center;margin-bottom:2.4rem}
+  .pr-wheel-wrap{margin:1.6rem auto 0;max-width:460px}
+  @media print{
+    *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    header,footer,#form-nav,#stopwatch,a[href="mailto:email@danieltiwari.com"],.result-actions,#assessment-form{display:none!important}
+    body{background:#fff}
+    .assessment-wrap{padding:0!important}
+    #assessment-result{display:none!important}
+    .print-result{display:block!important}
+  }
+
   /* reveal */
   .obs-fade,.rise{opacity:0;transform:translateY(18px);transition:opacity .9s ease,transform .9s ease}
   .obs-fade.is-in,.rise.in,.rise.is-in{opacity:1;transform:none}
@@ -388,6 +403,7 @@
     </form>
 
     <section id="assessment-result" class="assessment-result" hidden aria-live="polite"></section>
+    <div id="print-result" class="print-result" aria-hidden="true"></div>
   </div>
 </main>
 

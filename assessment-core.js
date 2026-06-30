@@ -204,6 +204,39 @@ function renderPieChart(wheel) {
   return `<svg viewBox="-64 -24 ${size + 128} ${size + 48}" class="wheel-svg" role="img" aria-label="Your fulfilment across all areas">${bg}${fill}${labels}</svg>`;
 }
 
+function renderWheelPrint(wheel) {
+  const size = 320, c = size / 2, R = 120, n = wheel.length;
+  const ang = (i) => (Math.PI * 2 * i) / n - Math.PI / 2;
+  const pt  = (i, r) => [c + Math.cos(ang(i)) * r, c + Math.sin(ang(i)) * r];
+  let labels = "";
+  wheel.forEach((a, i) => {
+    const [lx, ly] = pt(i, R + 24);
+    const anchor = Math.abs(lx - c) < 8 ? "middle" : lx < c ? "end" : "start";
+    labels += `<text x="${lx.toFixed(1)}" y="${(ly + 3).toFixed(1)}" text-anchor="${anchor}" font-size="10" fill="#7a7268" font-family="Alegreya SC, serif" letter-spacing="0.05em">${a.label}</text>`;
+  });
+  const poly = wheel.map((a, i) => pt(i, R * (a.fulfillment / 5)).map((v) => v.toFixed(1)).join(",")).join(" ");
+  const dots = wheel.map((a, i) => {
+    const [x, y] = pt(i, R * (a.fulfillment / 5));
+    return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3" fill="#1c1a14"/>`;
+  }).join("");
+  return `<svg viewBox="-80 -8 ${size + 160} ${size + 16}" style="width:100%;max-width:440px;height:auto;display:block;margin:0 auto" role="img" aria-label="Wheel of Life">
+    <polygon points="${poly}" fill="rgba(28,26,20,.11)" stroke="#1c1a14" stroke-width="1.5"/>
+    ${dots}${labels}
+  </svg>`;
+}
+
+function renderPrintResult(result) {
+  const el = document.getElementById("print-result");
+  if (!el) return;
+  el.innerHTML = `
+    <div class="pr-page">
+      <div class="pr-wheel-section">
+        <p class="pr-eyebrow">Your Wheel of Life</p>
+        <div class="pr-wheel-wrap">${renderWheelPrint(result.wheel)}</div>
+      </div>
+    </div>`;
+}
+
 function renderResult(result, emailState = "pending") {
   const el = document.getElementById("assessment-result");
   if (!el) return;

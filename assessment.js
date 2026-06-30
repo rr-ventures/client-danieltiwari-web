@@ -2314,6 +2314,7 @@ window.submitAssessment = async function submitAssessment(form, submitButton) {
   const result = calculateResult(answers);
   if (window.stopStopwatch) window.stopStopwatch();
   renderResult(result, "pending");
+  renderPrintResult(result);
   document.getElementById("assessment-result")?.scrollIntoView({ behavior: "smooth", block: "start" });
   submitButton.disabled = true;
   submitButton.classList.add("is-loading");

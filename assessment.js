@@ -2378,6 +2378,36 @@ function _fmtFitAnswer(id) {
   if (id === 'q2' && _fsState['fs_q2_needs']) out += ' — needs: ' + _fsState['fs_q2_needs'];
   return out;
 }
+// Read the deeper-step questions + answers straight from the rendered page, so the
+// email shows each question in FULL exactly as the person saw it (no guessed labels).
+function captureDeeperFromDom() {
+  const rows = [];
+  try {
+    document.querySelectorAll('.deeper-subpage').forEach((sp) => {
+      const area = (sp.querySelector('.deeper-area-name')?.textContent || '').trim();
+      sp.querySelectorAll('.deeper-field').forEach((field) => {
+        const lblEl = [...field.children].find((c) => c.tagName === 'LABEL') || field.querySelector('label');
+        const q = (lblEl?.textContent || '').replace(/\s+/g, ' ').trim();
+        if (!q) return;
+        const mine = (el) => el.closest('.deeper-field') === field;
+        let a = '';
+        const sel = [...field.querySelectorAll('.yn-btn.selected')].find(mine);
+        if (sel) a = sel.textContent.trim();
+        if (!a) {
+          const texts = [...field.querySelectorAll('input:not([type=checkbox]):not([type=radio]), textarea')]
+            .filter(mine).map((i) => i.value.trim()).filter(Boolean);
+          const checks = [...field.querySelectorAll('input[type=checkbox]')]
+            .filter((c) => mine(c) && c.checked)
+            .map((c) => (c.closest('label')?.textContent || 'Yes').replace(/\s+/g, ' ').trim());
+          a = [...texts, ...checks].join('; ');
+        }
+        if (a) rows.push([area ? `${area} — ${q}` : q, a]);
+      });
+    });
+  } catch (_e) { /* best effort */ }
+  return rows;
+}
+
 function buildQaSummary(answers) {
   const groups = [];
   groups.push({ title: 'Contact', rows: [
@@ -2394,13 +2424,7 @@ function buildQaSummary(answers) {
   });
   if (areaRows.length) groups.push({ title: 'Life areas — their ratings', rows: areaRows });
 
-  const deeperRows = [];
-  Object.keys(_deeperState || {}).sort().forEach((k) => {
-    let v = _deeperState[k];
-    if (Array.isArray(v)) v = v.filter((x) => (typeof x === 'string' ? x.trim() : x != null)).join('; ');
-    if (v == null || String(v).trim() === '') return;
-    deeperRows.push([_prettyKey(k), String(v)]);
-  });
+  const deeperRows = captureDeeperFromDom();
   if (deeperRows.length) groups.push({ title: 'Deeper questions', rows: deeperRows });
 
   groups.push({ title: 'Fit signals', rows: FIT_ORDER.map((id) => [FIT_LABELS[id], _fmtFitAnswer(id)]) });

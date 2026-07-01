@@ -643,11 +643,12 @@ function renderItemValueGroups(key, type, itemPlaceholder, valueLabel, vgContain
   build();
 }
 
-function renderSimpleBulletList(containerId, stateKey, placeholder, nothingStateKey) {
+function renderSimpleBulletList(containerId, stateKey, placeholder, nothingStateKey, stateObj) {
   const container = document.getElementById(containerId);
   if (!container) return;
-  if (!Array.isArray(_deeperState[stateKey])) _deeperState[stateKey] = [''];
-  const items = _deeperState[stateKey];
+  const state = stateObj || _deeperState;
+  if (!Array.isArray(state[stateKey])) state[stateKey] = [''];
+  const items = state[stateKey];
 
   function syncHidden() {
     const h = container.querySelector('input[name="' + stateKey + '"]');
@@ -656,7 +657,7 @@ function renderSimpleBulletList(containerId, stateKey, placeholder, nothingState
 
   function build() {
     container.innerHTML = '';
-    const isNothing = nothingStateKey && !!_deeperState[nothingStateKey];
+    const isNothing = nothingStateKey && !!state[nothingStateKey];
 
     const list = document.createElement('div');
     list.className = 'cause-list';
@@ -674,7 +675,7 @@ function renderSimpleBulletList(containerId, stateKey, placeholder, nothingState
       inp.placeholder = placeholder;
       inp.addEventListener('input', () => {
         items[i] = inp.value;
-        _deeperState[stateKey] = items;
+        state[stateKey] = items;
         syncHidden();
         if (window.clearFormError) window.clearFormError();
         container.querySelectorAll('.cause-remove').forEach(b => { b.hidden = items.length === 1; });
@@ -683,7 +684,7 @@ function renderSimpleBulletList(containerId, stateKey, placeholder, nothingState
         if (e.key === 'Enter') {
           e.preventDefault(); e.stopPropagation();
           items.push('');
-          _deeperState[stateKey] = items;
+          state[stateKey] = items;
           build();
           const inputs = container.querySelectorAll('.cause-input');
           if (inputs.length) inputs[inputs.length - 1].focus();
@@ -696,7 +697,7 @@ function renderSimpleBulletList(containerId, stateKey, placeholder, nothingState
       rm.hidden = items.length === 1;
       rm.addEventListener('click', () => {
         items.splice(i, 1);
-        _deeperState[stateKey] = items;
+        state[stateKey] = items;
         build(); syncHidden();
       });
       row.appendChild(bullet); row.appendChild(inp); row.appendChild(rm);
@@ -709,7 +710,7 @@ function renderSimpleBulletList(containerId, stateKey, placeholder, nothingState
     addBtn.hidden = isNothing;
     addBtn.addEventListener('click', () => {
       items.push('');
-      _deeperState[stateKey] = items;
+      state[stateKey] = items;
       build();
       const inputs = container.querySelectorAll('.cause-input');
       if (inputs.length) inputs[inputs.length - 1].focus();
@@ -730,7 +731,7 @@ function renderSimpleBulletList(containerId, stateKey, placeholder, nothingState
       cb.type = 'checkbox';
       cb.checked = isNothing;
       cb.addEventListener('change', () => {
-        _deeperState[nothingStateKey] = cb.checked;
+        state[nothingStateKey] = cb.checked;
         if (window.clearFormError) window.clearFormError();
         build();
       });
@@ -1086,12 +1087,15 @@ function renderControlAttitude(key) {
   container.hidden = items.length === 0;
   if (!items.length) { container.innerHTML = ''; return; }
 
-  const feelingKey   = 'deeper_' + key + '_control_feeling';
-  const feelingYnKey = 'deeper_' + key + '_control_feeling_yn';
+  const feelingKey        = 'deeper_' + key + '_control_feeling';
+  const feelingYnKey      = 'deeper_' + key + '_control_feeling_yn';
+  const feelingConfirmKey = 'deeper_' + key + '_control_feeling_confirm';
   if (typeof _deeperState[feelingKey] !== 'object' || !_deeperState[feelingKey]) _deeperState[feelingKey] = {};
   if (typeof _deeperState[feelingYnKey] !== 'object' || !_deeperState[feelingYnKey]) _deeperState[feelingYnKey] = {};
-  const feelings   = _deeperState[feelingKey];
-  const feelingYn  = _deeperState[feelingYnKey];
+  if (typeof _deeperState[feelingConfirmKey] !== 'object' || !_deeperState[feelingConfirmKey]) _deeperState[feelingConfirmKey] = {};
+  const feelings        = _deeperState[feelingKey];
+  const feelingYn        = _deeperState[feelingYnKey];
+  const feelingConfirm   = _deeperState[feelingConfirmKey];
 
   function syncHidden(stateKey, stateObj) {
     const h = container.querySelector('input[name="' + stateKey + '"]');
@@ -1139,6 +1143,39 @@ function renderControlAttitude(key) {
     ynLbl.textContent = 'Is this how you want to feel about it?';
     const btns = document.createElement('div');
     btns.className = 'yn-btns';
+
+    const confirmWrap = document.createElement('div');
+    confirmWrap.className = 'deeper-field confirm-check-field';
+    confirmWrap.hidden = feelingYn[item] !== 'yes';
+    const confirmLbl = document.createElement('label');
+    confirmLbl.innerHTML = 'Before you move on: are you sure you\'re not just settling for less, or playing down how you really feel? <strong>Now is the opportunity to be honest and stand up for yourself and what you actually want in life.</strong>';
+    const confirmCheckWrap = document.createElement('label');
+    confirmCheckWrap.className = 'confirm-check-wrap';
+    const confirmInput = document.createElement('input');
+    confirmInput.type = 'checkbox';
+    confirmInput.className = 'confirm-check';
+    confirmInput.checked = feelingConfirm[item] === 'yes';
+    const confirmBox = document.createElement('span');
+    confirmBox.className = 'confirm-check-box';
+    const confirmText = document.createElement('span');
+    confirmText.className = 'confirm-check-text';
+    confirmText.textContent = "This is genuinely how I want to feel about it";
+    confirmInput.addEventListener('change', () => {
+      feelingConfirm[item] = confirmInput.checked ? 'yes' : '';
+      _deeperState[feelingConfirmKey] = feelingConfirm;
+      syncHidden(feelingConfirmKey, feelingConfirm);
+      if (window.clearFormError) window.clearFormError();
+    });
+    confirmCheckWrap.appendChild(confirmInput);
+    confirmCheckWrap.appendChild(confirmBox);
+    confirmCheckWrap.appendChild(confirmText);
+    const confirmErr = document.createElement('p');
+    confirmErr.className = 'yn-error';
+    confirmErr.textContent = 'Please confirm before continuing.';
+    confirmWrap.appendChild(confirmLbl);
+    confirmWrap.appendChild(confirmCheckWrap);
+    confirmWrap.appendChild(confirmErr);
+
     ['yes', 'no'].forEach(val => {
       const btn = document.createElement('button');
       btn.type = 'button';
@@ -1150,6 +1187,13 @@ function renderControlAttitude(key) {
         feelingYn[item] = val;
         _deeperState[feelingYnKey] = feelingYn;
         syncHidden(feelingYnKey, feelingYn);
+        confirmWrap.hidden = val !== 'yes';
+        if (val !== 'yes' && feelingConfirm[item]) {
+          feelingConfirm[item] = '';
+          _deeperState[feelingConfirmKey] = feelingConfirm;
+          syncHidden(feelingConfirmKey, feelingConfirm);
+          confirmInput.checked = false;
+        }
         if (window.clearFormError) window.clearFormError();
       });
       btns.appendChild(btn);
@@ -1157,6 +1201,7 @@ function renderControlAttitude(key) {
     ynWrap.appendChild(ynLbl);
     ynWrap.appendChild(btns);
     block.appendChild(ynWrap);
+    block.appendChild(confirmWrap);
 
     container.appendChild(block);
   });
@@ -1170,6 +1215,9 @@ function renderControlAttitude(key) {
   const h2 = document.createElement('input');
   h2.type = 'hidden'; h2.name = feelingYnKey; h2.value = JSON.stringify(feelingYn);
   container.appendChild(h2);
+  const h3 = document.createElement('input');
+  h3.type = 'hidden'; h3.name = feelingConfirmKey; h3.value = JSON.stringify(feelingConfirm);
+  container.appendChild(h3);
 }
 
 function renderVisionItemAchievable(key) {
@@ -1451,7 +1499,7 @@ function initDeeperStep() {
               <div class="deeper-field vision-actual-field" data-key="${key}">
                 <label>Are you sure you <strong>ACTUALLY WANT THESE?</strong> Or are these things you think you're <strong>SUPPOSED TO</strong> want, or <strong>WOULD LIKE TO</strong> want, but don't really?</label>
                 <label class="confirm-check-wrap">
-                  <input type="checkbox" class="vision-actual-check" name="deeper_${key}_vision_actual" value="yes" ${visionActualYn === 'yes' ? 'checked' : ''}>
+                  <input type="checkbox" class="confirm-check vision-actual-check" name="deeper_${key}_vision_actual" value="yes" ${visionActualYn === 'yes' ? 'checked' : ''}>
                   <span class="confirm-check-box"></span>
                   <span class="confirm-check-text">I genuinely want these</span>
                 </label>
@@ -1789,9 +1837,10 @@ function initDeeperStep() {
     }
 
     if (qtype === 'control-attitude') {
-      const filledItems = (_deeperState['deeper_' + key + '_control_items'] || []).filter(i => i && i.trim());
-      const feelings  = _deeperState['deeper_' + key + '_control_feeling'] || {};
-      const feelingYn = _deeperState['deeper_' + key + '_control_feeling_yn'] || {};
+      const filledItems     = (_deeperState['deeper_' + key + '_control_items'] || []).filter(i => i && i.trim());
+      const feelings        = _deeperState['deeper_' + key + '_control_feeling'] || {};
+      const feelingYn       = _deeperState['deeper_' + key + '_control_feeling_yn'] || {};
+      const feelingConfirm  = _deeperState['deeper_' + key + '_control_feeling_confirm'] || {};
       const attEl = document.getElementById('control-attitude-' + key);
       for (const item of filledItems) {
         if (!feelings[item]?.trim()) {
@@ -1802,6 +1851,11 @@ function initDeeperStep() {
         if (!feelingYn[item]) {
           if (attEl) scrollToVisible(attEl);
           setFormErr('Please answer whether this is how you want to feel before continuing.');
+          return false;
+        }
+        if (feelingYn[item] === 'yes' && feelingConfirm[item] !== 'yes') {
+          if (attEl) scrollToVisible(attEl);
+          setFormErr('Please confirm before continuing.');
           return false;
         }
       }
@@ -2175,8 +2229,7 @@ function initFitSignalsStep() {
     container.appendChild(page);
 
     if (q.type === 'singleselect' && q.followup) {
-      if (!Array.isArray(_fsState[q.followup.stateKey])) _fsState[q.followup.stateKey] = [''];
-      renderSimpleBulletList('fs-followup-' + q.id, q.followup.stateKey, 'Describe what you need…');
+      renderSimpleBulletList('fs-followup-' + q.id, q.followup.stateKey, 'Describe what you need…', null, _fsState);
     }
     if (q.type === 'track-record') {
       renderTrackRecordList('fs-track-record-list');

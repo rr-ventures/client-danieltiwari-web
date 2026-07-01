@@ -458,14 +458,6 @@
 
   (function(){
     window._historyNav=false;
-    let backNavPending=false, backNavTimer=null;
-    window._guardedHistoryBack=function(){
-      if(backNavPending)return;
-      backNavPending=true;
-      clearTimeout(backNavTimer);
-      backNavTimer=setTimeout(()=>{backNavPending=false;},800);
-      history.back();
-    };
     const sections=Array.from(document.querySelectorAll('#assessment-form .assessment-section'));
     const btnBack=document.getElementById('btn-back');
     const btnNext=document.getElementById('btn-next');
@@ -524,7 +516,7 @@
         if(validateStep(current)){clearFormError();current++;showStep(current);}
       }
     });
-    btnBack.addEventListener('click',()=>{ window._guardedHistoryBack(); });
+    btnBack.addEventListener('click',()=>{ history.back(); });
     document.addEventListener('keydown',function(e){
       if(e.key!=='Enter'||e.target.tagName==='TEXTAREA'||e.target.tagName==='INPUT')return;
       e.preventDefault();
@@ -538,8 +530,6 @@
     showStep(current);
     history.replaceState({step:current,sub:-1},'');
     window.addEventListener('popstate',function(e){
-      clearTimeout(backNavTimer);
-      backNavPending=false;
       const st=e.state;
       if(!st)return;
       window._historyNav=true;
@@ -548,8 +538,12 @@
         sections.forEach((s,i)=>s.classList.toggle('active',i===4));
         formNav.hidden=false;
         btnBack.hidden=false;
-        window._showDeeperSubPage(st.sub, -1);
+        window._showDeeperSubPage(st.sub);
       } else if(st.step===5&&st.sub>=0&&window._showFitSubPage){
+        current=5;
+        sections.forEach((s,i)=>s.classList.toggle('active',i===5));
+        formNav.hidden=false;
+        btnBack.hidden=false;
         window._showFitSubPage(st.sub);
       } else if(st.step===0&&st.sub>=0){
         current=0;

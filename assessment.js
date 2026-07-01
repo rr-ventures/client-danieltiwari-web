@@ -124,7 +124,7 @@ function renderFulfillmentCard(index, savedVal = null) {
   if (!isFirst) {
     card.querySelector(".fulfillment-back-btn").addEventListener("click", () => {
       if (selected) _fulfillmentState[key] = selected;
-      window._guardedHistoryBack();
+      history.back();
     });
   }
   card.querySelector(".fulfillment-next-btn").addEventListener("click", () => {

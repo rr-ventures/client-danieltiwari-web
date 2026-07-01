@@ -2408,28 +2408,84 @@ function captureDeeperFromDom() {
   return rows;
 }
 
+// Flatten any stored answer (string / number / array / {what,howWell,why}) to text.
+function _fmtStateVal(v) {
+  if (Array.isArray(v)) {
+    return v
+      .map((x) => (x && typeof x === 'object'
+        ? Object.values(x).filter((y) => String(y ?? '').trim()).join(' — ')
+        : String(x ?? '')))
+      .filter((s) => s.trim())
+      .join('; ');
+  }
+  if (v && typeof v === 'object') return Object.values(v).filter((y) => String(y ?? '').trim()).join(' — ');
+  return v == null ? '' : String(v);
+}
+
 function buildQaSummary(answers) {
   const groups = [];
-  groups.push({ title: 'Contact', rows: [
+  const shownNorm = new Set();
+  const norm = (s) => String(s ?? '').trim().toLowerCase();
+  const mark = (a) => { const n = norm(a); if (n) shownNorm.add(n); };
+
+  const areaLabel = {};
+  (typeof AREAS !== 'undefined' ? AREAS : []).forEach(([k, l]) => { areaLabel[k] = l; });
+
+  // ---- About them (contact) — includes age + occupation ----
+  const contact = [
     ['Name', answers.name || '(not given)'],
     ['Email', answers.email || '(not given)'],
-  ] });
+    ['Age', answers.age || '(not given)'],
+    ['Occupation', answers.work_status || '(not given)'],
+  ];
+  contact.forEach(([, a]) => mark(a));
+  groups.push({ title: 'About them', rows: contact });
 
-  // Use getWheelValues() so EVERY life area is always included (reads them all
-  // straight from the page with defaults), never just the few in `answers`.
+  // ---- Life areas — ALL of them ----
   let areaRows = [];
   try {
-    areaRows = getWheelValues().map((a) => [a.label, `Fulfilment ${a.fulfillment}/10 · Importance ${a.importance}/3 · Urgency ${a.urgency}/3`]);
+    areaRows = getWheelValues().map((a) => [a.label, `Fulfilment ${a.fulfillment}/10 · Importance ${a.importance} · Urgency ${a.urgency}`]);
   } catch (_e) {
-    const areas = typeof AREAS !== 'undefined' ? AREAS : [];
-    areaRows = areas.map(([key, label]) => [label, `Fulfilment ${answers['fulfillment_' + key] ?? '?'}/10 · Importance ${answers['importance_' + key] ?? '?'}/3 · Urgency ${answers['urgency_' + key] ?? '?'}/3`]);
+    (typeof AREAS !== 'undefined' ? AREAS : []).forEach(([key, label]) =>
+      areaRows.push([label, `Fulfilment ${answers['fulfillment_' + key] ?? '?'}/10 · Importance ${answers['importance_' + key] ?? '?'} · Urgency ${answers['urgency_' + key] ?? '?'}`]));
   }
-  if (areaRows.length) groups.push({ title: 'Life areas — all of them, with ratings', rows: areaRows });
+  if (areaRows.length) { areaRows.forEach(([, a]) => mark(a)); groups.push({ title: 'Life areas — all 11, with ratings', rows: areaRows }); }
 
+  // ---- Where they chose to focus ----
+  try {
+    const focusKeys = [...document.querySelectorAll('#focus-hidden-inputs input')].map((i) => i.value).filter(Boolean);
+    if (focusKeys.length) {
+      const val = focusKeys.map((k) => areaLabel[k] || k).join(', ');
+      mark(val);
+      groups.push({ title: 'Where they chose to focus', rows: [['Focus area', val]] });
+    }
+  } catch (_e) { /* best effort */ }
+
+  // ---- Deeper questions — read in full from the page ----
   const deeperRows = captureDeeperFromDom();
+  deeperRows.forEach(([, a]) => mark(a));
   if (deeperRows.length) groups.push({ title: 'Deeper questions', rows: deeperRows });
 
-  groups.push({ title: 'Fit signals', rows: FIT_ORDER.map((id) => [FIT_LABELS[id], _fmtFitAnswer(id)]) });
+  // ---- Inner state & personality (fit signals) ----
+  const fitRows = FIT_ORDER.map((id) => [FIT_LABELS[id], _fmtFitAnswer(id)]);
+  fitRows.forEach(([, a]) => mark(a));
+  groups.push({ title: 'Inner state & personality', rows: fitRows });
+
+  // ---- COMPLETENESS NET: every stored deeper/fit answer not already shown above,
+  // so no question can ever silently go missing from the email. ----
+  const extra = [];
+  const scan = (state) => {
+    Object.keys(state || {}).sort().forEach((k) => {
+      const s = _fmtStateVal(state[k]);
+      if (!s.trim() || shownNorm.has(norm(s))) return;
+      extra.push([_prettyKey(k), s]);
+      mark(s);
+    });
+  };
+  try { scan(_deeperState); } catch (_e) { /* best effort */ }
+  try { scan(_fsState); } catch (_e) { /* best effort */ }
+  if (extra.length) groups.push({ title: 'Additional detail (nothing dropped)', rows: extra });
+
   return groups;
 }
 

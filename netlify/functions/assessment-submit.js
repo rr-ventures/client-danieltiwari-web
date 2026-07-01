@@ -156,26 +156,33 @@ function notifyEmailHtml(answers, result) {
   `;
 }
 
-// Readable "question, then their answer directly below it" block, grouped by
-// section. `qa` is the answers.qa_summary array the browser sends; empty/absent
-// falls back to the raw detail table.
+// Dead-simple, human-readable "Question / Answer" list. Every question is numbered,
+// shown in full, with the person's answer clearly labelled right beneath it. `qa` is
+// the answers.qa_summary array the browser sends; empty/absent falls back to raw.
 function qaSummaryHtml(qa) {
   if (!Array.isArray(qa) || !qa.length) return "";
-  const groups = qa
+  let n = 0;
+  const blocks = qa
     .map((g) => {
-      const rows = (g.rows || [])
-        .map(
-          ([q, a]) =>
-            `<div style="margin:0 0 13px">
-               <div style="color:#6b675e;font-size:.9rem;line-height:1.45">${escapeHtml(q)}</div>
-               <div style="color:#15140f;font-weight:600;margin-top:2px">${escapeHtml(a)}</div>
-             </div>`
-        )
+      const items = (g.rows || [])
+        .map(([q, a]) => {
+          n += 1;
+          return `<div style="margin:0 0 20px;padding:0 0 18px;border-bottom:1px solid #eee">
+              <div style="font-size:16px;font-weight:700;color:#15140f;line-height:1.4">${n}. ${escapeHtml(q)}</div>
+              <div style="font-size:16px;color:#0E4182;margin-top:7px"><span style="color:#8a857a">Answer:</span> ${escapeHtml(a)}</div>
+            </div>`;
+        })
         .join("");
-      return `<h3 style="font-family:Georgia,serif;font-size:1rem;color:#0E4182;margin:1.5rem 0 .7rem">${escapeHtml(g.title || "")}</h3>${rows}`;
+      const heading = g.title
+        ? `<div style="font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8a857a;margin:26px 0 12px">${escapeHtml(g.title)}</div>`
+        : "";
+      return heading + items;
     })
     .join("");
-  return `<div style="font-family:Georgia,serif;line-height:1.5;margin-top:1.4rem">${groups}</div>`;
+  return `<div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin-top:1.4rem">
+      <div style="font-size:18px;font-weight:700;color:#15140f;margin-bottom:6px">Every question &amp; their answer</div>
+      ${blocks}
+    </div>`;
 }
 
 exports.handler = async (event) => {

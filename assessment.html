@@ -42,6 +42,10 @@
   .header-name{font-family:var(--sc);font-size:.88rem;letter-spacing:.18em;color:var(--ink)}
   .header-back{font-family:var(--sc);font-size:.72rem;letter-spacing:.18em;color:var(--ink);border:1px solid rgba(232,228,220,.3);padding:.55rem 1.2rem;border-radius:2px;transition:border-color .2s}
   .header-back:hover{border-color:var(--ink)}
+  .assess-progress-bar{position:absolute;left:0;right:0;bottom:0;height:3px;background:rgba(0,0,0,.07)}
+  .assess-progress-fill{height:100%;width:0%;background:var(--accent);transition:width .35s ease}
+  .assess-progress-label{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-family:var(--sc);font-size:.68rem;letter-spacing:.15em;color:var(--muted);white-space:nowrap}
+  @media (max-width:480px){.assess-progress-label{font-size:.6rem;letter-spacing:.1em}}
 
   /* buttons */
   .btn{display:inline-block;font-family:var(--sc);font-size:.8rem;font-weight:500;letter-spacing:.18em;padding:1.1rem 2.6rem;border:1px solid;border-radius:2px;transition:background .2s,color .2s,border-color .2s;cursor:pointer;text-decoration:none}
@@ -265,7 +269,9 @@
 
 <header id="bar">
   <a class="header-name" href="/">Daniel Tiwari</a>
+  <span id="assess-progress-label" class="assess-progress-label" hidden></span>
   <a class="header-back sc" href="/">Back to site</a>
+  <div id="assess-progress-bar" class="assess-progress-bar" hidden><div id="assess-progress-fill" class="assess-progress-fill"></div></div>
 </header>
 
 <main id="main">
@@ -466,6 +472,40 @@
     const total=sections.length;
     let current=0;
 
+    // Section weights toward 100%: fulfillment, importance, urgency, focus,
+    // deeper questions, fit signals, contact info. Deeper questions and fit
+    // signals vary in length per person, so within those two the fraction is
+    // interpolated from their own live sub-page index/count instead of a
+    // fixed page count.
+    const PROGRESS_WEIGHTS=[15,8,8,4,35,20,10];
+    const PROGRESS_STARTS=(()=>{let acc=0;return PROGRESS_WEIGHTS.map(w=>{const s=acc;acc+=w;return s;});})();
+
+    function progressFraction(n){
+      if(n===0){
+        const idx=window._fulfillmentCardIndex;
+        const areaTotal=(window.AREAS&&window.AREAS.length)||11;
+        return typeof idx==='number'?Math.min(1,idx/areaTotal):0;
+      }
+      if(n===4&&window._deeperSubPageCount) return Math.min(1,(window._deeperSubPageIdx||0)/window._deeperSubPageCount);
+      if(n===5&&window._fitSubPageCount) return Math.min(1,(window._fitSubPageIdx||0)/window._fitSubPageCount);
+      return 0;
+    }
+
+    window.updateAssessmentProgress=function(){
+      const fillEl=document.getElementById('assess-progress-fill');
+      const barEl=document.getElementById('assess-progress-bar');
+      const labelEl=document.getElementById('assess-progress-label');
+      if(!fillEl||!barEl||!labelEl)return;
+      const fulfillmentAreas=document.getElementById('fulfillment-areas');
+      const started=current>0||(fulfillmentAreas&&!fulfillmentAreas.hidden);
+      if(!started){barEl.hidden=true;labelEl.hidden=true;return;}
+      barEl.hidden=false;labelEl.hidden=false;
+      const n=Math.max(0,Math.min(current,PROGRESS_WEIGHTS.length-1));
+      const pct=Math.max(0,Math.min(100,Math.round(PROGRESS_STARTS[n]+progressFraction(n)*PROGRESS_WEIGHTS[n])));
+      fillEl.style.width=pct+'%';
+      labelEl.textContent=pct+'% complete';
+    };
+
     function showStep(n){
       sections.forEach((s,i)=>s.classList.toggle('active',i===n));
       const isFulfillment=n===0;
@@ -475,6 +515,7 @@
       window.scrollTo({top:0,behavior:'smooth'});
       if(!window._historyNav&&n!==4&&n!==5) history.pushState({step:n,sub:-1},'');
       if(window.onStepChange) window.onStepChange(n);
+      window.updateAssessmentProgress();
     }
 
     const formStepErr=document.getElementById('form-step-error');
@@ -518,7 +559,7 @@
     });
     btnBack.addEventListener('click',()=>{ history.back(); });
     document.addEventListener('keydown',function(e){
-      if(e.key!=='Enter'||e.target.tagName==='TEXTAREA'||e.target.tagName==='INPUT')return;
+      if(e.key!=='Enter'||e.target.tagName==='TEXTAREA'||(e.target.tagName==='INPUT'&&e.target.type!=='checkbox'&&e.target.type!=='radio'))return;
       e.preventDefault();
       const getStarted=document.getElementById('btn-get-started');
       if(getStarted&&!getStarted.closest('[hidden]')&&getStarted.offsetParent!==null){getStarted.click();return;}

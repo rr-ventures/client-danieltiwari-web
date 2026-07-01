@@ -81,6 +81,8 @@ function renderFulfillmentCard(index, savedVal = null) {
   const isFirst = index === 0;
   const isLast = index === AREAS.length - 1;
   if (!savedVal) savedVal = _fulfillmentState[key] || null;
+  window._fulfillmentCardIndex = index;
+  if (window.updateAssessmentProgress) window.updateAssessmentProgress();
   const card = document.getElementById("fulfillment-card");
   card.innerHTML = `
     <h3 class="deeper-area-name">${label}</h3>
@@ -1669,6 +1671,7 @@ function initDeeperStep() {
     }
     container.querySelectorAll('.deeper-subpage').forEach((el, i) => { el.hidden = i !== idx; });
     window._deeperSubPageIdx = idx;
+    if (window.updateAssessmentProgress) window.updateAssessmentProgress();
     window.scrollTo({ top: 0, behavior: 'smooth' });
     if (!window._historyNav) history.pushState({ step: 4, sub: idx }, '');
     const { key, qtype } = sp;
@@ -2256,6 +2259,7 @@ function initFitSignalsStep() {
   window._showFitSubPage = function(idx) {
     container.querySelectorAll('.deeper-subpage').forEach((el, i) => { el.hidden = i !== idx; });
     window._fitSubPageIdx = idx;
+    if (window.updateAssessmentProgress) window.updateAssessmentProgress();
     updateFsHeader(idx);
     window.scrollTo({ top: 0, behavior: 'smooth' });
     if (!window._historyNav) history.pushState({ step: 5, sub: idx }, '');

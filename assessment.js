@@ -2415,14 +2415,16 @@ function buildQaSummary(answers) {
     ['Email', answers.email || '(not given)'],
   ] });
 
-  const areas = typeof AREAS !== 'undefined' ? AREAS : [];
-  const areaRows = areas.map(([key, label]) => {
-    const f = answers['fulfillment_' + key] ?? '?';
-    const imp = answers['importance_' + key] ?? '?';
-    const urg = answers['urgency_' + key] ?? '?';
-    return [label, `Fulfilment ${f}/10 · Importance ${imp}/3 · Urgency ${urg}/3`];
-  });
-  if (areaRows.length) groups.push({ title: 'Life areas — their ratings', rows: areaRows });
+  // Use getWheelValues() so EVERY life area is always included (reads them all
+  // straight from the page with defaults), never just the few in `answers`.
+  let areaRows = [];
+  try {
+    areaRows = getWheelValues().map((a) => [a.label, `Fulfilment ${a.fulfillment}/10 · Importance ${a.importance}/3 · Urgency ${a.urgency}/3`]);
+  } catch (_e) {
+    const areas = typeof AREAS !== 'undefined' ? AREAS : [];
+    areaRows = areas.map(([key, label]) => [label, `Fulfilment ${answers['fulfillment_' + key] ?? '?'}/10 · Importance ${answers['importance_' + key] ?? '?'}/3 · Urgency ${answers['urgency_' + key] ?? '?'}/3`]);
+  }
+  if (areaRows.length) groups.push({ title: 'Life areas — all of them, with ratings', rows: areaRows });
 
   const deeperRows = captureDeeperFromDom();
   if (deeperRows.length) groups.push({ title: 'Deeper questions', rows: deeperRows });

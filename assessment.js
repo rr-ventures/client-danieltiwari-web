@@ -2339,6 +2339,74 @@ function revealShareLink(resultUrl) {
   actions.appendChild(wrap);
 }
 
+// ---- Human-readable capture of every question + answer, for the notify email.
+// Labels mirror the fit-signals `questions` array in initFitSignalsStep; keep in sync.
+const FIT_LABELS = {
+  q2: 'Do you feel you have the mental and emotional capacity to tackle your challenges and create change right now?',
+  q3: 'Do you struggle with any of these on a regular basis?',
+  q4: 'Do you struggle with any addictions or compulsive habits?',
+  q5l: 'Which of the following do you struggle to maintain consistently?',
+  q5: 'How do you feel when you imagine living the life of mainstream society — a steady job, a mortgage, blending in?',
+  q6: 'What have you tried in the past to deal with your situation(s)?',
+  q7: 'If your life looks exactly the same in 3 years from now, how would you feel?',
+};
+const FIT_ORDER = ['q2', 'q3', 'q4', 'q5l', 'q5', 'q6', 'q7'];
+
+function _prettyKey(k) {
+  return String(k).replace(/^deeper_/, '').replace(/_/g, ' ').trim();
+}
+function _fmtFitAnswer(id) {
+  if (id === 'q6') {
+    const items = (_fsState['fs_q6_items'] || []).filter((i) => (i.what || '').trim());
+    if (!items.length) return '(none given)';
+    return items
+      .map((i) => `${i.what}${i.howWell != null ? ` (worked ${i.howWell}/5)` : ''}${(i.why || '').trim() ? ` — why: ${i.why}` : ''}`)
+      .join('  |  ');
+  }
+  let v = _fsState['fs_' + id];
+  let out;
+  if (Array.isArray(v)) {
+    let arr = v.slice();
+    const other = _fsState['fs_' + id + '_other'];
+    if (other && arr.includes('Other')) arr = arr.map((o) => (o === 'Other' ? 'Other: ' + other : o));
+    out = arr.length ? arr.join(', ') : '(none selected)';
+  } else if (typeof v === 'number') {
+    out = 'Rated ' + v;
+  } else if (v === 'yes') out = 'Yes';
+  else if (v === 'no') out = 'No';
+  else out = v == null || v === '' ? '(not answered)' : String(v);
+  if (id === 'q2' && _fsState['fs_q2_needs']) out += ' — needs: ' + _fsState['fs_q2_needs'];
+  return out;
+}
+function buildQaSummary(answers) {
+  const groups = [];
+  groups.push({ title: 'Contact', rows: [
+    ['Name', answers.name || '(not given)'],
+    ['Email', answers.email || '(not given)'],
+  ] });
+
+  const areas = typeof AREAS !== 'undefined' ? AREAS : [];
+  const areaRows = areas.map(([key, label]) => {
+    const f = answers['fulfillment_' + key] ?? '?';
+    const imp = answers['importance_' + key] ?? '?';
+    const urg = answers['urgency_' + key] ?? '?';
+    return [label, `Fulfilment ${f}/10 · Importance ${imp}/3 · Urgency ${urg}/3`];
+  });
+  if (areaRows.length) groups.push({ title: 'Life areas — their ratings', rows: areaRows });
+
+  const deeperRows = [];
+  Object.keys(_deeperState || {}).sort().forEach((k) => {
+    let v = _deeperState[k];
+    if (Array.isArray(v)) v = v.filter((x) => (typeof x === 'string' ? x.trim() : x != null)).join('; ');
+    if (v == null || String(v).trim() === '') return;
+    deeperRows.push([_prettyKey(k), String(v)]);
+  });
+  if (deeperRows.length) groups.push({ title: 'Deeper questions', rows: deeperRows });
+
+  groups.push({ title: 'Fit signals', rows: FIT_ORDER.map((id) => [FIT_LABELS[id], _fmtFitAnswer(id)]) });
+  return groups;
+}
+
 window.submitAssessment = async function submitAssessment(form, submitButton) {
   const answers = collectAnswers(form);
 
@@ -2363,6 +2431,9 @@ window.submitAssessment = async function submitAssessment(form, submitButton) {
   answers.conformity_signal    = answers.vision_scale;
   answers.truth_directness     = s5[q7] ?? 3;
   answers.potential_signal     = s5[q7] ?? 3;
+
+  // Readable question-by-question capture for the notify email (never fatal).
+  try { answers.qa_summary = buildQaSummary(answers); } catch (_e) { /* summary is best-effort */ }
 
   const result = calculateResult(answers);
   if (window.stopStopwatch) window.stopStopwatch();

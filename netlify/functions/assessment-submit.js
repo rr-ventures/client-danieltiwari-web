@@ -133,7 +133,7 @@ function calculateResult(answers) {
 
 function notifyEmailHtml(answers, result) {
   const rows = Object.entries(answers)
-    .filter(([key]) => !key.startsWith("fulfillment_") && !key.startsWith("importance_") && !key.startsWith("urgency_"))
+    .filter(([key]) => !key.startsWith("fulfillment_") && !key.startsWith("importance_") && !key.startsWith("urgency_") && key !== "qa_summary")
     .map(([key, value]) => `<tr><td style="padding: 6px 10px; border-bottom: 1px solid #ddd;"><strong>${escapeHtml(key)}</strong></td><td style="padding: 6px 10px; border-bottom: 1px solid #ddd;">${escapeHtml(value)}</td></tr>`)
     .join("");
   const focus = result.focusAreas
@@ -142,7 +142,7 @@ function notifyEmailHtml(answers, result) {
 
   return `
     <div style="font-family: Georgia, serif; color: #15140f; line-height: 1.6;">
-      <h2>New assessment lead: ${escapeHtml(answers.name || "Unnamed")}</h2>
+      <h2>Assessment answers — ${escapeHtml(answers.name || "Unnamed")}</h2>
       <p><strong>Email:</strong> ${escapeHtml(answers.email)}</p>
       <p><strong>Route:</strong> ${escapeHtml(result.route)}</p>
       <p><strong>Authenticity:</strong> ${escapeHtml(result.authenticity.label)} (${result.authenticity.stage})</p>
@@ -154,6 +154,28 @@ function notifyEmailHtml(answers, result) {
       <table style="border-collapse: collapse; width: 100%;">${rows}</table>
     </div>
   `;
+}
+
+// Readable "question, then their answer directly below it" block, grouped by
+// section. `qa` is the answers.qa_summary array the browser sends; empty/absent
+// falls back to the raw detail table.
+function qaSummaryHtml(qa) {
+  if (!Array.isArray(qa) || !qa.length) return "";
+  const groups = qa
+    .map((g) => {
+      const rows = (g.rows || [])
+        .map(
+          ([q, a]) =>
+            `<div style="margin:0 0 13px">
+               <div style="color:#6b675e;font-size:.9rem;line-height:1.45">${escapeHtml(q)}</div>
+               <div style="color:#15140f;font-weight:600;margin-top:2px">${escapeHtml(a)}</div>
+             </div>`
+        )
+        .join("");
+      return `<h3 style="font-family:Georgia,serif;font-size:1rem;color:#0E4182;margin:1.5rem 0 .7rem">${escapeHtml(g.title || "")}</h3>${rows}`;
+    })
+    .join("");
+  return `<div style="font-family:Georgia,serif;line-height:1.5;margin-top:1.4rem">${groups}</div>`;
 }
 
 exports.handler = async (event) => {
@@ -241,9 +263,9 @@ exports.handler = async (event) => {
     from,
     to: String(notifyTo).split(",").map((s) => s.trim()).filter(Boolean),
     reply_to: TEST_MODE ? replyTo : answers.email,
-    subject: `ACTION REQUIRED: Add new lead to CRM — ${answers.name || answers.email}`,
+    subject: `New assessment submission — ${answers.name || answers.email}`,
     html: leadActionEmail({
-      kind: "Assessment lead",
+      kind: "Assessment submission",
       rows: [
         ["Name", escapeHtml(answers.name || "(not given)")],
         ["Email", escapeHtml(answers.email)],
@@ -251,7 +273,8 @@ exports.handler = async (event) => {
         ["Stage", escapeHtml(mergeFields.authenticity_stage || "—")],
       ],
       extraHtml: `<p style="font-family:Georgia,serif;margin-top:1rem"><strong>Result page:</strong> <a href="${escapeHtml(resultUrl)}">${escapeHtml(resultUrl)}</a></p>
-        <details style="margin-top:1rem"><summary style="cursor:pointer;color:#8a857a;font-size:.85rem">Full assessment detail</summary>${notifyEmailHtml(answers, result)}</details>`,
+        ${qaSummaryHtml(answers.qa_summary)}
+        <details style="margin-top:1.4rem"><summary style="cursor:pointer;color:#8a857a;font-size:.85rem">Raw data (all fields)</summary>${notifyEmailHtml(answers, result)}</details>`,
     }),
     tags: [{ name: "source", value: "assessment_notify" }],
   }).catch((err) => ({ error: err.message }));

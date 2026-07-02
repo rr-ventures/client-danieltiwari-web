@@ -1550,7 +1550,7 @@ function initDeeperStep() {
           <div id="acts-doing-${key}" style="margin-top:.5rem"></div>
         </div>
         <div class="deeper-field" style="margin-top:1.4rem">
-          <label>What <strong>COULD</strong> you be doing to improve the situation but are <strong>NOT</strong> doing?</label>
+          <label>What are you <strong>NOT</strong> doing but <strong>COULD</strong> be doing to improve the situation?</label>
           <div id="acts-not-doing-${key}" style="margin-top:.5rem"></div>
         </div>
         <div id="acts-groups-${key}" hidden></div>

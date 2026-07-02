@@ -104,6 +104,12 @@ If they answer "I have doubts": I want them to know that it's totally normal tha
 
 For the first assessment results we receive, if it's a text field where we don't have anything in the master document yet for you to pull from, I will just write the text manually in response to what they wrote. And over time, these will become typical default answers and if you recognize them in a new user's answer, you can then give them the block of text that I had written manually for the previous person who hat a similar answer.
 
+### Governing philosophy — symptoms vs. root cause
+
+I don't like putting a lot of effort into speaking to these questions and creating a huge text around them, because without actually having a dialogue with the individual, it's hard for me to identify what's going on. Second, these are just symptoms, similar to how our Western medical system prescribes medication to treat symptoms instead of addressing the root cause. I don't treat depression, anxiety, or meaninglessness. What I do is get the individual back on track to live his life in alignment with himself, and then all of these symptoms go away by themselves. They're symptoms, not issues in and of themselves.
+
+This is why several fit-signal questions (Compulsive Patterns, Lifestyle, and some Inner State items) are intentionally left thin or deferred rather than getting a per-item deep-dive — writing a big speculative text block per symptom would work against how Dan actually coaches.
+
 ### Readiness
 
 So, this question is important because we have to be honest with ourselves about where we're at, our energy levels, and whether we actually have the capacity to take on challenges right now. We don't want to burn ourselves out. Chances are, many people already are burned out, and having another big task for them isn't always going to make things better. I therefore gave them this opportunity to assess and feel into how they're actually doing right now.
@@ -114,17 +120,87 @@ If it's going easy on themseles, then I want to acknowledge and communicate my r
 
 If they say "No I'm exhausted" then I ask them what they need right now (this is already the next question). Here I will need you to interpret their text answer again and depending on what they need, I will formulate an answer for them.
 
+### Inner state
+
+Options: Anxiety, Depression, PTSD, Apathy, Anger or resentment, Frustration or pressure, Meaninglessness, Panic attacks, Hypochondria, Other, None of the above.
+
+#### Anxiety
+
+(Content pulled out via a Socratic client-roleplay exercise — Dan playing coach, Claude playing a client who checked "anxiety." Dan's questions to draw it out: "Why are you so anxious?" / "What do you mean with 'something bad'? How bad can it get?" / "How bad can existence really get?" / "What happens if you fuck it up?" / "Why is that such a big deal?" / "What is there to count in the midst of infinity?" / "What else would you want to do for eternity if you were god?")
+
+You have to come to grips with the fact that ultimately, what's going to happen is going to happen. You're not fully in control of what happens so you need to let go a bit and find some acceptance for whatever happens. Some faith. Letting go of the desire to control everything.
+
+The anxiety is arising because you are taking life and existence (too) seriously. You lack a metaphysical context in which life is happening that allows for you to be easy going and playful rather than taking things overly serious and therefore being anxious.
+
+It's the dream of life by Alan Watts. Or thinking about our technological advancement with television etc — it's all attempting to reproduce reality so that we can have a game that feels real but isn't real. The perfect compromise between seriousness and a game. The middle ground in which we take it seriously enough for it to be a good game, but not too seriously so that we are too anxious to play.
+
+The point of philosophy is to enhance your practical life. Your philosophy or your metaphysical foundation is entirely deciding on what your life experience is. This isn't just philosophizing for fun — this actually changes your experience of life. There are probably many ways of dealing with and coping with anxiety, but the only real solution is considering whether existence is actually serious or not (hint: according to logic, it's not, but that's something the ego cannot know for sure).
+
+Quote to include: Alan Watts — "Man suffers only because he takes seriously what the gods made for fun."
+
+Furthermore, the experience of anxiety itself isn't even the ultimate problem. The ultimate problem is that we experience everything from an overly serious perspective, and that's why anxiety, which has been associated negatively in this society, is experienced in a very unpleasant way. But if you were to imagine that this life is a game and the human being you are is the character you're playing, then anxiety is just information. It's a signal. And if you don't take existence as overly serious, then you can even experience anxiety in a not so unpleasant way. And it also won't spiral out of control by becoming anxious about feeling anxious and becoming anxious about feeling anxious about feeling anxious etc., a vicious feedback loop.
+
+So, ultimately, the cure to anxiety is taking pressure out of the system. Whether you do that with lifestyle changes (good sleep, good diet, exercise, social life, and taking care of the things that need to be taken care of in your life), or through a metaphysical foundation, or whatever else may exist that can help. Ideally the vicious cycle needs to be stopped first, and once that's gone, the initial anxiety can be dealt with as well. Acceptance, faith, humility and surrender play a role in this.
+
+#### Depression
+
+There is a lot of social pressure resting upon us of us having to be happy and positive all the time and enjoying our lives etc., so relieving that pressure and acknowledging and accepting and fully owning the fact that you're just not happy or enjoying life right now is totally fine. So respect that you even acknowledged it here. Ultimately, I think that depression is something very human. In other words, I think that it's merely a symptom of us not living life optimally or in alignment with ourselves. Or if we are in resistance with something we don't have control over or see no way to impact.
+
+Your life just doesn't really seem engaging to you. You're not actually excited about it. Your connections might not be meaningful or fulfilling. Your work isn't anything you're truly passionate about. But essentially, what you do need and what is essential to any happy life is enjoying your life, and having a vision for life that you can look forward to. I'm not sure what stories might be running in your subconscious and how you're painting your life experience, but yeah. Let it be known that I think it's normal and healthy to be depressed in this world and society we live in. I'd be surprised about anyone who ISN'T depressed.
+
+Quote to include: Krishnamurti — "It's no measure of health to be well-adjusted to a profoundly sick society."
+
+First of all I'd make sure that you have a healthy and active lifestyle. Are you going outside regularly? Are you exercising regularly? Is your diet healthy? Are you sleeping well? And these things are not supposed to feel like chores. And you don't want to overburden yourself with them either. Just implement the best changes you feel you can right now, and don't beat yourself up if you can't manage to follow through. You have to be compassionate with yourself.
+
+Also, make sure to have other people you can connect with and talk to. It's always really helpful to talk and get shit off of your mind and chest. It's a huge way of processing and letting out whatever it is you have inside.
+
+And apart from that, whatever narrative is causing your depressing thoughts and feelings, it has to be thought through to its end. If you manage to do that fully and flawlessly, you will come to the conclusion that existence isn't that serious but it's more like a game that feels really real. And if you accept the challenge of playing the human game to win and you manage to find something that is engaging for you and that will allow you to truly accept the challenge, then it will cease to be depressing. It is similar to anxiety in the sense that the metaphysical foundation and context in which you feel like life is occurring is very important.
+
+#### PTSD
+
+I have no clue about PTSD, I don't feel qualified to speak on it, except that I know that fixing our metaphysical foundation / context of life will help.
+
+#### Apathy
+
+(Content pulled out via Socratic client-roleplay. Dan's key move: pressing on whether "feeling nothing" is really true — if it bothered the client that they feel numb, that itself proves something still cares, so it isn't true numbness.)
+
+You're not numb. You're just finding yourself not caring about most things in your life right now, you're disengaged with it.
+
+In that case I'd first investigate whether the stuff you're occupying yourself with in life are actually things that you truly chose and genuinely wanted, or whether you were just told to pursue them or thought you wanted them or thought you were supposed to pursue them or whatever. Now, if your life activities and circumstances do not resonate with you, then it would be time to switch them up. But if they do and you still find yourself being disengaged, then it's most likely that you're deadening your own feelings because you're afraid that if you would feel or care or become too alive, that eventually you would get hurt.
+
+#### Anger or resentment
+
+Resentment and anger always come from ourselves. It means that you are not happy with something about yourself or your own life, or that you are repressing or suppressing aspects of yourself. They are emotions that attempt to do justice.
+
+If you're fully happy and satisfied with yourself and your own life, why would you resent anybody or anything? Often times, one of the reasons we resent people is because they have something that we want but don't have. Or they express something that we would also like to express but don't allow ourselves to express or lack the courage to express.
+
+Practical technique to include: ask yourself, if you had to formulate your feeling of resentment into something that only includes you and your own life, how would you formulate it? Without the other person or the object that you are resenting. (Example reformulation: "I resent my job" becomes "I'm not doing what I actually want to be doing with my time." "I resent this person for X" becomes "I don't allow myself to do or say the things they seem to do so freely.")
+
+Those external things just TRIGGER and bring into CONSCIOUS AWARENESS the things that are bothering us in ourselves or in our own life.
+
+#### Frustration or pressure, Meaninglessness, Panic attacks, Hypochondria
+
+Deferred — these feel like coaching-conversation territory more than PDF-text territory, and Dan doesn't want generic AI-sounding text written for them regardless. One point that applies across all of them: having a healthy lifestyle, including social life, is very important. Actual text for these waits until Claude has been trained on Dan's voice (see to-do list) — not to be drafted before then.
+
+#### Other / None of the above
+
+Not yet ready to write PDF content for these.
+
+---
+
 ### Compulsive patterns
 
 With any addiction I would say that it is either meant as an entire distraction, or sometimes it can even reveal something about an unmet desire or value we carry within that we satisfy with this addiction.
 
-Note: Dan will speak more on this another time, addressing each specific addiction/habit (Alcohol, Drugs, Pharmaceuticals, Pornography, Gambling, Social media, Gaming, Food) individually. Not yet ready to write PDF content for this question.
+Per-substance breakdown (Alcohol, Drugs, Pharmaceuticals, Pornography, Gambling, Social media, Gaming, Food) intentionally not written — see "Governing philosophy" above. These are symptoms; real per-person content comes from the living answer library, not speculative brainstorming.
 
 ### Lifestyle
 
 Our mental and emotional well-being is so connected with our physical well-being. Furthermore, things like sleep, exercise and a healthy diet all go hand in hand with each other and they have such a massive positive influence on our life overall. They are really the low-hanging fruit in life and in my opinion they are a non-negotiable for anyone who wants to live a fulfilling, successful, and enjoyable life.
 
-Note: Dan will speak more on this, possibly per item (Sleep, Exercise, Healthy eating, Social connection, Time outdoors, Downtime / switching off, Hobbies or creative outlets), another time. Not yet ready to write PDF content for this question.
+These are just the low-hanging fruit. Every experience we have is from the lens of a biological human being, and therefore we are bound to its systems — its hardware, its software, its emotions, and its biochemistry. If we don't take care of our biological desires and needs, our body will raise an alarm. Naturally, alarms are uncomfortable because they signal that we need to change something. So, take care of your body.
+
+Per-item breakdown (Sleep, Exercise, Healthy eating, Social connection, Time outdoors, Downtime / switching off, Hobbies or creative outlets) intentionally not written — see "Governing philosophy" above. Same reasoning as Compulsive Patterns.
 
 ### The mainstream
 

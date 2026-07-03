@@ -109,6 +109,10 @@
   .transcript-body.open{display:block}
   .guide-text{font-size:clamp(1.05rem,1.7vw,1.2rem);line-height:1.85;color:var(--accent);text-align:center}
   .guide-text p+p{margin-top:.9rem}
+  .guide-points{list-style:none;margin:1.1rem auto 0;padding:0;max-width:32rem;text-align:left;font-size:clamp(1.02rem,1.6vw,1.15rem);line-height:1.7}
+  .guide-points li{position:relative;padding-left:1.5rem;color:var(--accent)}
+  .guide-points li+li{margin-top:.65rem}
+  .guide-points li::before{content:'';position:absolute;left:.15rem;top:.6em;width:.42rem;height:.42rem;border-radius:50%;background:currentColor;opacity:.55}
 
   /* ---- print / PDF ---- */
   .print-result{display:none}
@@ -284,6 +288,9 @@
           <div style="text-align:center;margin-bottom:1rem">
             <h2 style="margin:0 0 1rem">Personal Self-Assessment</h2>
             <p class="lede" style="max-width:30rem;margin:0 auto">I created this assessment for you to give yourself an honest and reflective view over where you are in life right now.</p>
+            <ul class="guide-points">
+              <li>This assessment can be genuinely life-changing.</li>
+            </ul>
           </div>
           <div class="section-guide">
             <div class="guide-video-wrap">
@@ -312,6 +319,9 @@
             <div>
               <h2>Taking an honest look.</h2>
               <p>Rate your fulfillment level in the mentioned area of life. Don't overthink it, but be as honest as possible with yourself. No intellectual rationalizations etc.</p>
+              <ul class="guide-points">
+                <li>Let a 5 be your DREAM LIFE VISION for that area, realistic or not.</li>
+              </ul>
             </div>
           </div>
           <div id="fulfillment-inputs"></div>

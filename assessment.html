@@ -366,6 +366,10 @@
           <p class="focus-reveal-eyebrow sc">Based on your answers</p>
           <h2 class="focus-reveal-title">Here's where to focus.</h2>
           <p class="focus-reveal-sub">This is the area the assessment has surfaced for you. Tap to swap it out.</p>
+          <ul class="guide-points">
+            <li>Your focus, time and energy are limited, so pick one area to work on for the rest of this assessment.</li>
+            <li>Ideally the one you regard as most important right now, and have the most willingness to work on.</li>
+          </ul>
         </div>
         <div id="rec-list" class="rec-list"></div>
         <p class="rec-hint sc">The selected area will be the focus of the next section.</p>
@@ -486,8 +490,9 @@
     // deeper questions, fit signals, contact info. Deeper questions and fit
     // signals vary in length per person, so within those two the fraction is
     // interpolated from their own live sub-page index/count instead of a
-    // fixed page count.
-    const PROGRESS_WEIGHTS=[15,8,8,4,35,20,10];
+    // fixed page count. Contact info isn't part of the assessment itself, so
+    // it carries no weight — the bar is already at 100% by the time it shows.
+    const PROGRESS_WEIGHTS=[17,9,9,4,39,22,0];
     const PROGRESS_STARTS=(()=>{let acc=0;return PROGRESS_WEIGHTS.map(w=>{const s=acc;acc+=w;return s;});})();
 
     function progressFraction(n){

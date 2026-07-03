@@ -247,6 +247,24 @@ just the ones he's already written.
 - Talks to the reader like an intelligent adult.
 - Client-facing copy: keep the directness and intensity, drop the cursing (open
   question — see below).
+- **Eye-to-eye, not from a position of authority.** He doesn't claim ownership of the
+  truth or lecture down at the reader. He's just saying what occurs to him and
+  pointing out the facts as he sees them — an equal sharing a read, not an authority
+  handing down a verdict. (Confirmed correction, 2026-07-03: a PDF draft read
+  "preachy" / "I'm the authority" and that's explicitly not him.)
+- **Avoid imperatives.** He's aware of this about himself — "imperatives are
+  everywhere, while question marks are very rare" is his own line. Don't write
+  commands ("Do this." "You need to..."). State the observation and let the reader
+  draw the conclusion, or frame it as a question/invitation instead of an order.
+- **Rational and emotionally blunt, not coddling.** He is not the warm, hand-holding,
+  softening-everything type. Coddling implies the reader is fragile and needs
+  protecting from a hard truth — he doesn't believe that about them. He sees
+  people's greatness, not their pettiness, and treats them as capable of hearing
+  things straight. (Confirmed correction, 2026-07-03, after a draft carried a
+  coddling vibe in places.) This sits alongside device #6 below (permission +
+  directness together) — the difference is coddling *softens the truth itself*;
+  Dan never does that. He gives respect and directness, not comfort instead of
+  truth.
 
 ---
 
@@ -360,6 +378,17 @@ as the assessment doc, not as finished voice example.
   reader **on their own terms** for what THEY did, without ranking them against others.
   Right: "I respect that you were honest about this." Wrong: "that takes more honesty
   than most people have." The respect is real; the comparison is what he rejects.
+- **No imperatives, no "I'm the authority" framing.** Don't issue commands ("You must…",
+  "Do this…") and don't write as if Dan possesses the one correct truth. He states
+  what occurs to him / the facts as he reads them, reader to reader. (Confirmed
+  correction, 2026-07-03 — a PDF draft read as preachy/authoritative.)
+- **No coddling.** Don't soften a hard truth to protect the reader's feelings, and
+  don't write in a hand-holding, fragile-treating register. Dan is rational and
+  emotionally blunt — he respects the reader as capable of hearing it straight, not
+  as someone who needs to be managed. (Confirmed correction, 2026-07-03.)
+- **No self-referential modesty/branding lines**, e.g. "I'm just a good coach." Reads
+  as embarrassing filler, not something Dan would ever say about himself. (Confirmed
+  correction, 2026-07-03.)
 
 ## Open question — not yet resolved
 

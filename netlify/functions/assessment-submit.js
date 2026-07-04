@@ -58,12 +58,16 @@ function numeric(value, fallback = 0) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+// Urgency is a flag set on the focus-recommendation screen (present = flagged,
+// absent = not), not a full 1-11 rank — weighted as a flat boost to match.
+const URGENCY_BOOST = 8;
+
 function topFocusAreas(answers) {
   return AREAS.map(([key, label]) => {
     const fulfillment = numeric(answers[`fulfillment_${key}`], 5);
     const importance = numeric(answers[`importance_${key}`], 5);
-    const urgency = numeric(answers[`urgency_${key}`], 5);
-    const score = (11 - fulfillment) + importance + urgency;
+    const urgency = answers[`urgency_${key}`] ? 1 : 0;
+    const score = (11 - fulfillment) + importance + (urgency ? URGENCY_BOOST : 0);
     return { key, label, fulfillment, importance, urgency, score };
   })
     .sort((a, b) => b.score - a.score)
@@ -137,7 +141,7 @@ function notifyEmailHtml(answers, result) {
     .map(([key, value]) => `<tr><td style="padding: 6px 10px; border-bottom: 1px solid #ddd;"><strong>${escapeHtml(key)}</strong></td><td style="padding: 6px 10px; border-bottom: 1px solid #ddd;">${escapeHtml(value)}</td></tr>`)
     .join("");
   const focus = result.focusAreas
-    .map((area) => `<li>${escapeHtml(area.label)}: fulfilment ${area.fulfillment}/10, importance ${area.importance}/10, urgency ${area.urgency}/10</li>`)
+    .map((area) => `<li>${escapeHtml(area.label)}: fulfilment ${area.fulfillment}/10, importance ${area.importance}/10${area.urgency ? ", flagged urgent" : ""}</li>`)
     .join("");
 
   return `

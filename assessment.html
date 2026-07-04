@@ -58,7 +58,7 @@
   .assessment-intro .eyebrow{font-family:var(--sc);font-size:.72rem;letter-spacing:.3em;color:var(--accent);margin-bottom:1.2rem}
   .assessment-intro h2{margin-bottom:1rem}
   .assessment-section{border-top:1px solid var(--hair);padding:3rem 0}
-  .assessment-section-head{text-align:center;margin-bottom:2.4rem}
+  .assessment-section-head{display:block;text-align:center;margin-bottom:2.4rem}
   .assessment-section-head .num{display:block;font-family:var(--sc);font-size:.72rem;letter-spacing:.2em;color:var(--accent);margin-bottom:.6rem}
   .assessment-section-head h2{margin-bottom:.5rem}
   .assessment-section-head p{color:#7a7268;font-size:clamp(1.05rem,1.7vw,1.2rem);line-height:1.8}
@@ -185,6 +185,7 @@
   .deeper-block-head{margin-bottom:1.6rem}
   .deeper-area-name{font-family:var(--display);font-size:clamp(1.2rem,2.2vw,1.5rem);font-weight:400;line-height:1.2;margin-bottom:.3rem;text-align:center}
   .deeper-area-desc{font-size:.95rem;color:var(--muted);line-height:1.75;text-align:center}
+  .deeper-page-title{text-align:center}
   .deeper-field{display:flex;flex-direction:column;gap:.5rem;margin-bottom:1.2rem}
   .deeper-field:last-child{margin-bottom:0}
   .deeper-field label{font-family:var(--sc);font-size:.68rem;letter-spacing:.2em;color:var(--accent);text-align:center}
@@ -346,18 +347,16 @@
 
       </section>
 
-      <!-- 03 · urgency -->
+      <!-- 03 · urgency check -->
       <section class="assessment-section">
-        <div class="assessment-section-head">
-          <span class="num">03</span>
-          <div>
-            <h2>What's pressing right now.</h2>
-            <p>Rate how pressing each area feels right now. If something is approaching a critical threshold, it comes first — regardless of how important it is long-term. If nothing is on fire, think in terms of bottlenecks and leverage: which areas are limiting your progress across the board, or which, if improved, would lift everything else along with them? If you could only improve one area, which area would create the biggest positive ripple effect across all other areas in your life?</p>
-          </div>
+        <div class="focus-reveal-head">
+          <p class="focus-reveal-eyebrow sc">Before we recommend</p>
+          <h2 class="focus-reveal-title">Anything pressing right now?</h2>
+          <p class="focus-reveal-sub">If something is approaching a critical threshold, flag it here — regardless of how important it is long-term. Pick up to 3, or none if nothing's pressing.</p>
         </div>
-        <p style="font-family:var(--sc);font-size:.78rem;letter-spacing:.2em;color:var(--muted);margin-bottom:1.2rem">Use the arrows to rank — most pressing at the top</p>
-        <div id="urgency-rows" class="drag-list"></div>
-        <div id="urgency-hidden-inputs"></div>
+        <div id="urgent-rows" class="rec-list"></div>
+        <div id="urgent-hidden-inputs"></div>
+        <p id="urgent-count-hint" class="rec-hint sc"></p>
       </section>
 
       <!-- 04 · focus recommendation -->
@@ -542,7 +541,6 @@
     function validateStep(n){
       clearFormError();
       if(n===1&&window._validateRanking?.['importance-rows']){if(!window._validateRanking['importance-rows']()){showFormError('Please rank these before continuing.');return false;}}
-      if(n===2&&window._validateRanking?.['urgency-rows']){if(!window._validateRanking['urgency-rows']()){showFormError('Please rank these before continuing.');return false;}}
       if(n===3){
         const inputs=sections[n].querySelectorAll('input[name="focus_area"]');
         if(!inputs.length){showFormError('Please select at least one focus area.');return false;}

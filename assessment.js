@@ -1848,11 +1848,11 @@ function initDeeperStep() {
     }
 
     if (qtype === 'control' && _deeperState['deeper_' + key + '_control_yn'] === 'no') {
-      const doing    = (_deeperState['deeper_' + key + '_acts_doing_items'] || []).filter(i => i && i.trim());
-      const notDoing = (_deeperState['deeper_' + key + '_acts_not_doing_items'] || []).filter(i => i && i.trim());
       const doingNothing    = !!_deeperState['deeper_' + key + '_acts_doing_nothing'];
       const notDoingNothing = !!_deeperState['deeper_' + key + '_acts_not_doing_nothing'];
-      if (!doing.length && !notDoing.length && doingNothing && notDoingNothing) {
+      const doing    = doingNothing    ? [] : (_deeperState['deeper_' + key + '_acts_doing_items'] || []).filter(i => i && i.trim());
+      const notDoing = notDoingNothing ? [] : (_deeperState['deeper_' + key + '_acts_not_doing_items'] || []).filter(i => i && i.trim());
+      if (!doing.length && !notDoing.length) {
         setFormErr("Hold on — your situation has to consist of things you're contributing to, things that are outside your control and must be accepted, or both. There is no situation in which it's neither. Please go back and reconsider one of your answers.");
         return false;
       }

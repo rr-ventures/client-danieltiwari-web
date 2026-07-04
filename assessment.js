@@ -35,7 +35,6 @@ function getWheelValues() {
     key, label,
     fulfillment: parseInt(document.querySelector(`input[name="fulfillment_${key}"]`)?.value || 5),
     importance: parseInt(document.querySelector(`input[name="importance_${key}"]`)?.value || 2),
-    urgency: document.querySelector(`input[name="urgency_${key}"]`) ? 1 : 0,
   }));
 }
 
@@ -293,57 +292,7 @@ function initSpilloverStep() {
   render();
 }
 
-/* ---- Step 2: Urgency flag ---- */
-function initUrgencyFlagStep() {
-  const MAX_URGENT = 3;
-
-  const urgent = new Set(
-    [...document.querySelectorAll('#urgent-hidden-inputs input')].map(i => i.name.replace(/^urgency_/, ''))
-  );
-
-  function updateUrgentInputs() {
-    document.getElementById('urgent-hidden-inputs').innerHTML =
-      [...urgent].map(key => `<input type="hidden" name="urgency_${key}" value="1">`).join('');
-    const hint = document.getElementById('urgent-count-hint');
-    if (hint) hint.textContent = urgent.size ? `${urgent.size} of ${MAX_URGENT} flagged` : `Tap up to ${MAX_URGENT}, or leave none if nothing's pressing`;
-  }
-
-  function renderUrgent() {
-    const atCap = urgent.size >= MAX_URGENT;
-    const container = document.getElementById('urgent-rows');
-    container.innerHTML = AREAS.map(([key, label], i) => {
-      const isUrgent = urgent.has(key);
-      const disabled = atCap && !isUrgent;
-      return `
-      <div class="rec-item${isUrgent ? " selected" : ""}" data-key="${key}"${disabled ? ' style="opacity:.45;pointer-events:none"' : ""}>
-        <span class="rec-num">${String(i + 1).padStart(2, "0")}</span>
-        <div class="rec-info">
-          <strong class="rec-label">${label}</strong>
-        </div>
-        <span class="rec-check">${isUrgent ? "✓" : ""}</span>
-      </div>`;
-    }).join("");
-
-    container.querySelectorAll(".rec-item").forEach(item => {
-      item.addEventListener("click", () => {
-        const key = item.dataset.key;
-        if (urgent.has(key)) {
-          urgent.delete(key);
-        } else if (urgent.size < MAX_URGENT) {
-          urgent.add(key);
-        }
-        updateUrgentInputs();
-        renderUrgent();
-      });
-    });
-
-    updateUrgentInputs();
-  }
-
-  renderUrgent();
-}
-
-/* ---- Step 3: Focus recommendation ---- */
+/* ---- Step 2: Focus recommendation ---- */
 function initFocusStep() {
   const n = AREAS.length;
 
@@ -354,7 +303,6 @@ function initFocusStep() {
 
   function getReason(area) {
     const importanceRank = n + 1 - area.importance;
-    if (area.urgency) return `flagged as urgent · ${area.fulfillment}/5 fulfilled`;
     if (area.fulfillment <= 2) return `${area.fulfillment}/5 fulfilled · #${importanceRank} in importance`;
     return `#${importanceRank} in importance · ${area.fulfillment}/5 fulfilled`;
   }
@@ -1526,9 +1474,8 @@ function initDeeperStep() {
   container.innerHTML = selectedKeys.flatMap(key => {
     const { label, desc } = areaMap[key] || { label: key, desc: '' };
     const data = wheelMap[key] || {};
-    const urgencyFocused = !!data.urgency;
     const q3Toggle = `Are you consciously aware of what your 5/5 in ${label} would look like?`;
-    const q3Expand = urgencyFocused ? `What would need to be resolved, achieved, or in place…` : `Describe the version of this area that would feel fully alive…`;
+    const q3Expand = `Describe the version of this area that would feel fully alive…`;
     const controlYn      = _deeperState[`deeper_${key}_control_yn`] || '';
     const controlItems   = _deeperState[`deeper_${key}_control_items`] || [];
     const visionYn       = _deeperState[`deeper_${key}_vision_yn`] || '';
@@ -1751,7 +1698,7 @@ function initDeeperStep() {
     window._deeperSubPageIdx = idx;
     if (window.updateAssessmentProgress) window.updateAssessmentProgress();
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    if (!window._historyNav) history.pushState({ step: 4, sub: idx }, '');
+    if (!window._historyNav) history.pushState({ step: 3, sub: idx }, '');
     const { key, qtype } = sp;
     const causes = (_deeperState['deeper_' + key + '_causes'] || []).filter(c => c && c.trim());
     if (qtype === 'acts-list' || qtype === 'control') {
@@ -2349,7 +2296,7 @@ function initFitSignalsStep() {
     if (window.updateAssessmentProgress) window.updateAssessmentProgress();
     updateFsHeader(idx);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    if (!window._historyNav) history.pushState({ step: 5, sub: idx }, '');
+    if (!window._historyNav) history.pushState({ step: 4, sub: idx }, '');
 
     if (_fsKeyHandler) { document.removeEventListener('keydown', _fsKeyHandler); _fsKeyHandler = null; }
     const q = questions[idx];
@@ -2412,12 +2359,11 @@ window.onStepChange = function(step) {
   }
   if (step === 0) initFulfillmentStep();
   if (step === 1) initImportanceStep();
-  if (step === 2) initUrgencyFlagStep();
-  if (step === 3) initFocusStep();
-  if (step === 4) initDeeperStep();
-  if (step === 5) initFitSignalsStep();
+  if (step === 2) initFocusStep();
+  if (step === 3) initDeeperStep();
+  if (step === 4) initFitSignalsStep();
   const btnNext = document.getElementById('btn-next');
-  if (btnNext) btnNext.textContent = step === 6 ? 'Get my results →' : 'Next →';
+  if (btnNext) btnNext.textContent = step === 5 ? 'Get my results →' : 'Next →';
 };
 
 // Initialize step 0 — showStep(0) ran before this script loaded
@@ -2540,10 +2486,10 @@ function buildQaSummary(answers) {
   // ---- Life areas — ALL of them ----
   let areaRows = [];
   try {
-    areaRows = getWheelValues().map((a) => [a.label, `Fulfilment ${a.fulfillment}/10 · Importance ${a.importance}${a.urgency ? ' · Flagged urgent' : ''}`]);
+    areaRows = getWheelValues().map((a) => [a.label, `Fulfilment ${a.fulfillment}/10 · Importance ${a.importance}`]);
   } catch (_e) {
     (typeof AREAS !== 'undefined' ? AREAS : []).forEach(([key, label]) =>
-      areaRows.push([label, `Fulfilment ${answers['fulfillment_' + key] ?? '?'}/10 · Importance ${answers['importance_' + key] ?? '?'}${answers['urgency_' + key] ? ' · Flagged urgent' : ''}`]));
+      areaRows.push([label, `Fulfilment ${answers['fulfillment_' + key] ?? '?'}/10 · Importance ${answers['importance_' + key] ?? '?'}`]));
   }
   if (areaRows.length) { areaRows.forEach(([, a]) => mark(a)); groups.push({ title: 'Life areas — all 11, with ratings', rows: areaRows }); }
 

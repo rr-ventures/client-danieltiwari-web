@@ -1762,7 +1762,10 @@ function initDeeperStep() {
         if (ynErr)  ynErr.hidden  = false;
         if (ynField) delete ynField.dataset.noValidate;
         const remaining = (_deeperState[controlItemsKey] || []).filter(i => i && i.trim());
-        if (!remaining.length) _deeperState['deeper_' + key + '_control_yn'] = '';
+        if (_deeperState['deeper_' + key + '_control_yn'] === 'yes' && !remaining.length) {
+          _deeperState['deeper_' + key + '_control_yn'] = '';
+          ynBtns?.querySelectorAll('.yn-btn').forEach(b => b.classList.remove('selected'));
+        }
         if (expand) expand.hidden = _deeperState['deeper_' + key + '_control_yn'] !== 'yes';
       }
     }

@@ -873,8 +873,10 @@ function renderTrackRecordList(containerId) {
 }
 
 function renderActsGroups(key) {
-  const doing    = (_deeperState['deeper_' + key + '_acts_doing_items'] || []).filter(i => i && i.trim());
-  const notDoing = (_deeperState['deeper_' + key + '_acts_not_doing_items'] || []).filter(i => i && i.trim());
+  const doingNothing    = !!_deeperState['deeper_' + key + '_acts_doing_nothing'];
+  const notDoingNothing = !!_deeperState['deeper_' + key + '_acts_not_doing_nothing'];
+  const doing    = doingNothing    ? [] : (_deeperState['deeper_' + key + '_acts_doing_items'] || []).filter(i => i && i.trim());
+  const notDoing = notDoingNothing ? [] : (_deeperState['deeper_' + key + '_acts_not_doing_items'] || []).filter(i => i && i.trim());
   _deeperState['deeper_' + key + '_acts_items'] = [...doing, ...notDoing];
   renderItemValueGroups(key, 'acts',
     'Describe what you are doing…',
@@ -1636,8 +1638,10 @@ function initDeeperStep() {
       return;
     }
     if (sp.qtype === 'acts-values') {
-      const doing    = (_deeperState['deeper_' + sp.key + '_acts_doing_items'] || []).filter(i => i && i.trim());
-      const notDoing = (_deeperState['deeper_' + sp.key + '_acts_not_doing_items'] || []).filter(i => i && i.trim());
+      const doingNothing    = !!_deeperState['deeper_' + sp.key + '_acts_doing_nothing'];
+      const notDoingNothing = !!_deeperState['deeper_' + sp.key + '_acts_not_doing_nothing'];
+      const doing    = doingNothing    ? [] : (_deeperState['deeper_' + sp.key + '_acts_doing_items'] || []).filter(i => i && i.trim());
+      const notDoing = notDoingNothing ? [] : (_deeperState['deeper_' + sp.key + '_acts_not_doing_items'] || []).filter(i => i && i.trim());
       if (!doing.length && !notDoing.length) {
         showDeeperSubPage(idx + direction, direction);
         return;

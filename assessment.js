@@ -1631,7 +1631,8 @@ function initDeeperStep() {
   }
 
   function showDeeperSubPage(idx, direction = 1) {
-    if (idx < 0 || idx >= allSubPages.length) return;
+    if (idx >= allSubPages.length) { window.advanceMainStep?.(); return; }
+    if (idx < 0) return;
     const sp = allSubPages[idx];
     if (sp.qtype === 'control-attitude' && _deeperState['deeper_' + sp.key + '_control_yn'] !== 'yes') {
       showDeeperSubPage(idx + direction, direction);

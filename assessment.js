@@ -873,11 +873,9 @@ function renderTrackRecordList(containerId) {
 }
 
 function renderActsGroups(key) {
-  const doingNothing    = !!_deeperState['deeper_' + key + '_acts_doing_nothing'];
-  const notDoingNothing = !!_deeperState['deeper_' + key + '_acts_not_doing_nothing'];
-  const doing    = doingNothing    ? [] : (_deeperState['deeper_' + key + '_acts_doing_items'] || []).filter(i => i && i.trim());
-  const notDoing = notDoingNothing ? [] : (_deeperState['deeper_' + key + '_acts_not_doing_items'] || []).filter(i => i && i.trim());
-  _deeperState['deeper_' + key + '_acts_items'] = [...doing, ...notDoing];
+  const isNothing = !!_deeperState['deeper_' + key + '_acts_raw_nothing'];
+  const items = isNothing ? [] : (_deeperState['deeper_' + key + '_acts_raw_items'] || []).filter(i => i && i.trim());
+  _deeperState['deeper_' + key + '_acts_items'] = items;
   renderItemValueGroups(key, 'acts',
     'Describe what you are doing…',
     "Check the actions/inactions and then write the value that they are serving.",
@@ -886,6 +884,63 @@ function renderActsGroups(key) {
 
 function renderActsItemValues(key) {
   renderActsGroups(key);
+}
+
+function renderActsConfirm(key) {
+  const container = document.getElementById('acts-confirm-' + key);
+  if (!container) return;
+  container.innerHTML = '';
+  container.hidden = !_deeperState['deeper_' + key + '_acts_confirm_shown'];
+  container.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:1.2rem;background:rgba(20,18,14,.6);';
+
+  const card = document.createElement('div');
+  card.style.cssText = 'background:#fdfcf9;border-radius:14px;max-width:420px;width:100%;padding:1.7rem 1.6rem;box-shadow:0 20px 60px rgba(0,0,0,.35);';
+
+  const title = document.createElement('p');
+  title.style.cssText = 'font-weight:600;margin:0 0 1rem;font-size:1.05rem;';
+  title.textContent = 'Before you continue —';
+  card.appendChild(title);
+
+  const wrap = document.createElement('label');
+  wrap.style.cssText = 'display:flex;align-items:flex-start;gap:.6rem;cursor:pointer;font-size:.95rem;line-height:1.45;';
+  const cb = document.createElement('input');
+  cb.type = 'checkbox';
+  cb.style.marginTop = '.2rem';
+  cb.checked = !!_deeperState['deeper_' + key + '_acts_confirm'];
+  const lbl = document.createElement('span');
+  lbl.textContent = "I contemplated all of the things I am NOT doing but COULD be doing to improve my situation.";
+  wrap.appendChild(cb);
+  wrap.appendChild(lbl);
+  card.appendChild(wrap);
+
+  const err = document.createElement('p');
+  err.style.cssText = 'color:#b3261e;font-size:.85rem;margin:.7rem 0 0;display:none;';
+  err.textContent = 'Please check the box first.';
+  card.appendChild(err);
+
+  cb.addEventListener('change', () => { if (cb.checked) err.style.display = 'none'; });
+
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.textContent = 'Continue';
+  btn.style.cssText = 'margin-top:1.3rem;width:100%;padding:.75rem 1rem;border:none;border-radius:8px;background:#1a1a1a;color:#fff;font-size:.95rem;cursor:pointer;';
+  btn.addEventListener('click', () => {
+    if (!cb.checked) { err.style.display = 'block'; return; }
+    _deeperState['deeper_' + key + '_acts_confirm'] = true;
+    container.hidden = true;
+    if (window.clearFormError) window.clearFormError();
+    window._showDeeperSubPage(window._deeperSubPageIdx + 1, 1);
+  });
+  card.appendChild(btn);
+
+  const backLink = document.createElement('button');
+  backLink.type = 'button';
+  backLink.textContent = 'Wait — let me add more';
+  backLink.style.cssText = 'margin-top:.8rem;width:100%;padding:.5rem;border:none;background:none;color:#6b6559;font-size:.85rem;text-decoration:underline;cursor:pointer;';
+  backLink.addEventListener('click', () => { container.hidden = true; });
+  card.appendChild(backLink);
+
+  container.appendChild(card);
 }
 
 function renderOmitsGroups(key) {
@@ -1571,14 +1626,11 @@ function initDeeperStep() {
         <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Your Contribution</h3>
         <div id="recap-causes-${key}-acts-list" data-label="Why ${label} feels like a ${data.fulfillment}/5" class="recap-block" hidden></div>
         <div class="deeper-field" style="margin-top:1.4rem">
-          <label>What are <strong>YOU DOING</strong> that is contributing to the situation?</label>
-          <div id="acts-doing-${key}" style="margin-top:.5rem"></div>
+          <label>How are you contributing to this?</label>
+          <p class="guide-text" style="margin:.4rem 0 .8rem;font-size:.92rem">Include things you're doing, and things you know you could be doing but aren't.</p>
+          <div id="acts-items-${key}" style="margin-top:.5rem"></div>
         </div>
-        <div class="deeper-field" style="margin-top:1.4rem">
-          <label>What are you <strong>NOT</strong> doing but <strong>COULD</strong> be doing to improve the situation?</label>
-          <div id="acts-not-doing-${key}" style="margin-top:.5rem"></div>
-        </div>
-        <div id="acts-groups-${key}" hidden></div>
+        <div id="acts-confirm-${key}" style="margin-top:1.2rem" hidden></div>
       </div>`,
       `<div class="deeper-subpage" id="deeper-sub-${key}-acts-values" hidden>
         ${head}
@@ -1639,11 +1691,9 @@ function initDeeperStep() {
       return;
     }
     if (sp.qtype === 'acts-values') {
-      const doingNothing    = !!_deeperState['deeper_' + sp.key + '_acts_doing_nothing'];
-      const notDoingNothing = !!_deeperState['deeper_' + sp.key + '_acts_not_doing_nothing'];
-      const doing    = doingNothing    ? [] : (_deeperState['deeper_' + sp.key + '_acts_doing_items'] || []).filter(i => i && i.trim());
-      const notDoing = notDoingNothing ? [] : (_deeperState['deeper_' + sp.key + '_acts_not_doing_items'] || []).filter(i => i && i.trim());
-      if (!doing.length && !notDoing.length) {
+      const isNothing = !!_deeperState['deeper_' + sp.key + '_acts_raw_nothing'];
+      const items = isNothing ? [] : (_deeperState['deeper_' + sp.key + '_acts_raw_items'] || []).filter(i => i && i.trim());
+      if (!items.length) {
         showDeeperSubPage(idx + direction, direction);
         return;
       }
@@ -1791,7 +1841,7 @@ function initDeeperStep() {
   window._showDeeperSubPage = showDeeperSubPage;
   showDeeperSubPage(0);
 
-  selectedKeys.forEach(k => { renderCauseList(k); renderSimpleBulletList('acts-doing-' + k, 'deeper_' + k + '_acts_doing_items', 'Describe what you are doing…', 'deeper_' + k + '_acts_doing_nothing'); renderSimpleBulletList('acts-not-doing-' + k, 'deeper_' + k + '_acts_not_doing_items', 'Describe what you could be doing…', 'deeper_' + k + '_acts_not_doing_nothing'); renderActsGroups(k); renderControlList(k); renderControlAttitude(k); renderVisionList(k); });
+  selectedKeys.forEach(k => { renderCauseList(k); renderSimpleBulletList('acts-items-' + k, 'deeper_' + k + '_acts_raw_items', 'Describe what you are doing, or could be doing…', 'deeper_' + k + '_acts_raw_nothing'); renderActsConfirm(k); renderActsGroups(k); renderControlList(k); renderControlAttitude(k); renderVisionList(k); });
 
   // Wire up yn-field toggles
   container.querySelectorAll('.yn-field').forEach(field => {
@@ -1852,11 +1902,9 @@ function initDeeperStep() {
     }
 
     if (qtype === 'control' && _deeperState['deeper_' + key + '_control_yn'] === 'no') {
-      const doingNothing    = !!_deeperState['deeper_' + key + '_acts_doing_nothing'];
-      const notDoingNothing = !!_deeperState['deeper_' + key + '_acts_not_doing_nothing'];
-      const doing    = doingNothing    ? [] : (_deeperState['deeper_' + key + '_acts_doing_items'] || []).filter(i => i && i.trim());
-      const notDoing = notDoingNothing ? [] : (_deeperState['deeper_' + key + '_acts_not_doing_items'] || []).filter(i => i && i.trim());
-      if (!doing.length && !notDoing.length) {
+      const isNothing = !!_deeperState['deeper_' + key + '_acts_raw_nothing'];
+      const items = isNothing ? [] : (_deeperState['deeper_' + key + '_acts_raw_items'] || []).filter(i => i && i.trim());
+      if (!items.length) {
         setFormErr("Hold on — your situation has to consist of things you're contributing to, things that are outside your control and must be accepted, or both. There is no situation in which it's neither. Please go back and reconsider one of your answers.");
         return false;
       }
@@ -1898,16 +1946,17 @@ function initDeeperStep() {
     }
 
     if (qtype === 'acts-list') {
-      const doing           = (_deeperState['deeper_' + key + '_acts_doing_items'] || []).filter(i => i && i.trim());
-      const notDoing        = (_deeperState['deeper_' + key + '_acts_not_doing_items'] || []).filter(i => i && i.trim());
-      const doingNothing    = !!_deeperState['deeper_' + key + '_acts_doing_nothing'];
-      const notDoingNothing = !!_deeperState['deeper_' + key + '_acts_not_doing_nothing'];
-      if (!doing.length && !doingNothing) {
-        setFormErr('Please add at least one item or select "Nothing" for what you are doing.');
+      const items     = (_deeperState['deeper_' + key + '_acts_raw_items'] || []).filter(i => i && i.trim());
+      const isNothing = !!_deeperState['deeper_' + key + '_acts_raw_nothing'];
+      if (!items.length && !isNothing) {
+        const listEl = document.getElementById('acts-items-' + key);
+        if (listEl) scrollToVisible(listEl);
+        setFormErr('Please add at least one item or select "Nothing".');
         return false;
       }
-      if (!notDoing.length && !notDoingNothing) {
-        setFormErr('Please add at least one item or select "Nothing" for what you are not doing.');
+      if (!_deeperState['deeper_' + key + '_acts_confirm']) {
+        _deeperState['deeper_' + key + '_acts_confirm_shown'] = true;
+        renderActsConfirm(key);
         return false;
       }
     }

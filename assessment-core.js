@@ -7,16 +7,14 @@
    these top-level bindings are visible to the scripts that follow.
    ============================================================ */
 const AREAS = [
-  ["career", "Career & Vocation", "Placeholder text."],
-  ["relationships", "Romance", "Placeholder text."],
+  ["career", "Work & Vocation", "Placeholder text."],
+  ["relationships", "Intimate Relationships", "Placeholder text."],
   ["friendships", "Friendships", "Placeholder text."],
   ["family", "Family", "Placeholder text."],
   ["health", "Health & Vitality", "Placeholder text."],
-  ["attractiveness", "Attractiveness/Appearance", "Placeholder text."],
+  ["attractiveness", "Attractiveness & Appearance", "Placeholder text."],
   ["money", "Finances", "Placeholder text."],
   ["lifestyle", "Lifestyle & Environment", "Placeholder text."],
-  ["adventure", "Recreation & Adventure", "Placeholder text."],
-  ["growth", "Personal Growth", "Placeholder text."],
   ["spirituality", "Meaning & Spirituality", "Placeholder text."],
 ];
 
@@ -65,9 +63,7 @@ const AREA_READ = {
   health:       { looks: "a body you negotiate with rather than actually inhabit, with energy that doesn't match the life you're trying to live", shift: "pick the one basic you keep abandoning — sleep, movement, food — and protect it for a week." },
   attractiveness:{ looks: "a gap between how you present and how you feel underneath it", shift: "tend to one thing that's for you, not for being seen." },
   money:        { looks: "numbers quietly driving decisions you wouldn't otherwise make", shift: "separate what you actually need from what you're trying to prove." },
-  lifestyle:    { looks: "surroundings and rhythms shaped by default rather than by intention", shift: "change one thing in your daily environment or routine to match who you're becoming." },
-  adventure:    { looks: "days that feel full on paper but thin on actual enjoyment or aliveness", shift: "put one thing on the calendar soon that you'd genuinely look forward to." },
-  growth:       { looks: "a sense of standing still while the person you could be waits", shift: "name one thing you've been meaning to learn or work on, and give it one hour this week." },
+  lifestyle:    { looks: "surroundings and rhythms shaped by default rather than by intention, days that feel full on paper but thin on actual enjoyment or aliveness", shift: "change one thing in your daily environment or routine to match who you're becoming — and put one thing on the calendar soon that you'd genuinely look forward to." },
   spirituality: { looks: "competence without much sense of why any of it matters", shift: "make space for one question bigger than your to-do list." },
 };
 

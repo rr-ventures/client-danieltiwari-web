@@ -17,7 +17,6 @@ const AREAS = [
   ["fitness", "Vitality / Fitness"],
   ["attractiveness", "Attractiveness"],
   ["money", "Money / Finances"],
-  ["adventure", "Adventure / Fun"],
   ["spirituality", "Spirituality / Meaning"],
   ["lifestyle", "Lifestyle / Surroundings"],
 ];

@@ -16,6 +16,7 @@ const AREAS = [
   ["money", "Finances", "Placeholder text."],
   ["lifestyle", "Lifestyle & Environment", "Placeholder text."],
   ["spirituality", "Meaning & Spirituality", "Placeholder text."],
+  ["fun_adventure", "Fun & Adventure", "Placeholder text."],
 ];
 
 const CALENDLY = "https://cal.eu/danieltiwari/connect";
@@ -65,6 +66,7 @@ const AREA_READ = {
   money:        { looks: "numbers quietly driving decisions you wouldn't otherwise make", shift: "separate what you actually need from what you're trying to prove." },
   lifestyle:    { looks: "surroundings and rhythms shaped by default rather than by intention, days that feel full on paper but thin on actual enjoyment or aliveness", shift: "change one thing in your daily environment or routine to match who you're becoming — and put one thing on the calendar soon that you'd genuinely look forward to." },
   spirituality: { looks: "competence without much sense of why any of it matters", shift: "make space for one question bigger than your to-do list." },
+  fun_adventure: { looks: "a life managed so tightly there's no room left for surprise, risk, or anything you haven't already approved of in advance", shift: "do one thing this week you can't fully predict the outcome of." },
 };
 
 function numeric(value, fallback = 0) {

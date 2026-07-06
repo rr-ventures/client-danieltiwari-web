@@ -14,11 +14,11 @@ const AREAS = [
   ["friendships", "Friendships"],
   ["family", "Family"],
   ["health", "Health"],
-  ["fitness", "Vitality / Fitness"],
   ["attractiveness", "Attractiveness"],
   ["money", "Money / Finances"],
-  ["spirituality", "Spirituality / Meaning"],
   ["lifestyle", "Lifestyle / Surroundings"],
+  ["spirituality", "Spirituality / Meaning"],
+  ["fun_adventure", "Fun & Adventure"],
 ];
 
 // Short, URL-safe, unguessable id for the hosted result page.

@@ -438,7 +438,8 @@ function renderCauseList(key) {
 /* ---- Shared: bullet list + value groups (acts & omits) ---- */
 function renderItemValueGroups(key, type, itemPlaceholder, valueLabel, vgContainerId) {
   const container = document.getElementById(type + '-groups-' + key);
-  if (!container) return;
+  const vgTargetEl = vgContainerId ? document.getElementById(vgContainerId) : null;
+  if (!container && !vgTargetEl) return;
   const itemsKey = 'deeper_' + key + '_' + type + '_items';
 
   const groupsKey = 'deeper_' + key + '_' + type + '_groups';
@@ -449,12 +450,12 @@ function renderItemValueGroups(key, type, itemPlaceholder, valueLabel, vgContain
   const groups = _deeperState[groupsKey];
 
   function getVgTarget() {
-    return vgContainerId ? (document.getElementById(vgContainerId) || container) : container;
+    return vgTargetEl || container;
   }
 
   function syncItems() {
     _deeperState[itemsKey] = items;
-    const h = container.querySelector('input[name="' + itemsKey + '"]');
+    const h = (container || getVgTarget()).querySelector('input[name="' + itemsKey + '"]');
     if (h) h.value = JSON.stringify(items);
     refreshValueGroups();
   }
@@ -595,10 +596,12 @@ function renderItemValueGroups(key, type, itemPlaceholder, valueLabel, vgContain
   }
 
   function build() {
-    container.innerHTML = '';
-    const listEl = document.createElement('div');
-    buildItemList(listEl);
-    container.appendChild(listEl);
+    if (container) {
+      container.innerHTML = '';
+      const listEl = document.createElement('div');
+      buildItemList(listEl);
+      container.appendChild(listEl);
+    }
 
     const vgTarget = getVgTarget();
     if (vgContainerId) vgTarget.innerHTML = '';
@@ -624,7 +627,7 @@ function renderItemValueGroups(key, type, itemPlaceholder, valueLabel, vgContain
     hiddenItems.type = 'hidden';
     hiddenItems.name = itemsKey;
     hiddenItems.value = JSON.stringify(items);
-    container.appendChild(hiddenItems);
+    (container || vgTarget).appendChild(hiddenItems);
     const hiddenGroups = document.createElement('input');
     hiddenGroups.type = 'hidden';
     hiddenGroups.name = groupsKey;
@@ -1627,7 +1630,7 @@ function initDeeperStep() {
         <div id="recap-causes-${key}-acts-list" data-label="Why ${label} feels like a ${data.fulfillment}/5" class="recap-block" hidden></div>
         <div class="deeper-field" style="margin-top:1.4rem">
           <label>How are you contributing to this?</label>
-          <p class="guide-text" style="margin:.4rem 0 .8rem;font-size:.92rem">Include things you're doing, and things you know you could be doing but aren't.</p>
+          <p class="guide-text" style="margin:.4rem 0 .8rem;font-size:.68rem">Include things you're doing, and things you know you could be doing but aren't.</p>
           <div id="acts-items-${key}" style="margin-top:.5rem"></div>
         </div>
         <div id="acts-confirm-${key}" style="margin-top:1.2rem" hidden></div>

@@ -246,7 +246,7 @@ function renderResult(result, emailState = "pending") {
     return `
     <li>
       <strong>${f.label}</strong>
-      <span class="nums">fulfilment ${f.fulfillment}/5 · importance ${f.importance}/10</span>
+      <span class="nums">fulfilment ${f.fulfillment}/5 · importance ${f.importance}/${AREAS.length}</span>
       <p class="read">${read.looks ? `It can look like ${read.looks}.` : ""} <em>First shift —</em> ${read.shift || ""}</p>
     </li>`;
   }).join("");

@@ -379,19 +379,23 @@
       <section class="assessment-section">
         <div class="question-grid">
           <div class="field">
-            <label for="name"><span class="num">01</span> Name</label>
-            <input id="name" name="name" type="text" required autocomplete="name" placeholder="First and last">
+            <label for="first_name"><span class="num">01</span> First name</label>
+            <input id="first_name" name="first_name" type="text" required autocomplete="given-name" placeholder="First name">
           </div>
           <div class="field">
-            <label for="email"><span class="num">02</span> Email</label>
+            <label for="last_name"><span class="num">02</span> Last name</label>
+            <input id="last_name" name="last_name" type="text" required autocomplete="family-name" placeholder="Last name">
+          </div>
+          <div class="field">
+            <label for="email"><span class="num">03</span> Email</label>
             <input id="email" name="email" type="email" required autocomplete="email" placeholder="you@example.com">
           </div>
           <div class="field">
-            <label for="age"><span class="num">03</span> Age</label>
+            <label for="age"><span class="num">04</span> Age</label>
             <input id="age" name="age" type="number" min="16" max="100" required placeholder="Your age">
           </div>
           <div class="field">
-            <label for="work_status"><span class="num">04</span> Occupation</label>
+            <label for="work_status"><span class="num">05</span> Occupation</label>
             <select id="work_status" name="work_status" required>
               <option value="" disabled selected>Select your occupation…</option>
               <option>Employed — full time</option>

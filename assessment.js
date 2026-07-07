@@ -1407,47 +1407,40 @@ function renderVisionAchievableCheck(key) {
 
   const allNotAchievable = vItems.length > 0 && notAchievable.length === vItems.length;
 
-  if (allNotAchievable && _deeperState[checkKey] !== 'revise') {
-    _deeperState[checkKey] = 'revise';
-    syncHidden();
-  }
-
   const qWrap = document.createElement('div');
-  qWrap.className = 'deeper-field yn-field';
+  qWrap.className = 'deeper-field yn-field vision-achievable-check-field';
 
-  if (allNotAchievable) {
-    qWrap.classList.remove('yn-field');
-    const msg = document.createElement('label');
-    msg.textContent = 'None of your vision points are achievable as stated — you will need to revise your vision in the next step.';
-    qWrap.appendChild(msg);
-  } else {
-    const qLbl = document.createElement('label');
-    qLbl.textContent = 'Is this still a vision worth working towards?';
-    qWrap.appendChild(qLbl);
+  const qLbl = document.createElement('label');
+  qLbl.textContent = allNotAchievable
+    ? 'None of your vision points are achievable as stated — what would you like to do?'
+    : 'Is this still a vision worth working towards?';
+  qWrap.appendChild(qLbl);
 
-    const btns = document.createElement('div');
-    btns.className = 'yn-btns';
-    btns.style.flexWrap = 'wrap';
-    [{ val: 'yes', label: 'Yes, this is my vision' }, { val: 'revise', label: "I'd like to add to or revise it" }].forEach(opt => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'yn-btn' + (_deeperState[checkKey] === opt.val ? ' selected' : '');
-      btn.textContent = opt.label;
-      btn.addEventListener('click', () => {
-        btns.querySelectorAll('.yn-btn').forEach(b => b.classList.remove('selected'));
-        btn.classList.add('selected');
-        _deeperState[checkKey] = opt.val;
-        syncHidden();
-        if (window.clearFormError) window.clearFormError();
-      });
-      btns.appendChild(btn);
+  const btns = document.createElement('div');
+  btns.className = 'yn-btns';
+  btns.style.flexWrap = 'wrap';
+  const options = allNotAchievable
+    ? [{ val: 'revise', label: "I'd like to revise it" }, { val: 'unknown after vision was rejected as not achievable', label: "I don't know what my vision is" }]
+    : [{ val: 'yes', label: 'Yes, this is my vision' }, { val: 'revise', label: "I'd like to add to or revise it" }];
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'yn-btn' + (_deeperState[checkKey] === opt.val ? ' selected' : '');
+    btn.textContent = opt.label;
+    btn.addEventListener('click', () => {
+      btns.querySelectorAll('.yn-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      _deeperState[checkKey] = opt.val;
+      syncHidden();
+      if (window.clearFormError) window.clearFormError();
     });
-    qWrap.appendChild(btns);
+    btns.appendChild(btn);
+  });
+  qWrap.appendChild(btns);
 
-    const err = document.createElement('p');
-    err.className = 'yn-error';
-    qWrap.appendChild(err);
-  }
+  const err = document.createElement('p');
+  err.className = 'yn-error';
+  qWrap.appendChild(err);
 
   container.appendChild(qWrap);
 
@@ -1594,7 +1587,7 @@ function initDeeperStep() {
         ${head}
         <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Your Vision</h3>
         <p class="guide-text" style="margin-top:1.6rem">Only mark something as "Literally impossible" if it is genuinely, objectively impossible — like reversing death or defying a law of nature (unless you believe this is possible as well). If it feels out of reach for you personally, that is a limiting belief, not an impossibility. Mark those as achievable.</p>
-        <div class="deeper-field" style="margin-top:1.4rem">
+        <div class="deeper-field vision-achievable-field" style="margin-top:1.4rem">
           <label>For each point in your vision, is it theoretically achievable?</label>
           <div id="vision-item-achievable-${key}" style="margin-top:.9rem"></div>
         </div>
@@ -1747,7 +1740,8 @@ function initDeeperStep() {
       const vYn = _deeperState['deeper_' + sp.key + '_vision_yn'];
       const vActual = _deeperState['deeper_' + sp.key + '_vision_actual_yn'];
       const vItems = (_deeperState['deeper_' + sp.key + '_vision_items'] || []).filter(i => i && i.trim());
-      if ((vYn !== 'yes' && vYn !== 'partially') || !vItems.length || vActual !== 'yes') {
+      const achievableCheck = _deeperState['deeper_' + sp.key + '_vision_achievable_check'];
+      if ((vYn !== 'yes' && vYn !== 'partially') || !vItems.length || vActual !== 'yes' || achievableCheck === 'unknown after vision was rejected as not achievable') {
         showDeeperSubPage(idx + direction, direction);
         return;
       }
@@ -2015,15 +2009,7 @@ function initDeeperStep() {
     }
 
     if (qtype === 'vision-achievable-check') {
-      const _vYnChk = _deeperState['deeper_' + key + '_vision_yn'];
-      const _vItemsChk = (_vYnChk === 'yes' || _vYnChk === 'partially')
-        ? (_deeperState['deeper_' + key + '_vision_items'] || []).filter(i => i && i.trim())
-        : [];
-      const _achChk = _deeperState['deeper_' + key + '_vision_item_achievable'] || {};
-      const _allNotAch = _vItemsChk.length > 0 && _vItemsChk.every((_, i) => _achChk[i] === 'no');
-      if (_allNotAch) {
-        _deeperState['deeper_' + key + '_vision_achievable_check'] = 'revise';
-      } else if (!_deeperState['deeper_' + key + '_vision_achievable_check']) {
+      if (!_deeperState['deeper_' + key + '_vision_achievable_check']) {
         const gc = document.getElementById('vision-achievable-check-' + key);
         if (gc) scrollToVisible(gc);
         setFormErr('Please answer before continuing.');
@@ -2461,9 +2447,9 @@ function _fmtFitAnswer(id) {
     if (_fsState['fs_q6_nothing']) return 'Nothing';
     const items = (_fsState['fs_q6_items'] || []).filter((i) => (i.what || '').trim());
     if (!items.length) return '(none given)';
-    return items
-      .map((i) => `${i.what}${i.howWell != null ? ` (worked ${i.howWell}/5)` : ''}${(i.why || '').trim() ? ` — why: ${i.why}` : ''}`)
-      .join('  |  ');
+    const formatted = items
+      .map((i) => `${i.what}${i.howWell != null ? ` (worked ${i.howWell}/5)` : ''}${(i.why || '').trim() ? ` — why: ${i.why}` : ''}`);
+    return formatted.length > 1 ? formatted : formatted[0];
   }
   let v = _fsState['fs_' + id];
   let out;
@@ -2471,13 +2457,13 @@ function _fmtFitAnswer(id) {
     let arr = v.slice();
     const otherItems = (_fsState['fs_' + id + '_other_items'] || []).filter((i) => i && i.trim());
     if (otherItems.length && arr.includes('Other')) arr = arr.map((o) => (o === 'Other' ? 'Other: ' + otherItems.join('; ') : o));
-    out = arr.length ? arr.join(', ') : '(none selected)';
+    out = arr.length > 1 ? arr : (arr.length ? arr[0] : '(none selected)');
   } else if (typeof v === 'number') {
     out = 'Rated ' + v;
   } else if (v === 'yes') out = 'Yes';
   else if (v === 'no') out = 'No';
   else out = v == null || v === '' ? '(not answered)' : String(v);
-  if (id === 'q2' && _fsState['fs_q2_needs']) out += ' — needs: ' + _fsState['fs_q2_needs'];
+  if (id === 'q2' && v === "No, I'm exhausted" && _fsState['fs_q2_needs']) out += ' — needs: ' + _fsState['fs_q2_needs'];
   return out;
 }
 // Read the deeper-step questions + answers straight from the rendered page, so the
@@ -2487,7 +2473,32 @@ function captureDeeperFromDom() {
   try {
     document.querySelectorAll('.deeper-subpage').forEach((sp) => {
       const area = (sp.querySelector('.deeper-area-name')?.textContent || '').trim();
+
+      // Control-attitude: one row per circumstance they must accept, combining their
+      // feeling about it and whether they want to feel that way — instead of the same
+      // two generic questions ("How do you feel about this?" / "Is this how you want to
+      // feel about it?") repeating once per circumstance with no context of which is which.
+      const attMatch = sp.id.match(/^deeper-sub-(.+)-control-attitude$/);
+      if (attMatch) {
+        const areaKey = attMatch[1];
+        const items = (_deeperState['deeper_' + areaKey + '_control_items'] || []).filter((i) => i && i.trim());
+        const feelings = _deeperState['deeper_' + areaKey + '_control_feeling'] || {};
+        const feelingYn = _deeperState['deeper_' + areaKey + '_control_feeling_yn'] || {};
+        items.forEach((item) => {
+          const feeling = (feelings[item] || '').trim();
+          if (!feeling) return;
+          const wantsToFeel = feelingYn[item] === 'yes' ? 'Yes' : feelingYn[item] === 'no' ? 'No' : '';
+          const a = wantsToFeel ? `Feels: ${feeling}. Wants to feel this way: ${wantsToFeel}.` : `Feels: ${feeling}.`;
+          rows.push([area ? `${area} — ${item}` : item, a]);
+        });
+        return;
+      }
+
       sp.querySelectorAll('.deeper-field').forEach((field) => {
+        if (field.classList.contains('vision-actual-field')) return; // mandatory confirm checkbox — answer is always the same, not worth showing
+        if (field.classList.contains('vision-achievable-field')) return; // per-item achievable/not-achievable ratings — not needed in the email
+        if (field.classList.contains('vision-achievable-check-field')) return; // whether it's still worth achieving / needs revising — not needed in the email
+        if (field.classList.contains('confirm-check-field')) return; // mandatory confirm checkbox (e.g. control-attitude) — answer is always the same, not worth showing
         const lblEl = [...field.children].find((c) => c.tagName === 'LABEL') || field.querySelector('label');
         const q = (lblEl?.textContent || '').replace(/\s+/g, ' ').trim();
         if (!q) return;
@@ -2496,12 +2507,16 @@ function captureDeeperFromDom() {
         const sel = [...field.querySelectorAll('.yn-btn.selected')].find(mine);
         if (sel) a = sel.textContent.trim();
         if (!a) {
-          const texts = [...field.querySelectorAll('input:not([type=checkbox]):not([type=radio]), textarea')]
+          // The "which values" question checks off actions/inactions per value group —
+          // we only want the values themselves in the email, not the actions repeated.
+          const isActsValuesField = !!field.querySelector('[id^="acts-value-groups-"]');
+          const texts = [...field.querySelectorAll('input:not([type=checkbox]):not([type=radio]):not([type=hidden]), textarea')]
             .filter(mine).map((i) => i.value.trim()).filter(Boolean);
-          const checks = [...field.querySelectorAll('input[type=checkbox]')]
+          const checks = isActsValuesField ? [] : [...field.querySelectorAll('input[type=checkbox]')]
             .filter((c) => mine(c) && c.checked)
             .map((c) => (c.closest('label')?.textContent || 'Yes').replace(/\s+/g, ' ').trim());
-          a = [...texts, ...checks].join('; ');
+          const combined = [...texts, ...checks];
+          a = combined.length > 1 ? combined : combined.join('; ');
         }
         if (a) rows.push([area ? `${area} — ${q}` : q, a]);
       });
@@ -2528,14 +2543,14 @@ function buildQaSummary(answers) {
   const groups = [];
   const shownNorm = new Set();
   const norm = (s) => String(s ?? '').trim().toLowerCase();
-  const mark = (a) => { const n = norm(a); if (n) shownNorm.add(n); };
+  const mark = (a) => { const n = norm(Array.isArray(a) ? a.join('; ') : a); if (n) shownNorm.add(n); };
 
   const areaLabel = {};
   (typeof AREAS !== 'undefined' ? AREAS : []).forEach(([k, l]) => { areaLabel[k] = l; });
 
   // ---- About them (contact) — includes age + occupation ----
   const contact = [
-    ['Name', answers.name || '(not given)'],
+    ['Name', [answers.first_name, answers.last_name].filter(Boolean).join(' ') || '(not given)'],
     ['Email', answers.email || '(not given)'],
     ['Age', answers.age || '(not given)'],
     ['Occupation', answers.work_status || '(not given)'],
@@ -2546,12 +2561,12 @@ function buildQaSummary(answers) {
   // ---- Life areas — ALL of them ----
   let areaRows = [];
   try {
-    areaRows = getWheelValues().map((a) => [a.label, `Fulfilment ${a.fulfillment}/10 · Importance ${a.importance}`]);
+    areaRows = getWheelValues().map((a) => [a.label, `Fulfilment ${a.fulfillment}/5 · Importance ${a.importance}`]);
   } catch (_e) {
     (typeof AREAS !== 'undefined' ? AREAS : []).forEach(([key, label]) =>
-      areaRows.push([label, `Fulfilment ${answers['fulfillment_' + key] ?? '?'}/10 · Importance ${answers['importance_' + key] ?? '?'}`]));
+      areaRows.push([label, `Fulfilment ${answers['fulfillment_' + key] ?? '?'}/5 · Importance ${answers['importance_' + key] ?? '?'}`]));
   }
-  if (areaRows.length) { areaRows.forEach(([, a]) => mark(a)); groups.push({ title: 'Life areas — all 11, with ratings', rows: areaRows }); }
+  if (areaRows.length) { areaRows.forEach(([, a]) => mark(a)); groups.push({ title: 'Life areas — all 11, with ratings', rows: areaRows, subNumbered: true }); }
 
   // ---- Where they chose to focus ----
   try {
@@ -2566,6 +2581,19 @@ function buildQaSummary(answers) {
   // ---- Deeper questions — read in full from the page ----
   const deeperRows = captureDeeperFromDom();
   deeperRows.forEach(([, a]) => mark(a));
+
+  // The achievable-ratings and revise/worth-it questions are intentionally left out of
+  // the email (see the skips in captureDeeperFromDom). But when someone's vision was
+  // rejected as not achievable AND they said they don't actually know their real vision,
+  // that's worth a clear, dedicated flag — distinct from saying "I don't know" up front.
+  (typeof AREAS !== 'undefined' ? AREAS : []).forEach(([key, label]) => {
+    if (_deeperState['deeper_' + key + '_vision_achievable_check'] === 'unknown after vision was rejected as not achievable') {
+      const note = "Their stated vision was marked not achievable, and they don't know what their real vision is — this came after the rejection, not as a first answer.";
+      deeperRows.push([`${label} — Vision outcome`, note]);
+      mark(note);
+    }
+  });
+
   if (deeperRows.length) groups.push({ title: 'Deeper questions', rows: deeperRows });
 
   // ---- Inner state & personality (fit signals) ----
@@ -2573,11 +2601,26 @@ function buildQaSummary(answers) {
   fitRows.forEach(([, a]) => mark(a));
   groups.push({ title: 'Inner state & personality', rows: fitRows });
 
-  // ---- COMPLETENESS NET: every stored deeper/fit answer not already shown above,
-  // so no question can ever silently go missing from the email. ----
+  // ---- COMPLETENESS NET: every stored deeper answer not already shown above, so no
+  // question can ever silently go missing from the email. Fit-signal answers (fs_*) are
+  // NOT scanned here — every one of them is already fully represented, correctly
+  // formatted, in "Inner state & personality" above (FIT_ORDER covers every question,
+  // including its side-fields like "other" text and the track-record list), so scanning
+  // them again here would just re-dump the same answer in a raw, differently-worded form.
+  // Likewise, fields deliberately excluded from the email (mandatory confirm checkboxes,
+  // per-item achievable ratings, revise/worth-it question, and the value-groups object
+  // behind the "which values" question — already shown as just the values above) stay
+  // excluded here too, for the same reason: they'd otherwise reappear as an ugly,
+  // differently-formatted raw duplicate of something already shown cleanly.
+  const SUPPRESSED_KEY_SUFFIXES = [
+    '_vision_actual_yn', '_vision_item_achievable', '_vision_achievable_check',
+    '_acts_groups', '_omits_groups',
+    '_control_feeling', '_control_feeling_yn', '_control_feeling_confirm',
+  ];
   const extra = [];
   const scan = (state) => {
     Object.keys(state || {}).sort().forEach((k) => {
+      if (SUPPRESSED_KEY_SUFFIXES.some((suffix) => k.endsWith(suffix))) return;
       const s = _fmtStateVal(state[k]);
       if (!s.trim() || shownNorm.has(norm(s))) return;
       extra.push([_prettyKey(k), s]);
@@ -2585,7 +2628,6 @@ function buildQaSummary(answers) {
     });
   };
   try { scan(_deeperState); } catch (_e) { /* best effort */ }
-  try { scan(_fsState); } catch (_e) { /* best effort */ }
   if (extra.length) groups.push({ title: 'Additional detail (nothing dropped)', rows: extra });
 
   return groups;

@@ -8,6 +8,11 @@ function firstNameOf(answers) {
   return n ? n.split(/\s+/)[0] : "";
 }
 
+function fullNameOf(answers) {
+  const parts = [answers.first_name, answers.last_name].filter(Boolean).map((s) => String(s).trim()).filter(Boolean);
+  return parts.length ? parts.join(" ") : String(answers.name || "").trim();
+}
+
 const AREAS = [
   ["career", "Career"],
   ["relationships", "Relationships"],
@@ -136,12 +141,12 @@ function notifyEmailHtml(answers, result) {
     .map(([key, value]) => `<tr><td style="padding: 6px 10px; border-bottom: 1px solid #ddd;"><strong>${escapeHtml(key)}</strong></td><td style="padding: 6px 10px; border-bottom: 1px solid #ddd;">${escapeHtml(value)}</td></tr>`)
     .join("");
   const focus = result.focusAreas
-    .map((area) => `<li>${escapeHtml(area.label)}: fulfilment ${area.fulfillment}/10, importance ${area.importance}/10</li>`)
+    .map((area) => `<li>${escapeHtml(area.label)}: fulfilment ${area.fulfillment}/5, importance ${area.importance}/${AREAS.length}</li>`)
     .join("");
 
   return `
     <div style="font-family: Georgia, serif; color: #15140f; line-height: 1.6;">
-      <h2>Assessment answers — ${escapeHtml(answers.name || "Unnamed")}</h2>
+      <h2>Assessment answers — ${escapeHtml(fullNameOf(answers) || "Unnamed")}</h2>
       <p><strong>Email:</strong> ${escapeHtml(answers.email)}</p>
       <p><strong>Route:</strong> ${escapeHtml(result.route)}</p>
       <p><strong>Authenticity:</strong> ${escapeHtml(result.authenticity.label)} (${result.authenticity.stage})</p>
@@ -163,12 +168,16 @@ function qaSummaryHtml(qa) {
   let n = 0;
   const blocks = qa
     .map((g) => {
+      const parentNum = g.subNumbered ? (n += 1) : null;
       const items = (g.rows || [])
-        .map(([q, a]) => {
-          n += 1;
+        .map(([q, a], i) => {
+          const num = parentNum !== null ? `${parentNum}.${i + 1}` : (n += 1);
+          const answerHtml = Array.isArray(a)
+            ? `<ul style="margin:4px 0 0;padding-left:20px">${a.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`
+            : `<span style="color:#8a857a">Answer:</span> ${escapeHtml(a)}`;
           return `<div style="margin:0 0 20px;padding:0 0 18px;border-bottom:1px solid #eee">
-              <div style="font-size:16px;font-weight:700;color:#15140f;line-height:1.4">${n}. ${escapeHtml(q)}</div>
-              <div style="font-size:16px;color:#0E4182;margin-top:7px"><span style="color:#8a857a">Answer:</span> ${escapeHtml(a)}</div>
+              <div style="font-size:16px;font-weight:700;color:#15140f;line-height:1.4">${num}. ${escapeHtml(q)}</div>
+              <div style="font-size:16px;color:#0E4182;margin-top:7px">${answerHtml}</div>
             </div>`;
         })
         .join("");
@@ -254,7 +263,7 @@ exports.handler = async (event) => {
       await dripStore().setJSON(id, {
         email: leadTo,
         branch: result.route,
-        name: answers.name || "",
+        name: fullNameOf(answers),
         mergeFields,
         startedAt: new Date().toISOString(),
         sentDays: [dayZero.day],
@@ -269,11 +278,11 @@ exports.handler = async (event) => {
     from,
     to: String(notifyTo).split(",").map((s) => s.trim()).filter(Boolean),
     reply_to: TEST_MODE ? replyTo : answers.email,
-    subject: `New assessment submission — ${answers.name || answers.email}`,
+    subject: `New assessment submission — ${fullNameOf(answers) || answers.email}`,
     html: leadActionEmail({
       kind: "Assessment submission",
       rows: [
-        ["Name", escapeHtml(answers.name || "(not given)")],
+        ["Name", escapeHtml(fullNameOf(answers) || "(not given)")],
         ["Email", escapeHtml(answers.email)],
         ["Top focus", escapeHtml(mergeFields.top_focus_area || "—")],
         ["Stage", escapeHtml(mergeFields.authenticity_stage || "—")],

@@ -16,7 +16,8 @@ const AREAS = [
   ["health", "Health"],
   ["attractiveness", "Attractiveness"],
   ["money", "Money / Finances"],
-  ["lifestyle", "Lifestyle / Surroundings"],
+  ["lifestyle", "Lifestyle"],
+  ["environment", "Environment"],
   ["spirituality", "Spirituality / Meaning"],
   ["fun_adventure", "Fun & Adventure"],
 ];

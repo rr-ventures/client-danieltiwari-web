@@ -395,7 +395,15 @@
             <input id="age" name="age" type="number" min="16" max="100" required placeholder="Your age">
           </div>
           <div class="field">
-            <label for="work_status"><span class="num">05</span> Occupation</label>
+            <label for="gender"><span class="num">05</span> Gender</label>
+            <select id="gender" name="gender" required>
+              <option value="" disabled selected>Select your gender…</option>
+              <option>Male</option>
+              <option>Female</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="work_status"><span class="num">06</span> Occupation</label>
             <select id="work_status" name="work_status" required>
               <option value="" disabled selected>Select your occupation…</option>
               <option>Employed — full time</option>

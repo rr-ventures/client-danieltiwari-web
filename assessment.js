@@ -1421,7 +1421,11 @@ function renderVisionAchievableCheck(key) {
   btns.style.flexWrap = 'wrap';
   const options = allNotAchievable
     ? [{ val: 'revise', label: "I'd like to revise it" }, { val: 'unknown after vision was rejected as not achievable', label: "I don't know what my vision is" }]
-    : [{ val: 'yes', label: 'Yes, this is my vision' }, { val: 'revise', label: "I'd like to add to or revise it" }];
+    : [
+        { val: 'yes', label: vYn === 'partially' ? 'Yes, this is my partial vision' : 'Yes, this is still my full vision' },
+        ...(vYn === 'yes' ? [{ val: 'partial', label: 'This is my partial vision for now' }] : []),
+        { val: 'revise', label: "I'd like to add to or revise it" },
+      ];
   options.forEach(opt => {
     const btn = document.createElement('button');
     btn.type = 'button';
@@ -1495,6 +1499,49 @@ function renderVisionRevised(key) {
   renderSimpleBulletList('vision-revised-' + key, revisedKey, 'Describe your revised vision…');
 }
 
+function renderVisionRevisedCompleteness(key) {
+  const container = document.getElementById('vision-revised-completeness-' + key);
+  if (!container) return;
+  container.innerHTML = '';
+
+  const vYn = _deeperState['deeper_' + key + '_vision_yn'];
+  if (vYn !== 'yes') return; // only meaningful if they originally claimed full awareness
+
+  const stateKey = 'deeper_' + key + '_completeness_yn';
+
+  const field = document.createElement('div');
+  field.className = 'deeper-field yn-field';
+  field.dataset.key = key;
+  field.dataset.role = 'completeness';
+
+  const lbl = document.createElement('label');
+  lbl.textContent = "Now that you've revised it, is this your full vision, or is it partial?";
+  field.appendChild(lbl);
+
+  const btns = document.createElement('div');
+  btns.className = 'yn-btns';
+  [{ val: 'full', label: 'This is my full vision' }, { val: 'partial', label: 'This is partial' }].forEach(opt => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'yn-btn' + (_deeperState[stateKey] === opt.val ? ' selected' : '');
+    btn.textContent = opt.label;
+    btn.addEventListener('click', () => {
+      btns.querySelectorAll('.yn-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      _deeperState[stateKey] = opt.val;
+      if (window.clearFormError) window.clearFormError();
+    });
+    btns.appendChild(btn);
+  });
+  field.appendChild(btns);
+
+  const err = document.createElement('p');
+  err.className = 'yn-error';
+  field.appendChild(err);
+
+  container.appendChild(field);
+}
+
 /* ---- Step 5: Deeper questions per focus area ---- */
 function initDeeperStep() {
   const container = document.getElementById('deeper-questions');
@@ -1544,7 +1591,7 @@ function initDeeperStep() {
           <label>Why does ${label} only feel like a ${data.fulfillment}/5 right now?</label>
           <ul class="guide-points">
             <li>List the points you feel dissatisfied or unfulfilled with.</li>
-            <li>Be specific.</li>
+            <li>List circumstances, not feelings — e.g. "I work 60 hours a week," not "I feel drained."</li>
           </ul>
           <div id="cause-list-${key}"></div>
         </div>
@@ -1603,6 +1650,7 @@ function initDeeperStep() {
           <label>Create your revised vision — only things that are theoretically achievable.</label>
           <div id="vision-revised-${key}" style="margin-top:.9rem"></div>
         </div>
+        <div id="vision-revised-completeness-${key}" style="margin-top:1.4rem"></div>
       </div>`,
       `<div class="deeper-subpage" id="deeper-sub-${key}-vision-commitment" hidden>
         ${head}
@@ -1828,6 +1876,7 @@ function initDeeperStep() {
     }
     if (qtype === 'vision-revised') {
       renderVisionRevised(key);
+      renderVisionRevisedCompleteness(key);
     }
     if (qtype === 'vision-commitment') {
       renderVisionCommitment(key);
@@ -2060,16 +2109,16 @@ function initFitSignalsStep() {
       followup: { triggerValue: "No, I'm exhausted", label: 'What do you think you need right now?', stateKey: 'fs_q2_needs' } },
     { id: 'q3', type: 'multiselect', headline: 'Inner state',
       label: 'Do you struggle with any of these on a regular basis?',
-      options: ['Anxiety', 'Depression', 'PTSD', 'Apathy', 'Anger or resentment', 'Frustration or pressure', 'Meaninglessness', 'Panic attacks', 'Hypochondria', 'Other', 'None of the above'],
-      other: 'Other', none: 'None of the above' },
+      options: ['Anxiety', 'Depression', 'PTSD', 'Apathy', 'Anger or resentment', 'Frustration or pressure', 'Meaninglessness', 'Panic attacks', 'Hypochondria', 'Other', 'None'],
+      other: 'Other', none: 'None' },
     { id: 'q4', type: 'multiselect', headline: 'Compulsive patterns',
       label: 'Do you struggle with any addictions or compulsive habits?',
-      options: ['Alcohol', 'Drugs', 'Pharmaceuticals', 'Pornography', 'Gambling', 'Social media', 'Gaming', 'Food', 'Other', 'None of the above'],
-      other: 'Other', none: 'None of the above' },
+      options: ['Alcohol', 'Drugs', 'Pharmaceuticals', 'Pornography', 'Gambling', 'Social media', 'Gaming', 'Food', 'Other', 'None'],
+      other: 'Other', none: 'None' },
     { id: 'q5l', type: 'multiselect', headline: 'Lifestyle',
       label: 'Which of the following do you struggle to maintain consistently?',
-      options: ['Sleep', 'Exercise', 'Healthy eating', 'Social connection', 'Time outdoors', 'Downtime / switching off', 'Hobbies or creative outlets', 'Other', 'None of the above'],
-      other: 'Other', none: 'None of the above' },
+      options: ['Sleep', 'Exercise', 'Healthy eating', 'Social connection', 'Time outdoors', 'Downtime / switching off', 'Hobbies or creative outlets', 'Other', 'None'],
+      other: 'Other', none: 'None' },
     { id: 'q5', type: 'scale5', headline: 'The mainstream',
       label: 'How do you feel when you imagine living the life of mainstream society — a steady job, a mortgage, blending in?',
       low: "Can't think of anything worse", high: "It's exactly what I want" },
@@ -2079,6 +2128,9 @@ function initFitSignalsStep() {
       label: 'If your life looks exactly the same in 3 years from now, how would you feel?',
       note: 'Remember. This isn\'t about passing a test. There are no "right" or "wrong" answers. The only right answer is the honest one.',
       options: ["I'd be fine with it", "Disappointing, but I'd manage", "Like I'd wasted something important", "Unacceptable — it cannot happen"] },
+    { id: 'q8', type: 'textarea', optional: true, headline: 'Anything else',
+      label: "Is there anything else you'd like to share that wasn't addressed in this assessment?",
+      placeholder: 'Optional — write as much or as little as you like.' },
   ];
 
   container.innerHTML = '';
@@ -2250,14 +2302,14 @@ function initFitSignalsStep() {
         span.textContent = opt;
         row.appendChild(cb); row.appendChild(span);
         checks.appendChild(row);
+        if (opt === q.other) {
+          otherWrap = document.createElement('div');
+          otherWrap.id = 'fs-other-' + q.id;
+          otherWrap.hidden = !_fsState['fs_' + q.id].includes(q.other);
+          otherWrap.style.cssText = 'margin-left:1.6rem;margin-top:.4rem';
+          checks.appendChild(otherWrap);
+        }
       });
-      if (q.other) {
-        otherWrap = document.createElement('div');
-        otherWrap.id = 'fs-other-' + q.id;
-        otherWrap.hidden = !_fsState['fs_' + q.id].includes(q.other);
-        otherWrap.style.cssText = 'margin-left:1.6rem;margin-top:.4rem';
-        checks.appendChild(otherWrap);
-      }
       field.appendChild(checks);
     }
 
@@ -2301,6 +2353,7 @@ function initFitSignalsStep() {
       ta.className = 'cause-input';
       ta.style.cssText = 'width:100%;min-height:5rem;resize:vertical;margin-top:.8rem;box-sizing:border-box';
       ta.value = _fsState['fs_' + q.id] || '';
+      if (q.placeholder) ta.placeholder = q.placeholder;
       ta.addEventListener('input', () => { _fsState['fs_' + q.id] = ta.value; });
       field.appendChild(ta);
     }
@@ -2380,7 +2433,7 @@ function initFitSignalsStep() {
     if (q.type === 'scale5' && !_fsState['fs_' + q.id]) {
       setFormErr('Please select a number before continuing.'); return false;
     }
-    if (q.type === 'textarea' && !_fsState['fs_' + q.id]?.trim()) {
+    if (q.type === 'textarea' && !q.optional && !_fsState['fs_' + q.id]?.trim()) {
       setFormErr('Please write your answer before continuing.'); return false;
     }
     if (q.type === 'track-record' && !_fsState['fs_q6_nothing']) {
@@ -2436,8 +2489,9 @@ const FIT_LABELS = {
   q5: 'How do you feel when you imagine living the life of mainstream society — a steady job, a mortgage, blending in?',
   q6: 'What have you tried in the past to deal with your situation(s)?',
   q7: 'If your life looks exactly the same in 3 years from now, how would you feel?',
+  q8: "Is there anything else you'd like to share that wasn't addressed in this assessment?",
 };
-const FIT_ORDER = ['q2', 'q3', 'q4', 'q5l', 'q5', 'q6', 'q7'];
+const FIT_ORDER = ['q2', 'q3', 'q4', 'q5l', 'q5', 'q6', 'q7', 'q8'];
 
 function _prettyKey(k) {
   return String(k).replace(/^deeper_/, '').replace(/_/g, ' ').trim();
@@ -2553,6 +2607,7 @@ function buildQaSummary(answers) {
     ['Name', [answers.first_name, answers.last_name].filter(Boolean).join(' ') || '(not given)'],
     ['Email', answers.email || '(not given)'],
     ['Age', answers.age || '(not given)'],
+    ['Gender', answers.gender || '(not given)'],
     ['Occupation', answers.work_status || '(not given)'],
   ];
   contact.forEach(([, a]) => mark(a));

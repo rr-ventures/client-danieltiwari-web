@@ -81,12 +81,17 @@ function wheelData(answers) {
     key, label,
     fulfillment: numeric(answers[`fulfillment_${key}`], 3),
     importance: numeric(answers[`importance_${key}`], 5),
+    urgency: numeric(answers[`urgency_${key}`], 0),
   }));
 }
 
+// Urgency is a flag (up to 3 picked on the urgency step), not a full 1-11
+// rank, so it's weighted as a flat boost rather than summed as a rank.
+const URGENCY_BOOST = 8;
+
 function topFocusAreas(wheel) {
   return wheel
-    .map((a) => ({ ...a, gap: a.importance - a.fulfillment, score: (6 - a.fulfillment) * 2 + a.importance }))
+    .map((a) => ({ ...a, gap: a.importance - a.fulfillment, score: (6 - a.fulfillment) * 2 + a.importance + (a.urgency ? URGENCY_BOOST : 0) }))
     .sort((a, b) => b.score - a.score)
     .slice(0, 2);
 }
@@ -176,7 +181,7 @@ function renderWheel(wheel) {
 
 function rankAllAreas(wheel) {
   return wheel
-    .map((a) => ({ ...a, score: (6 - a.fulfillment) * 2 + a.importance }))
+    .map((a) => ({ ...a, score: (6 - a.fulfillment) * 2 + a.importance + (a.urgency ? URGENCY_BOOST : 0) }))
     .sort((a, b) => b.score - a.score);
 }
 
@@ -246,7 +251,7 @@ function renderResult(result, emailState = "pending") {
     return `
     <li>
       <strong>${f.label}</strong>
-      <span class="nums">fulfilment ${f.fulfillment}/5 · importance ${f.importance}/${AREAS.length}</span>
+      <span class="nums">fulfilment ${f.fulfillment}/5 · importance ${f.importance}/${AREAS.length}${f.urgency ? " · flagged urgent" : ""}</span>
       <p class="read">${read.looks ? `It can look like ${read.looks}.` : ""} <em>First shift —</em> ${read.shift || ""}</p>
     </li>`;
   }).join("");

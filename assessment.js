@@ -5,6 +5,21 @@
    initialization, one-at-a-time fulfillment, and submission.
    ============================================================ */
 
+const CAUSE_LIST_HINT = 'One reason per line — press "+ Add another" for the next.';
+const VALUE_LIST_HINT = 'One value per line — press "+ Add another" for the next value.';
+const VISION_LIST_HINT = 'One part of your vision per line — press "+ Add another" for the next.';
+const CONTROL_LIST_HINT = 'One thing outside your control per line — press "+ Add another" for the next.';
+const FEELING_LIST_HINT = 'One feeling per line — press "+ Add another" for the next.';
+const GENERIC_LIST_HINT = 'One thing per line — press "+ Add another" for the next.';
+const ATTEMPT_LIST_HINT = 'One undertaking per line — press "+ Add another" for the next.';
+
+// Wraps "&" so CSS can render it in a plainer font — several of the display/small-caps
+// fonts on this page draw an ornate, script-style ampersand that clashes with the rest
+// of the text. Only safe to use where the result is inserted as HTML (innerHTML), never
+// in a data-attribute or in text sent to the notification email.
+function ampSafe(text) {
+  return String(text).replace(/&/g, '<span class="amp">&</span>');
+}
 const _scaleState = {};       // "urgency_career": "2"
 const _fulfillmentState = {}; // "career": "7"
 const _deeperState = {};      // "career_cause": "...", "career_vision": "..."
@@ -35,6 +50,7 @@ function getWheelValues() {
     key, label,
     fulfillment: parseInt(document.querySelector(`input[name="fulfillment_${key}"]`)?.value || 5),
     importance: parseInt(document.querySelector(`input[name="importance_${key}"]`)?.value || 2),
+    urgency: document.querySelector(`input[name="urgency_${key}"]`) ? 1 : 0,
   }));
 }
 
@@ -187,7 +203,7 @@ function buildRankingRows(containerId, hiddenContainerId, type) {
     <div class="drag-item" data-key="${key}">
       <span class="drag-rank">${String(i + 1).padStart(2, "0")}</span>
       <div class="drag-label-wrap">
-        <span class="drag-label">${label}</span>
+        <span class="drag-label">${label.replace(/&/g, '<span class="amp">&</span>')}</span>
         ${desc ? `<span class="drag-desc">${desc}</span>` : ""}
       </div>
       <div class="move-btns">
@@ -292,7 +308,57 @@ function initSpilloverStep() {
   render();
 }
 
-/* ---- Step 2: Focus recommendation ---- */
+/* ---- Step 2: Urgency flag ---- */
+function initUrgencyFlagStep() {
+  const MAX_URGENT = 3;
+
+  const urgent = new Set(
+    [...document.querySelectorAll('#urgent-hidden-inputs input')].map(i => i.name.replace(/^urgency_/, ''))
+  );
+
+  function updateUrgentInputs() {
+    document.getElementById('urgent-hidden-inputs').innerHTML =
+      [...urgent].map(key => `<input type="hidden" name="urgency_${key}" value="1">`).join('');
+    const hint = document.getElementById('urgent-count-hint');
+    if (hint) hint.textContent = urgent.size ? `${urgent.size} of ${MAX_URGENT} flagged` : `Tap up to ${MAX_URGENT}, or leave none if nothing's pressing`;
+  }
+
+  function renderUrgent() {
+    const atCap = urgent.size >= MAX_URGENT;
+    const container = document.getElementById('urgent-rows');
+    container.innerHTML = AREAS.map(([key, label], i) => {
+      const isUrgent = urgent.has(key);
+      const disabled = atCap && !isUrgent;
+      return `
+      <div class="rec-item${isUrgent ? " selected" : ""}" data-key="${key}"${disabled ? ' style="opacity:.45;pointer-events:none"' : ""}>
+        <span class="rec-num">${String(i + 1).padStart(2, "0")}</span>
+        <div class="rec-info">
+          <strong class="rec-label">${label}</strong>
+        </div>
+        <span class="rec-check">${isUrgent ? "✓" : ""}</span>
+      </div>`;
+    }).join("");
+
+    container.querySelectorAll(".rec-item").forEach(item => {
+      item.addEventListener("click", () => {
+        const key = item.dataset.key;
+        if (urgent.has(key)) {
+          urgent.delete(key);
+        } else if (urgent.size < MAX_URGENT) {
+          urgent.add(key);
+        }
+        updateUrgentInputs();
+        renderUrgent();
+      });
+    });
+
+    updateUrgentInputs();
+  }
+
+  renderUrgent();
+}
+
+/* ---- Step 3: Focus recommendation ---- */
 function initFocusStep() {
   const n = AREAS.length;
 
@@ -303,6 +369,7 @@ function initFocusStep() {
 
   function getReason(area) {
     const importanceRank = n + 1 - area.importance;
+    if (area.urgency) return `flagged as urgent · ${area.fulfillment}/5 fulfilled`;
     if (area.fulfillment <= 2) return `${area.fulfillment}/5 fulfilled · #${importanceRank} in importance`;
     return `#${importanceRank} in importance · ${area.fulfillment}/5 fulfilled`;
   }
@@ -373,7 +440,7 @@ function renderCauseList(key) {
       row.className = 'cause-item';
       const bullet = document.createElement('span');
       bullet.className = 'cause-bullet';
-      bullet.textContent = '—';
+      bullet.textContent = '•';
       const inp = document.createElement('input');
       inp.type = 'text';
       inp.className = 'cause-input';
@@ -425,6 +492,10 @@ function renderCauseList(key) {
     hidden.type = 'hidden';
     hidden.name = 'deeper_' + key + '_causes';
     hidden.value = JSON.stringify(causes);
+    const hint = document.createElement('p');
+    hint.className = 'list-hint';
+    hint.textContent = CAUSE_LIST_HINT;
+    container.appendChild(hint);
     container.appendChild(list);
     container.appendChild(addBtn);
     container.appendChild(hidden);
@@ -435,210 +506,177 @@ function renderCauseList(key) {
   build();
 }
 
-/* ---- Shared: bullet list + value groups (acts & omits) ---- */
-function renderItemValueGroups(key, type, itemPlaceholder, valueLabel, vgContainerId) {
-  const container = document.getElementById(type + '-groups-' + key);
-  const vgTargetEl = vgContainerId ? document.getElementById(vgContainerId) : null;
-  if (!container && !vgTargetEl) return;
-  const itemsKey = 'deeper_' + key + '_' + type + '_items';
+/* ---- Values attributed to each action/inaction, one bullet list per item ---- */
+function renderActsValuesByItem(key) {
+  const container = document.getElementById('acts-value-groups-' + key);
+  if (!container) return;
+  const items = (_deeperState['deeper_' + key + '_acts_items'] || []).filter(it => it && it.trim());
+  const stateKey = 'deeper_' + key + '_acts_values_by_item';
+  if (typeof _deeperState[stateKey] !== 'object' || !_deeperState[stateKey]) _deeperState[stateKey] = {};
+  const valuesByItem = _deeperState[stateKey];
 
-  const groupsKey = 'deeper_' + key + '_' + type + '_groups';
+  container.innerHTML = '';
+  if (!items.length) return;
 
-  if (!Array.isArray(_deeperState[itemsKey])) _deeperState[itemsKey] = [''];
-  const items = _deeperState[itemsKey];
-  if (!Array.isArray(_deeperState[groupsKey])) _deeperState[groupsKey] = [{ selected: [], value: '' }];
-  const groups = _deeperState[groupsKey];
+  const hidden = document.createElement('input');
+  hidden.type = 'hidden';
+  hidden.name = stateKey;
+  function syncHidden() { hidden.value = JSON.stringify(valuesByItem); }
 
-  function getVgTarget() {
-    return vgTargetEl || container;
-  }
-
-  function syncItems() {
-    _deeperState[itemsKey] = items;
-    const h = (container || getVgTarget()).querySelector('input[name="' + itemsKey + '"]');
-    if (h) h.value = JSON.stringify(items);
-    refreshValueGroups();
-  }
-
-  function syncGroups() {
-    _deeperState[groupsKey] = groups;
-    const h = getVgTarget().querySelector('input[name="' + groupsKey + '"]');
-    if (h) h.value = JSON.stringify(groups);
-  }
-
-  function buildItemList(listEl) {
-    listEl.innerHTML = '';
-    const rows = document.createElement('div');
-    rows.className = 'cause-list';
-    items.forEach((val, i) => {
-      const row = document.createElement('div');
-      row.className = 'cause-item';
-      const bullet = document.createElement('span');
-      bullet.className = 'cause-bullet';
-      bullet.textContent = '—';
-      const inp = document.createElement('input');
-      inp.type = 'text';
-      inp.className = 'cause-input';
-      inp.value = val;
-      inp.placeholder = itemPlaceholder;
-      inp.addEventListener('input', () => {
-        items[i] = inp.value;
-        syncItems();
-        listEl.querySelectorAll('.cause-remove').forEach(b => { b.hidden = items.length === 1; });
+  // Every distinct value typed anywhere on this page, across all actions/inactions —
+  // offered as quick-add checkboxes on the OTHER items so the same value never has
+  // to be typed out twice. Matching is case-insensitive (e.g. "Security" and
+  // "security" count as the same value); the first-typed casing is kept for display.
+  function allTypedValues() {
+    const seen = [];
+    const seenNorm = new Set();
+    items.forEach((it) => {
+      (valuesByItem[it] || []).forEach((v) => {
+        const t = (v || '').trim();
+        const norm = t.toLowerCase();
+        if (t && !seenNorm.has(norm)) { seenNorm.add(norm); seen.push(t); }
       });
-      inp.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          e.stopPropagation();
-          items.push('');
-          buildItemList(listEl);
-          const inputs = listEl.querySelectorAll('.cause-input');
-          if (inputs.length) inputs[inputs.length - 1].focus();
-        }
-      });
-      const rm = document.createElement('button');
-      rm.type = 'button';
-      rm.className = 'cause-remove';
-      rm.textContent = '×';
-      rm.hidden = items.length === 1;
-      rm.addEventListener('click', () => { items.splice(i, 1); buildItemList(listEl); syncItems(); });
-      row.appendChild(bullet); row.appendChild(inp); row.appendChild(rm);
-      rows.appendChild(row);
     });
+    return seen;
+  }
+
+  const refreshSuggestionsFns = [];
+  function refreshAllSuggestions() {
+    refreshSuggestionsFns.forEach((fn) => fn());
+  }
+
+  items.forEach((item) => {
+    if (!Array.isArray(valuesByItem[item]) || !valuesByItem[item].length) valuesByItem[item] = [''];
+    const values = valuesByItem[item];
+
+    const block = document.createElement('div');
+    block.className = 'acts-group';
+    const itemLbl = document.createElement('p');
+    itemLbl.className = 'acts-item-heading';
+    itemLbl.textContent = item;
+    block.appendChild(itemLbl);
+
+    // Quick-add checkboxes for values already named under other actions/inactions
+    // on this page. Checking one fills it into this item's list below instead of
+    // making the person retype a value they already named elsewhere.
+    const suggestWrap = document.createElement('div');
+    suggestWrap.className = 'acts-suggest-wrap';
+    block.appendChild(suggestWrap);
+
+    const hint = document.createElement('p');
+    hint.className = 'list-hint';
+    hint.textContent = VALUE_LIST_HINT;
+    block.appendChild(hint);
+
+    const list = document.createElement('div');
+    list.className = 'cause-list';
+    block.appendChild(list);
+
+    function buildRows() {
+      list.innerHTML = '';
+      values.forEach((val, i) => {
+        const row = document.createElement('div');
+        row.className = 'cause-item';
+        const bullet = document.createElement('span');
+        bullet.className = 'cause-bullet';
+        bullet.textContent = '•';
+        const inp = document.createElement('input');
+        inp.type = 'text';
+        inp.className = 'cause-input';
+        inp.value = val;
+        inp.placeholder = 'e.g. Security, comfort, avoiding failure…';
+        inp.addEventListener('input', () => {
+          values[i] = inp.value;
+          syncHidden();
+          list.querySelectorAll('.cause-remove').forEach(b => { b.hidden = values.length === 1; });
+        });
+        inp.addEventListener('blur', () => { refreshAllSuggestions(); });
+        inp.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            e.stopPropagation();
+            values.push('');
+            buildRows();
+            const inputs = list.querySelectorAll('.cause-input');
+            if (inputs.length) inputs[inputs.length - 1].focus();
+          }
+        });
+        const rm = document.createElement('button');
+        rm.type = 'button';
+        rm.className = 'cause-remove';
+        rm.textContent = '×';
+        rm.hidden = values.length === 1;
+        rm.addEventListener('click', () => {
+          values.splice(i, 1);
+          if (!values.length) values.push('');
+          buildRows();
+          syncHidden();
+          refreshAllSuggestions();
+        });
+        row.appendChild(bullet); row.appendChild(inp); row.appendChild(rm);
+        list.appendChild(row);
+      });
+    }
+    buildRows();
+
     const addBtn = document.createElement('button');
     addBtn.type = 'button';
     addBtn.className = 'list-add-btn';
     addBtn.textContent = '+ Add another';
     addBtn.addEventListener('click', () => {
-      items.push('');
-      buildItemList(listEl);
-      const inputs = listEl.querySelectorAll('.cause-input');
+      values.push('');
+      buildRows();
+      const inputs = list.querySelectorAll('.cause-input');
       if (inputs.length) inputs[inputs.length - 1].focus();
     });
-    listEl.appendChild(rows);
-    listEl.appendChild(addBtn);
-    const listErr = document.createElement('p');
-    listErr.className = 'yn-error list-error';
-    listEl.appendChild(listErr);
-  }
+    block.appendChild(addBtn);
 
-  function buildGroup(gi, vgEl) {
-    const g = groups[gi];
-    if (!Array.isArray(g.selected)) g.selected = [];
-    const filledItems = items.filter(it => it && it.trim());
-    const wrap = document.createElement('div');
-    wrap.className = 'acts-group';
-    const checks = document.createElement('div');
-    checks.className = 'acts-checkboxes';
-    filledItems.forEach(item => {
-      const lbl = document.createElement('label');
-      lbl.className = 'acts-check-label';
-      const cb = document.createElement('input');
-      cb.type = 'checkbox';
-      cb.checked = g.selected.includes(item);
-      cb.addEventListener('change', () => {
-        if (cb.checked) { if (!g.selected.includes(item)) g.selected.push(item); }
-        else { g.selected = g.selected.filter(s => s !== item); }
-        reveal.hidden = g.selected.length === 0;
-        syncGroups();
+    function refreshSuggestions() {
+      const already = new Set(values.map((v) => (v || '').trim().toLowerCase()).filter(Boolean));
+      const options = allTypedValues().filter((v) => !already.has(v.toLowerCase()));
+      suggestWrap.innerHTML = '';
+      if (!options.length) return;
+      const suggestLbl = document.createElement('p');
+      suggestLbl.className = 'list-hint';
+      suggestLbl.textContent = 'Also applies here?';
+      suggestWrap.appendChild(suggestLbl);
+      const checks = document.createElement('div');
+      checks.className = 'acts-checkboxes';
+      options.forEach((opt) => {
+        const rowLbl = document.createElement('label');
+        rowLbl.className = 'acts-check-label';
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.addEventListener('change', () => {
+          if (!cb.checked) return;
+          const blankIdx = values.findIndex((v) => !v || !v.trim());
+          if (blankIdx !== -1) values[blankIdx] = opt; else values.push(opt);
+          buildRows();
+          syncHidden();
+          refreshSuggestions();
+        });
+        const span = document.createElement('span');
+        span.textContent = opt;
+        rowLbl.appendChild(cb); rowLbl.appendChild(span);
+        checks.appendChild(rowLbl);
       });
-      const span = document.createElement('span');
-      span.textContent = item;
-      lbl.appendChild(cb); lbl.appendChild(span);
-      checks.appendChild(lbl);
-    });
-    wrap.appendChild(checks);
-    const reveal = document.createElement('div');
-    reveal.className = 'acts-value-reveal';
-    reveal.hidden = g.selected.length === 0;
-    const valueInp = document.createElement('input');
-    valueInp.type = 'text';
-    valueInp.className = 'cause-input';
-    valueInp.style.marginTop = '.6rem';
-    valueInp.style.width = '100%';
-    valueInp.placeholder = 'e.g. Security, comfort, avoiding failure…';
-    valueInp.value = g.value || '';
-    valueInp.addEventListener('input', () => { g.value = valueInp.value; syncGroups(); });
-    reveal.appendChild(valueInp);
-    wrap.appendChild(reveal);
-    if (groups.length > 1) {
-      const footer = document.createElement('div');
-      footer.className = 'acts-group-footer';
-      const rmBtn = document.createElement('button');
-      rmBtn.type = 'button';
-      rmBtn.className = 'acts-group-remove';
-      rmBtn.textContent = 'Remove';
-      rmBtn.addEventListener('click', () => { groups.splice(gi, 1); buildValueGroups(vgEl); syncGroups(); });
-      footer.appendChild(rmBtn);
-      wrap.appendChild(footer);
+      suggestWrap.appendChild(checks);
     }
-    return wrap;
-  }
+    refreshSuggestions();
+    refreshSuggestionsFns.push(refreshSuggestions);
 
-  function buildValueGroups(vgEl) {
-    vgEl.innerHTML = '';
-    groups.forEach((_, gi) => vgEl.appendChild(buildGroup(gi, vgEl)));
-    const addBtn = document.createElement('button');
-    addBtn.type = 'button';
-    addBtn.className = 'list-add-btn';
-    addBtn.style.marginTop = '.8rem';
-    addBtn.textContent = '+ Add another value';
-    addBtn.addEventListener('click', () => { groups.push({ selected: [], value: '' }); buildValueGroups(vgEl); syncGroups(); });
-    vgEl.appendChild(addBtn);
-  }
+    container.appendChild(block);
+  });
 
-  function refreshValueGroups() {
-    const filledItems = items.filter(it => it && it.trim());
-    const vgWrap = getVgTarget().querySelector('.' + type + '-vg-wrap');
-    if (!vgWrap) return;
-    vgWrap.hidden = filledItems.length === 0;
-    if (filledItems.length) { const vgEl = vgWrap.querySelector('.' + type + '-vg-inner'); if (vgEl) buildValueGroups(vgEl); }
-  }
+  syncHidden();
+  container.appendChild(hidden);
 
-  function build() {
-    if (container) {
-      container.innerHTML = '';
-      const listEl = document.createElement('div');
-      buildItemList(listEl);
-      container.appendChild(listEl);
-    }
-
-    const vgTarget = getVgTarget();
-    if (vgContainerId) vgTarget.innerHTML = '';
-
-    const vgWrap = document.createElement('div');
-    vgWrap.className = type + '-vg-wrap deeper-field';
-    vgWrap.hidden = items.filter(it => it && it.trim()).length === 0;
-    vgWrap.style.marginTop = '1.4rem';
-    const vgLbl = document.createElement('label');
-    vgLbl.textContent = valueLabel;
-    vgWrap.appendChild(vgLbl);
-    const vgError = document.createElement('p');
-    vgError.className = 'yn-error';
-    vgError.textContent = 'Every ' + (type === 'acts' ? 'action' : 'inaction') + ' needs at least one value attributed to it before continuing.';
-    vgWrap.appendChild(vgError);
-    const vgInner = document.createElement('div');
-    vgInner.className = type + '-vg-inner';
-    buildValueGroups(vgInner);
-    vgWrap.appendChild(vgInner);
-    vgTarget.appendChild(vgWrap);
-
-    const hiddenItems = document.createElement('input');
-    hiddenItems.type = 'hidden';
-    hiddenItems.name = itemsKey;
-    hiddenItems.value = JSON.stringify(items);
-    (container || vgTarget).appendChild(hiddenItems);
-    const hiddenGroups = document.createElement('input');
-    hiddenGroups.type = 'hidden';
-    hiddenGroups.name = groupsKey;
-    hiddenGroups.value = JSON.stringify(groups);
-    vgTarget.appendChild(hiddenGroups);
-  }
-
-  build();
+  const listErr = document.createElement('p');
+  listErr.className = 'yn-error list-error';
+  container.appendChild(listErr);
 }
 
-function renderSimpleBulletList(containerId, stateKey, placeholder, nothingStateKey, stateObj) {
+function renderSimpleBulletList(containerId, stateKey, placeholder, nothingStateKey, stateObj, hintText) {
   const container = document.getElementById(containerId);
   if (!container) return;
   const state = stateObj || _deeperState;
@@ -662,7 +700,7 @@ function renderSimpleBulletList(containerId, stateKey, placeholder, nothingState
       row.className = 'cause-item';
       const bullet = document.createElement('span');
       bullet.className = 'cause-bullet';
-      bullet.textContent = '—';
+      bullet.textContent = '•';
       const inp = document.createElement('input');
       inp.type = 'text';
       inp.className = 'cause-input';
@@ -710,6 +748,11 @@ function renderSimpleBulletList(containerId, stateKey, placeholder, nothingState
       const inputs = container.querySelectorAll('.cause-input');
       if (inputs.length) inputs[inputs.length - 1].focus();
     });
+    const hint = document.createElement('p');
+    hint.className = 'list-hint';
+    hint.textContent = hintText || GENERIC_LIST_HINT;
+    hint.hidden = isNothing;
+    container.appendChild(hint);
     container.appendChild(list);
     container.appendChild(addBtn);
     const hidden = document.createElement('input');
@@ -771,7 +814,7 @@ function renderTrackRecordList(containerId) {
       whatRow.style.cssText = 'display:flex;align-items:center;gap:.6rem';
       const bullet = document.createElement('span');
       bullet.className = 'cause-bullet';
-      bullet.textContent = '—';
+      bullet.textContent = '•';
       const whatInp = document.createElement('input');
       whatInp.type = 'text';
       whatInp.className = 'cause-input';
@@ -852,6 +895,11 @@ function renderTrackRecordList(containerId) {
       build();
       container.querySelectorAll('.cause-input')[items.length * 2 - 2]?.focus();
     });
+    const hint = document.createElement('p');
+    hint.className = 'list-hint';
+    hint.textContent = ATTEMPT_LIST_HINT;
+    hint.hidden = isNothing;
+    container.appendChild(hint);
     container.appendChild(list);
     container.appendChild(addBtn);
 
@@ -879,10 +927,7 @@ function renderActsGroups(key) {
   const isNothing = !!_deeperState['deeper_' + key + '_acts_raw_nothing'];
   const items = isNothing ? [] : (_deeperState['deeper_' + key + '_acts_raw_items'] || []).filter(i => i && i.trim());
   _deeperState['deeper_' + key + '_acts_items'] = items;
-  renderItemValueGroups(key, 'acts',
-    'Describe what you are doing…',
-    "Check the actions/inactions and then write the value that they are serving.",
-    'acts-value-groups-' + key);
+  renderActsValuesByItem(key);
 }
 
 function renderActsItemValues(key) {
@@ -946,13 +991,6 @@ function renderActsConfirm(key) {
   container.appendChild(card);
 }
 
-function renderOmitsGroups(key) {
-  renderItemValueGroups(key, 'omits',
-    'Describe what you are NOT doing…',
-    "What value of yours are you serving by not taking that action? Be brutally honest here — they may be values you don't consciously approve of.");
-}
-
-
 /* ---- Vision bullet list ---- */
 function renderVisionList(key) {
   const container = document.getElementById('vision-list-' + key);
@@ -1001,7 +1039,7 @@ function renderVisionList(key) {
       row.className = 'cause-item';
       const bullet = document.createElement('span');
       bullet.className = 'cause-bullet';
-      bullet.textContent = '—';
+      bullet.textContent = '•';
       const inp = document.createElement('input');
       inp.type = 'text';
       inp.className = 'cause-input';
@@ -1056,6 +1094,10 @@ function renderVisionList(key) {
     hidden.type = 'hidden';
     hidden.name = 'deeper_' + key + '_vision_items';
     hidden.value = JSON.stringify(items);
+    const hint = document.createElement('p');
+    hint.className = 'list-hint';
+    hint.textContent = VISION_LIST_HINT;
+    container.appendChild(hint);
     container.appendChild(list);
     container.appendChild(addBtn);
     container.appendChild(hidden);
@@ -1093,7 +1135,7 @@ function renderControlList(key) {
       row.className = 'cause-item';
       const bullet = document.createElement('span');
       bullet.className = 'cause-bullet';
-      bullet.textContent = '—';
+      bullet.textContent = '•';
       const inp = document.createElement('input');
       inp.type = 'text';
       inp.className = 'cause-input';
@@ -1144,6 +1186,10 @@ function renderControlList(key) {
     hidden.type = 'hidden';
     hidden.name = 'deeper_' + key + '_control_items';
     hidden.value = JSON.stringify(items);
+    const hint = document.createElement('p');
+    hint.className = 'list-hint';
+    hint.textContent = CONTROL_LIST_HINT;
+    container.appendChild(hint);
     container.appendChild(list);
     container.appendChild(addBtn);
     container.appendChild(hidden);
@@ -1195,20 +1241,82 @@ function renderControlAttitude(key) {
     const feelingLbl = document.createElement('span');
     feelingLbl.style.cssText = 'font-family:var(--sc);font-size:.68rem;letter-spacing:.2em;color:var(--accent);display:block;margin-bottom:.5rem';
     feelingLbl.textContent = 'How do you feel about this?';
-    const feelingInp = document.createElement('input');
-    feelingInp.type = 'text';
-    feelingInp.className = 'cause-input';
-    feelingInp.style.width = '100%';
-    feelingInp.placeholder = 'e.g. Resigned, angry, at peace with it, bitter, numb, frustrated…';
-    feelingInp.value = feelings[item] || '';
-    feelingInp.addEventListener('input', () => {
-      feelings[item] = feelingInp.value;
-      _deeperState[feelingKey] = feelings;
-      syncHidden(feelingKey, feelings);
-      if (window.clearFormError) window.clearFormError();
-    });
     feelingWrap.appendChild(feelingLbl);
-    feelingWrap.appendChild(feelingInp);
+
+    const feelingHint = document.createElement('p');
+    feelingHint.className = 'list-hint';
+    feelingHint.textContent = FEELING_LIST_HINT;
+    feelingWrap.appendChild(feelingHint);
+
+    if (!Array.isArray(feelings[item]) || !feelings[item].length) feelings[item] = [''];
+    const feelingList = feelings[item];
+
+    const feelingListEl = document.createElement('div');
+    feelingListEl.className = 'cause-list';
+    feelingWrap.appendChild(feelingListEl);
+
+    function buildFeelingRows() {
+      feelingListEl.innerHTML = '';
+      feelingList.forEach((val, i) => {
+        const row = document.createElement('div');
+        row.className = 'cause-item';
+        const bullet = document.createElement('span');
+        bullet.className = 'cause-bullet';
+        bullet.textContent = '•';
+        const inp = document.createElement('input');
+        inp.type = 'text';
+        inp.className = 'cause-input';
+        inp.value = val;
+        inp.placeholder = 'e.g. Resigned, angry, at peace with it, bitter, numb, frustrated…';
+        inp.addEventListener('input', () => {
+          feelingList[i] = inp.value;
+          feelings[item] = feelingList;
+          _deeperState[feelingKey] = feelings;
+          syncHidden(feelingKey, feelings);
+          if (window.clearFormError) window.clearFormError();
+          feelingListEl.querySelectorAll('.cause-remove').forEach(b => { b.hidden = feelingList.length === 1; });
+        });
+        inp.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            e.stopPropagation();
+            feelingList.push('');
+            buildFeelingRows();
+            const inputs = feelingListEl.querySelectorAll('.cause-input');
+            if (inputs.length) inputs[inputs.length - 1].focus();
+          }
+        });
+        const rm = document.createElement('button');
+        rm.type = 'button';
+        rm.className = 'cause-remove';
+        rm.textContent = '×';
+        rm.hidden = feelingList.length === 1;
+        rm.addEventListener('click', () => {
+          feelingList.splice(i, 1);
+          if (!feelingList.length) feelingList.push('');
+          feelings[item] = feelingList;
+          _deeperState[feelingKey] = feelings;
+          buildFeelingRows();
+          syncHidden(feelingKey, feelings);
+        });
+        row.appendChild(bullet); row.appendChild(inp); row.appendChild(rm);
+        feelingListEl.appendChild(row);
+      });
+    }
+    buildFeelingRows();
+
+    const feelingAddBtn = document.createElement('button');
+    feelingAddBtn.type = 'button';
+    feelingAddBtn.className = 'list-add-btn';
+    feelingAddBtn.textContent = '+ Add another';
+    feelingAddBtn.addEventListener('click', () => {
+      feelingList.push('');
+      buildFeelingRows();
+      const inputs = feelingListEl.querySelectorAll('.cause-input');
+      if (inputs.length) inputs[inputs.length - 1].focus();
+    });
+    feelingWrap.appendChild(feelingAddBtn);
+
     block.appendChild(feelingWrap);
 
     const ynWrap = document.createElement('div');
@@ -1496,7 +1604,7 @@ function renderVisionRevised(key) {
   const stillAchievable = vItems.filter((_, i) => achievable[i] !== 'no');
   _deeperState[revisedKey] = stillAchievable.length ? [...stillAchievable] : [''];
 
-  renderSimpleBulletList('vision-revised-' + key, revisedKey, 'Describe your revised vision…');
+  renderSimpleBulletList('vision-revised-' + key, revisedKey, 'Describe your revised vision…', null, undefined, VISION_LIST_HINT);
 }
 
 function renderVisionRevisedCompleteness(key) {
@@ -1520,7 +1628,7 @@ function renderVisionRevisedCompleteness(key) {
 
   const btns = document.createElement('div');
   btns.className = 'yn-btns';
-  [{ val: 'full', label: 'This is my full vision' }, { val: 'partial', label: 'This is partial' }].forEach(opt => {
+  [{ val: 'full', label: 'This is my full vision' }, { val: 'partial', label: 'This is my partial vision' }].forEach(opt => {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'yn-btn' + (_deeperState[stateKey] === opt.val ? ' selected' : '');
@@ -1573,8 +1681,9 @@ function initDeeperStep() {
 
   container.innerHTML = selectedKeys.flatMap(key => {
     const { label, desc } = areaMap[key] || { label: key, desc: '' };
+    const labelHtml = ampSafe(label);
     const data = wheelMap[key] || {};
-    const q3Toggle = `Are you consciously aware of what your 5/5 in ${label} would look like?`;
+    const q3Toggle = `Are you consciously aware of what your 5/5 in ${labelHtml} would look like?`;
     const q3Expand = `Describe the version of this area that would feel fully alive…`;
     const controlYn      = _deeperState[`deeper_${key}_control_yn`] || '';
     const controlItems   = _deeperState[`deeper_${key}_control_items`] || [];
@@ -1582,13 +1691,13 @@ function initDeeperStep() {
     const visionItems    = _deeperState[`deeper_${key}_vision_items`] || [];
     const commitmentYn   = _deeperState[`deeper_${key}_commitment_yn`] || '';
     const visionActualYn  = _deeperState[`deeper_${key}_vision_actual_yn`] || '';
-    const head = `<h3 class="deeper-area-name">${label}</h3>${desc ? `<p class="fulfillment-area-desc">${desc}</p>` : ''}`;
+    const head = `<h3 class="deeper-area-name">${labelHtml}</h3>${desc ? `<p class="fulfillment-area-desc">${desc}</p>` : ''}`;
     return [
       `<div class="deeper-subpage" id="deeper-sub-${key}-cause" hidden>
         ${head}
         <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">What's the matter?</h3>
         <div class="deeper-field">
-          <label>Why does ${label} only feel like a ${data.fulfillment}/5 right now?</label>
+          <label>Why does ${labelHtml} only feel like a ${data.fulfillment}/5 right now?</label>
           <ul class="guide-points">
             <li>List the points you feel dissatisfied or unfulfilled with.</li>
             <li>List circumstances, not feelings — e.g. "I work 60 hours a week," not "I feel drained."</li>
@@ -1613,7 +1722,7 @@ function initDeeperStep() {
         ${head}
         <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Your Vision</h3>
         <div class="deeper-field">
-          <label>Describe what your 5/5 in ${label} would look like.</label>
+          <label>Describe what your 5/5 in ${labelHtml} would look like.</label>
           <div class="yn-expand">
             <div id="vision-list-${key}" data-placeholder="${q3Expand}" style="margin-top:.9rem"></div>
             <div class="values-reveal" ${visionItems.filter(i => i && i.trim()).length ? '' : 'hidden'}>
@@ -1798,7 +1907,7 @@ function initDeeperStep() {
     window._deeperSubPageIdx = idx;
     if (window.updateAssessmentProgress) window.updateAssessmentProgress();
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    if (!window._historyNav) history.pushState({ step: 3, sub: idx }, '');
+    if (!window._historyNav) history.pushState({ step: 4, sub: idx }, '');
     const { key, qtype } = sp;
     const causes = (_deeperState['deeper_' + key + '_causes'] || []).filter(c => c && c.trim());
     if (qtype === 'acts-list' || qtype === 'control') {
@@ -1887,7 +1996,7 @@ function initDeeperStep() {
   window._showDeeperSubPage = showDeeperSubPage;
   showDeeperSubPage(0);
 
-  selectedKeys.forEach(k => { renderCauseList(k); renderSimpleBulletList('acts-items-' + k, 'deeper_' + k + '_acts_raw_items', 'Describe what you are doing, or could be doing…', 'deeper_' + k + '_acts_raw_nothing'); renderActsConfirm(k); renderActsGroups(k); renderControlList(k); renderControlAttitude(k); renderVisionList(k); });
+  selectedKeys.forEach(k => { renderCauseList(k); renderSimpleBulletList('acts-items-' + k, 'deeper_' + k + '_acts_raw_items', 'Describe what you are doing, or could be doing…', 'deeper_' + k + '_acts_raw_nothing', undefined, GENERIC_LIST_HINT); renderActsConfirm(k); renderActsGroups(k); renderControlList(k); renderControlAttitude(k); renderVisionList(k); });
 
   // Wire up yn-field toggles
   container.querySelectorAll('.yn-field').forEach(field => {
@@ -1973,7 +2082,7 @@ function initDeeperStep() {
       const feelingConfirm  = _deeperState['deeper_' + key + '_control_feeling_confirm'] || {};
       const attEl = document.getElementById('control-attitude-' + key);
       for (const item of filledItems) {
-        if (!feelings[item]?.trim()) {
+        if (!(Array.isArray(feelings[item]) && feelings[item].some(f => f && f.trim()))) {
           if (attEl) scrollToVisible(attEl);
           setFormErr('Please describe how you feel about each circumstance before continuing.');
           return false;
@@ -2009,14 +2118,13 @@ function initDeeperStep() {
 
     if (qtype === 'acts-values') {
       const filledItems = (_deeperState['deeper_' + key + '_acts_items'] || []).filter(i => i && i.trim());
-      const groups = _deeperState['deeper_' + key + '_acts_groups'] || [];
+      const valuesByItem = _deeperState['deeper_' + key + '_acts_values_by_item'] || {};
       const allCovered = filledItems.every(item =>
-        groups.some(g => Array.isArray(g.selected) && g.selected.includes(item) && g.value && g.value.trim())
+        Array.isArray(valuesByItem[item]) && valuesByItem[item].some(v => v && v.trim())
       );
       if (!allCovered) {
         const gc = document.getElementById('acts-value-groups-' + key);
-        const vgWrap = gc?.querySelector('.acts-vg-wrap');
-        if (vgWrap) scrollToVisible(vgWrap);
+        if (gc) scrollToVisible(gc);
         setFormErr('Every action needs at least one value attributed to it before continuing.');
         return false;
       }
@@ -2362,10 +2470,10 @@ function initFitSignalsStep() {
     container.appendChild(page);
 
     if (q.type === 'singleselect' && q.followup) {
-      renderSimpleBulletList('fs-followup-' + q.id, q.followup.stateKey, 'Describe what you need…', null, _fsState);
+      renderSimpleBulletList('fs-followup-' + q.id, q.followup.stateKey, 'Describe what you need…', null, _fsState, GENERIC_LIST_HINT);
     }
     if (q.type === 'multiselect' && q.other) {
-      renderSimpleBulletList('fs-other-' + q.id, 'fs_' + q.id + '_other_items', 'Please specify...', null, _fsState);
+      renderSimpleBulletList('fs-other-' + q.id, 'fs_' + q.id + '_other_items', 'Please specify...', null, _fsState, GENERIC_LIST_HINT);
     }
     if (q.type === 'track-record') {
       renderTrackRecordList('fs-track-record-list');
@@ -2395,7 +2503,7 @@ function initFitSignalsStep() {
     if (window.updateAssessmentProgress) window.updateAssessmentProgress();
     updateFsHeader(idx);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    if (!window._historyNav) history.pushState({ step: 4, sub: idx }, '');
+    if (!window._historyNav) history.pushState({ step: 5, sub: idx }, '');
 
     if (_fsKeyHandler) { document.removeEventListener('keydown', _fsKeyHandler); _fsKeyHandler = null; }
     const q = questions[idx];
@@ -2458,11 +2566,12 @@ window.onStepChange = function(step) {
   }
   if (step === 0) initFulfillmentStep();
   if (step === 1) initImportanceStep();
-  if (step === 2) initFocusStep();
-  if (step === 3) initDeeperStep();
-  if (step === 4) initFitSignalsStep();
+  if (step === 2) initUrgencyFlagStep();
+  if (step === 3) initFocusStep();
+  if (step === 4) initDeeperStep();
+  if (step === 5) initFitSignalsStep();
   const btnNext = document.getElementById('btn-next');
-  if (btnNext) btnNext.textContent = step === 5 ? 'Get my results →' : 'Next →';
+  if (btnNext) btnNext.textContent = step === 6 ? 'Get my results →' : 'Next →';
 };
 
 // Initialize step 0 — showStep(0) ran before this script loaded
@@ -2539,7 +2648,8 @@ function captureDeeperFromDom() {
         const feelings = _deeperState['deeper_' + areaKey + '_control_feeling'] || {};
         const feelingYn = _deeperState['deeper_' + areaKey + '_control_feeling_yn'] || {};
         items.forEach((item) => {
-          const feeling = (feelings[item] || '').trim();
+          const feelingList = Array.isArray(feelings[item]) ? feelings[item] : (feelings[item] ? [feelings[item]] : []);
+          const feeling = feelingList.filter((f) => f && f.trim()).join(', ');
           if (!feeling) return;
           const wantsToFeel = feelingYn[item] === 'yes' ? 'Yes' : feelingYn[item] === 'no' ? 'No' : '';
           const a = wantsToFeel ? `Feels: ${feeling}. Wants to feel this way: ${wantsToFeel}.` : `Feels: ${feeling}.`;
@@ -2561,8 +2671,8 @@ function captureDeeperFromDom() {
         const sel = [...field.querySelectorAll('.yn-btn.selected')].find(mine);
         if (sel) a = sel.textContent.trim();
         if (!a) {
-          // The "which values" question checks off actions/inactions per value group —
-          // we only want the values themselves in the email, not the actions repeated.
+          // The "which values" question lists a bullet-list of values under each
+          // action/inaction — there are no checkboxes here, just free-text values.
           const isActsValuesField = !!field.querySelector('[id^="acts-value-groups-"]');
           const texts = [...field.querySelectorAll('input:not([type=checkbox]):not([type=radio]):not([type=hidden]), textarea')]
             .filter(mine).map((i) => i.value.trim()).filter(Boolean);
@@ -2663,13 +2773,13 @@ function buildQaSummary(answers) {
   // including its side-fields like "other" text and the track-record list), so scanning
   // them again here would just re-dump the same answer in a raw, differently-worded form.
   // Likewise, fields deliberately excluded from the email (mandatory confirm checkboxes,
-  // per-item achievable ratings, revise/worth-it question, and the value-groups object
+  // per-item achievable ratings, revise/worth-it question, and the values-by-item object
   // behind the "which values" question — already shown as just the values above) stay
   // excluded here too, for the same reason: they'd otherwise reappear as an ugly,
   // differently-formatted raw duplicate of something already shown cleanly.
   const SUPPRESSED_KEY_SUFFIXES = [
     '_vision_actual_yn', '_vision_item_achievable', '_vision_achievable_check',
-    '_acts_groups', '_omits_groups',
+    '_acts_values_by_item', '_omits_groups',
     '_control_feeling', '_control_feeling_yn', '_control_feeling_confirm',
   ];
   const extra = [];

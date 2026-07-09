@@ -2739,6 +2739,12 @@ function captureDeeperFromDom() {
   const rows = [];
   try {
     document.querySelectorAll('.deeper-subpage').forEach((sp) => {
+      // Fit-signals pages share the .deeper-subpage class for styling, but they're
+      // not what this function is for — they already have their own correct,
+      // conditional handling in FIT_ORDER/FIT_LABELS/_fmtFitAnswer below. Scanning
+      // them here too picked up stray labels (e.g. a hidden follow-up's label)
+      // and produced garbled/duplicate rows in the notification email.
+      if (!sp.id.startsWith('deeper-sub-')) return;
       const area = (sp.dataset.area || sp.querySelector('.deeper-area-name')?.textContent || '').trim();
 
       // Control-attitude: one row per circumstance they must accept, combining their
@@ -2883,9 +2889,18 @@ function buildQaSummary(answers) {
   // excluded here too, for the same reason: they'd otherwise reappear as an ugly,
   // differently-formatted raw duplicate of something already shown cleanly.
   const SUPPRESSED_KEY_SUFFIXES = [
-    '_vision_actual_yn', '_vision_item_achievable', '_vision_achievable_check',
+    // Every yn-field (vision/commitment/control) is already captured above with its
+    // proper button wording (e.g. "There is no other way", not the raw "certain") —
+    // the raw code stored in state rarely matches that wording, so without this it
+    // reappears down here as an ugly, differently-worded duplicate.
+    '_yn',
+    // Mandatory confirm checkboxes (acts-list, control-attitude) and the UI flag
+    // that tracks whether that confirm modal has been shown — the answer is always
+    // the same when present, and neither is real content worth showing.
+    '_confirm', '_confirm_shown',
+    '_vision_item_achievable', '_vision_achievable_check', '_vision_items',
     '_acts_values_by_item', '_omits_groups',
-    '_control_feeling', '_control_feeling_yn', '_control_feeling_confirm',
+    '_control_feeling',
   ];
   const extra = [];
   const scan = (state) => {

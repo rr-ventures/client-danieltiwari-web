@@ -13,6 +13,34 @@ const FEELING_LIST_HINT = 'One feeling per line — press "+ Add another" for th
 const GENERIC_LIST_HINT = 'One thing per line — press "+ Add another" for the next.';
 const ATTEMPT_LIST_HINT = 'One undertaking per line — press "+ Add another" for the next.';
 
+// Wraps an element with an invisible bullet spacer so it lines up with the
+// input field of a bullet+input list, not the bullet, regardless of what
+// row class is used for the outer layout.
+function indentPastBullet(el, rowClassName) {
+  const wrap = document.createElement('div');
+  wrap.className = rowClassName;
+  const spacer = document.createElement('span');
+  spacer.className = 'cause-bullet';
+  spacer.style.visibility = 'hidden';
+  spacer.textContent = '•';
+  wrap.appendChild(spacer);
+  wrap.appendChild(el);
+  return wrap;
+}
+
+// Hint line above a bullet+input list.
+function createListHint(text) {
+  const p = document.createElement('p');
+  p.className = 'list-hint';
+  p.textContent = text;
+  return indentPastBullet(p, 'list-hint-row');
+}
+
+// "+ Add another" button below a bullet+input list.
+function wrapListAddBtn(btn) {
+  return indentPastBullet(btn, 'list-addbtn-row');
+}
+
 // Wraps "&" so CSS can render it in a plainer font — several of the display/small-caps
 // fonts on this page draw an ornate, script-style ampersand that clashes with the rest
 // of the text. Only safe to use where the result is inserted as HTML (innerHTML), never
@@ -27,9 +55,18 @@ const _fsState = {};          // fit signals answers
 let _fulfillmentKeyHandler = null;
 let _spilloverState = null;
 
-function setFormErr(msg) {
+// Scrolls so `el` (the first unanswered field) sits just below the sticky header.
+function scrollToVisible(el) {
+  const offset = (document.getElementById('bar')?.offsetHeight || 0) + 24;
+  window.scrollTo({ top: window.scrollY + el.getBoundingClientRect().top - offset, behavior: 'smooth' });
+}
+// `field`, if given, is the actual unanswered field to jump to — otherwise falls
+// back to the nav bar (e.g. for page-level errors with no single field to point to).
+function setFormErr(msg, field) {
   const el = document.getElementById('form-step-error');
-  if (el) { el.textContent = msg; el.classList.add('visible'); document.getElementById('form-nav').scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+  if (el) { el.textContent = msg; el.classList.add('visible'); }
+  if (field) { scrollToVisible(field); }
+  else { document.getElementById('form-nav').scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
 }
 function clearFormErr() {
   const el = document.getElementById('form-step-error');
@@ -101,7 +138,6 @@ function renderFulfillmentCard(index, savedVal = null) {
   const card = document.getElementById("fulfillment-card");
   card.innerHTML = `
     <h3 class="deeper-area-name">${label}</h3>
-    ${desc ? `<p class="fulfillment-area-desc">${desc}</p>` : ""}
     <div class="number-scale">
       ${[1,2,3,4,5].map(n => `<button type="button" class="number-btn" data-val="${n}">${n}</button>`).join("")}
     </div>
@@ -313,20 +349,23 @@ function initUrgencyFlagStep() {
   const MAX_URGENT = 3;
 
   const urgent = new Set(
-    [...document.querySelectorAll('#urgent-hidden-inputs input')].map(i => i.name.replace(/^urgency_/, ''))
+    [...document.querySelectorAll('#urgent-hidden-inputs input[name^="urgency_"]')]
+      .map(i => i.name.replace(/^urgency_/, ''))
+      .filter(k => k !== 'none')
   );
+  let noneFlag = !!document.querySelector('#urgent-hidden-inputs input[name="urgency_none"]');
 
   function updateUrgentInputs() {
-    document.getElementById('urgent-hidden-inputs').innerHTML =
-      [...urgent].map(key => `<input type="hidden" name="urgency_${key}" value="1">`).join('');
-    const hint = document.getElementById('urgent-count-hint');
-    if (hint) hint.textContent = urgent.size ? `${urgent.size} of ${MAX_URGENT} flagged` : `Tap up to ${MAX_URGENT}, or leave none if nothing's pressing`;
+    const inputs = [...urgent].map(key => `<input type="hidden" name="urgency_${key}" value="1">`);
+    if (noneFlag) inputs.push('<input type="hidden" name="urgency_none" value="1">');
+    document.getElementById('urgent-hidden-inputs').innerHTML = inputs.join('');
+    if (window.clearFormError) window.clearFormError();
   }
 
   function renderUrgent() {
     const atCap = urgent.size >= MAX_URGENT;
     const container = document.getElementById('urgent-rows');
-    container.innerHTML = AREAS.map(([key, label], i) => {
+    const areaRows = AREAS.map(([key, label], i) => {
       const isUrgent = urgent.has(key);
       const disabled = atCap && !isUrgent;
       return `
@@ -338,14 +377,29 @@ function initUrgencyFlagStep() {
         <span class="rec-check">${isUrgent ? "✓" : ""}</span>
       </div>`;
     }).join("");
+    const noneRow = `
+      <div class="rec-item${noneFlag ? " selected" : ""}" data-key="__none__" style="border-top:1px solid var(--hair);margin-top:.4rem;padding-top:1.3rem">
+        <span class="rec-num">—</span>
+        <div class="rec-info">
+          <strong class="rec-label">Nothing's pressing right now</strong>
+        </div>
+        <span class="rec-check">${noneFlag ? "✓" : ""}</span>
+      </div>`;
+    container.innerHTML = areaRows + noneRow;
 
     container.querySelectorAll(".rec-item").forEach(item => {
       item.addEventListener("click", () => {
         const key = item.dataset.key;
-        if (urgent.has(key)) {
-          urgent.delete(key);
-        } else if (urgent.size < MAX_URGENT) {
-          urgent.add(key);
+        if (key === '__none__') {
+          noneFlag = !noneFlag;
+          if (noneFlag) urgent.clear();
+        } else {
+          if (urgent.has(key)) {
+            urgent.delete(key);
+          } else if (urgent.size < MAX_URGENT) {
+            urgent.add(key);
+            noneFlag = false;
+          }
         }
         updateUrgentInputs();
         renderUrgent();
@@ -492,12 +546,9 @@ function renderCauseList(key) {
     hidden.type = 'hidden';
     hidden.name = 'deeper_' + key + '_causes';
     hidden.value = JSON.stringify(causes);
-    const hint = document.createElement('p');
-    hint.className = 'list-hint';
-    hint.textContent = CAUSE_LIST_HINT;
-    container.appendChild(hint);
+    container.appendChild(createListHint(CAUSE_LIST_HINT));
     container.appendChild(list);
-    container.appendChild(addBtn);
+    container.appendChild(wrapListAddBtn(addBtn));
     container.appendChild(hidden);
     const listErr = document.createElement('p');
     listErr.className = 'yn-error list-error';
@@ -554,7 +605,10 @@ function renderActsValuesByItem(key) {
     const itemLbl = document.createElement('p');
     itemLbl.className = 'acts-item-heading';
     itemLbl.textContent = item;
-    block.appendChild(itemLbl);
+    itemLbl.style.marginBottom = '0';
+    const itemLblRow = indentPastBullet(itemLbl, 'indent-row-center');
+    itemLblRow.style.marginBottom = '.6rem';
+    block.appendChild(itemLblRow);
 
     // Quick-add checkboxes for values already named under other actions/inactions
     // on this page. Checking one fills it into this item's list below instead of
@@ -563,10 +617,7 @@ function renderActsValuesByItem(key) {
     suggestWrap.className = 'acts-suggest-wrap';
     block.appendChild(suggestWrap);
 
-    const hint = document.createElement('p');
-    hint.className = 'list-hint';
-    hint.textContent = VALUE_LIST_HINT;
-    block.appendChild(hint);
+    block.appendChild(createListHint(VALUE_LIST_HINT));
 
     const list = document.createElement('div');
     list.className = 'cause-list';
@@ -629,7 +680,7 @@ function renderActsValuesByItem(key) {
       const inputs = list.querySelectorAll('.cause-input');
       if (inputs.length) inputs[inputs.length - 1].focus();
     });
-    block.appendChild(addBtn);
+    block.appendChild(wrapListAddBtn(addBtn));
 
     function refreshSuggestions() {
       const already = new Set(values.map((v) => (v || '').trim().toLowerCase()).filter(Boolean));
@@ -639,7 +690,7 @@ function renderActsValuesByItem(key) {
       const suggestLbl = document.createElement('p');
       suggestLbl.className = 'list-hint';
       suggestLbl.textContent = 'Also applies here?';
-      suggestWrap.appendChild(suggestLbl);
+      suggestWrap.appendChild(indentPastBullet(suggestLbl, 'indent-row-center'));
       const checks = document.createElement('div');
       checks.className = 'acts-checkboxes';
       options.forEach((opt) => {
@@ -660,7 +711,7 @@ function renderActsValuesByItem(key) {
         rowLbl.appendChild(cb); rowLbl.appendChild(span);
         checks.appendChild(rowLbl);
       });
-      suggestWrap.appendChild(checks);
+      suggestWrap.appendChild(indentPastBullet(checks, 'indent-row-center'));
     }
     refreshSuggestions();
     refreshSuggestionsFns.push(refreshSuggestions);
@@ -740,7 +791,6 @@ function renderSimpleBulletList(containerId, stateKey, placeholder, nothingState
     addBtn.type = 'button';
     addBtn.className = 'list-add-btn';
     addBtn.textContent = '+ Add another';
-    addBtn.hidden = isNothing;
     addBtn.addEventListener('click', () => {
       items.push('');
       state[stateKey] = items;
@@ -748,13 +798,13 @@ function renderSimpleBulletList(containerId, stateKey, placeholder, nothingState
       const inputs = container.querySelectorAll('.cause-input');
       if (inputs.length) inputs[inputs.length - 1].focus();
     });
-    const hint = document.createElement('p');
-    hint.className = 'list-hint';
-    hint.textContent = hintText || GENERIC_LIST_HINT;
+    const addBtnRow = wrapListAddBtn(addBtn);
+    addBtnRow.hidden = isNothing;
+    const hint = createListHint(hintText || GENERIC_LIST_HINT);
     hint.hidden = isNothing;
     container.appendChild(hint);
     container.appendChild(list);
-    container.appendChild(addBtn);
+    container.appendChild(addBtnRow);
     const hidden = document.createElement('input');
     hidden.type = 'hidden';
     hidden.name = stateKey;
@@ -807,10 +857,12 @@ function renderTrackRecordList(containerId) {
 
     items.forEach((item, i) => {
       const card = document.createElement('div');
+      card.dataset.index = i;
       card.style.cssText = 'border:1px solid var(--hair);border-radius:4px;padding:1rem 1.2rem;margin-bottom:1rem';
 
       // What row
       const whatRow = document.createElement('div');
+      whatRow.dataset.role = 'what-row';
       whatRow.style.cssText = 'display:flex;align-items:center;gap:.6rem';
       const bullet = document.createElement('span');
       bullet.className = 'cause-bullet';
@@ -832,6 +884,7 @@ function renderTrackRecordList(containerId) {
 
       // Scale — hidden until text is entered
       const scaleSec = document.createElement('div');
+      scaleSec.dataset.role = 'scale-row';
       scaleSec.style.marginTop = '1rem';
       scaleSec.hidden = !item.what?.trim();
       const scaleLbl = document.createElement('label');
@@ -845,6 +898,7 @@ function renderTrackRecordList(containerId) {
 
       // Why textarea — hidden until scale is selected
       const taSec = document.createElement('div');
+      taSec.dataset.role = 'why-row';
       taSec.style.marginTop = '1rem';
       taSec.hidden = !item.howWell;
       const taLbl = document.createElement('label');
@@ -889,19 +943,23 @@ function renderTrackRecordList(containerId) {
     addBtn.type = 'button';
     addBtn.className = 'list-add-btn';
     addBtn.textContent = '+ Add another';
-    addBtn.hidden = isNothing;
     addBtn.addEventListener('click', () => {
       items.push({ what: '', howWell: null, why: '' });
       build();
       container.querySelectorAll('.cause-input')[items.length * 2 - 2]?.focus();
     });
-    const hint = document.createElement('p');
-    hint.className = 'list-hint';
-    hint.textContent = ATTEMPT_LIST_HINT;
-    hint.hidden = isNothing;
-    container.appendChild(hint);
+    // Cards have their own 1.2rem left padding around the bullet+input row, on
+    // top of the usual bullet-width+gap indent — so the hint and add-button need
+    // that extra offset too, to still land on the text field, not the bullet.
+    const hintRow = createListHint(ATTEMPT_LIST_HINT);
+    hintRow.hidden = isNothing;
+    hintRow.style.paddingLeft = '1.2rem';
+    const addBtnRow = wrapListAddBtn(addBtn);
+    addBtnRow.hidden = isNothing;
+    addBtnRow.style.paddingLeft = '1.2rem';
+    container.appendChild(hintRow);
     container.appendChild(list);
-    container.appendChild(addBtn);
+    container.appendChild(addBtnRow);
 
     const nothingWrap = document.createElement('label');
     nothingWrap.style.cssText = 'display:flex;align-items:center;gap:.5rem;margin-top:.75rem;cursor:pointer;font-size:.9rem;';
@@ -1094,12 +1152,9 @@ function renderVisionList(key) {
     hidden.type = 'hidden';
     hidden.name = 'deeper_' + key + '_vision_items';
     hidden.value = JSON.stringify(items);
-    const hint = document.createElement('p');
-    hint.className = 'list-hint';
-    hint.textContent = VISION_LIST_HINT;
-    container.appendChild(hint);
+    container.appendChild(createListHint(VISION_LIST_HINT));
     container.appendChild(list);
-    container.appendChild(addBtn);
+    container.appendChild(wrapListAddBtn(addBtn));
     container.appendChild(hidden);
     const listErr = document.createElement('p');
     listErr.className = 'yn-error list-error';
@@ -1186,12 +1241,9 @@ function renderControlList(key) {
     hidden.type = 'hidden';
     hidden.name = 'deeper_' + key + '_control_items';
     hidden.value = JSON.stringify(items);
-    const hint = document.createElement('p');
-    hint.className = 'list-hint';
-    hint.textContent = CONTROL_LIST_HINT;
-    container.appendChild(hint);
+    container.appendChild(createListHint(CONTROL_LIST_HINT));
     container.appendChild(list);
-    container.appendChild(addBtn);
+    container.appendChild(wrapListAddBtn(addBtn));
     container.appendChild(hidden);
     const listErr = document.createElement('p');
     listErr.className = 'yn-error list-error';
@@ -1223,11 +1275,32 @@ function renderControlAttitude(key) {
     if (h) h.value = JSON.stringify(stateObj);
   }
 
+  // Every distinct feeling typed anywhere on this page, across all circumstances —
+  // offered as quick-add checkboxes on the OTHER circumstances so the same feeling
+  // never has to be typed out twice. Mirrors the same pattern used for values.
+  function allTypedFeelings() {
+    const seen = [];
+    const seenNorm = new Set();
+    items.forEach((it) => {
+      (feelings[it] || []).forEach((v) => {
+        const t = (v || '').trim();
+        const norm = t.toLowerCase();
+        if (t && !seenNorm.has(norm)) { seenNorm.add(norm); seen.push(t); }
+      });
+    });
+    return seen;
+  }
+  const refreshFeelingSuggestionsFns = [];
+  function refreshAllFeelingSuggestions() {
+    refreshFeelingSuggestionsFns.forEach((fn) => fn());
+  }
+
   container.innerHTML = '';
 
   items.forEach(item => {
     const block = document.createElement('div');
     block.className = 'deeper-block';
+    block.dataset.item = item;
     block.style.marginTop = '1.4rem';
 
     const itemHead = document.createElement('p');
@@ -1239,21 +1312,28 @@ function renderControlAttitude(key) {
     feelingWrap.className = 'deeper-field';
     feelingWrap.style.marginBottom = '1rem';
     const feelingLbl = document.createElement('span');
-    feelingLbl.style.cssText = 'font-family:var(--sc);font-size:.68rem;letter-spacing:.2em;color:var(--accent);display:block;margin-bottom:.5rem';
+    feelingLbl.style.cssText = 'font-family:var(--body);font-weight:300;font-size:clamp(1.05rem,1.7vw,1.2rem);line-height:1.8;color:var(--muted);display:block;margin-bottom:.5rem;text-align:center;background:var(--bg2);border-radius:3px;padding:1.1rem 1.6rem';
     feelingLbl.textContent = 'How do you feel about this?';
     feelingWrap.appendChild(feelingLbl);
 
-    const feelingHint = document.createElement('p');
-    feelingHint.className = 'list-hint';
-    feelingHint.textContent = FEELING_LIST_HINT;
-    feelingWrap.appendChild(feelingHint);
+    // Plain (non-flex) wrapper for hint+list+add-button, so their spacing is
+    // governed by normal margins instead of the .deeper-field flex gap —
+    // matching every other bullet+input list on the site.
+    const feelingListWrap = document.createElement('div');
+    feelingWrap.appendChild(feelingListWrap);
+
+    const feelingSuggestWrap = document.createElement('div');
+    feelingSuggestWrap.className = 'acts-suggest-wrap';
+    feelingListWrap.appendChild(feelingSuggestWrap);
+
+    feelingListWrap.appendChild(createListHint(FEELING_LIST_HINT));
 
     if (!Array.isArray(feelings[item]) || !feelings[item].length) feelings[item] = [''];
     const feelingList = feelings[item];
 
     const feelingListEl = document.createElement('div');
     feelingListEl.className = 'cause-list';
-    feelingWrap.appendChild(feelingListEl);
+    feelingListWrap.appendChild(feelingListEl);
 
     function buildFeelingRows() {
       feelingListEl.innerHTML = '';
@@ -1276,6 +1356,7 @@ function renderControlAttitude(key) {
           if (window.clearFormError) window.clearFormError();
           feelingListEl.querySelectorAll('.cause-remove').forEach(b => { b.hidden = feelingList.length === 1; });
         });
+        inp.addEventListener('blur', () => { refreshAllFeelingSuggestions(); });
         inp.addEventListener('keydown', (e) => {
           if (e.key === 'Enter') {
             e.preventDefault();
@@ -1315,14 +1396,50 @@ function renderControlAttitude(key) {
       const inputs = feelingListEl.querySelectorAll('.cause-input');
       if (inputs.length) inputs[inputs.length - 1].focus();
     });
-    feelingWrap.appendChild(feelingAddBtn);
+    feelingListWrap.appendChild(wrapListAddBtn(feelingAddBtn));
+
+    function refreshFeelingSuggestions() {
+      const already = new Set(feelingList.map((v) => (v || '').trim().toLowerCase()).filter(Boolean));
+      const options = allTypedFeelings().filter((v) => !already.has(v.toLowerCase()));
+      feelingSuggestWrap.innerHTML = '';
+      if (!options.length) return;
+      const suggestLbl = document.createElement('p');
+      suggestLbl.className = 'list-hint';
+      suggestLbl.textContent = 'Also applies here?';
+      feelingSuggestWrap.appendChild(indentPastBullet(suggestLbl, 'indent-row-center'));
+      const checks = document.createElement('div');
+      checks.className = 'acts-checkboxes';
+      options.forEach((opt) => {
+        const rowLbl = document.createElement('label');
+        rowLbl.className = 'acts-check-label';
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.addEventListener('change', () => {
+          if (!cb.checked) return;
+          const blankIdx = feelingList.findIndex((v) => !v || !v.trim());
+          if (blankIdx !== -1) feelingList[blankIdx] = opt; else feelingList.push(opt);
+          feelings[item] = feelingList;
+          _deeperState[feelingKey] = feelings;
+          syncHidden(feelingKey, feelings);
+          buildFeelingRows();
+          refreshFeelingSuggestions();
+        });
+        const span = document.createElement('span');
+        span.textContent = opt;
+        rowLbl.appendChild(cb); rowLbl.appendChild(span);
+        checks.appendChild(rowLbl);
+      });
+      feelingSuggestWrap.appendChild(indentPastBullet(checks, 'indent-row-center'));
+    }
+    refreshFeelingSuggestions();
+    refreshFeelingSuggestionsFns.push(refreshFeelingSuggestions);
 
     block.appendChild(feelingWrap);
 
     const ynWrap = document.createElement('div');
     ynWrap.className = 'deeper-field';
     const ynLbl = document.createElement('label');
-    ynLbl.style.cssText = 'font-family:var(--sc);font-size:.68rem;letter-spacing:.2em;color:var(--accent);display:block;margin-bottom:.5rem;text-align:center';
+    ynLbl.style.cssText = 'font-family:var(--body);font-weight:300;font-size:clamp(1.05rem,1.7vw,1.2rem);line-height:1.8;color:var(--muted);display:block;margin-bottom:.5rem;text-align:center';
     ynLbl.textContent = 'Is this how you want to feel about it?';
     const btns = document.createElement('div');
     btns.className = 'yn-btns';
@@ -1331,6 +1448,7 @@ function renderControlAttitude(key) {
     confirmWrap.className = 'deeper-field confirm-check-field';
     confirmWrap.hidden = feelingYn[item] !== 'yes';
     const confirmLbl = document.createElement('label');
+    confirmLbl.className = 'confirm-note';
     confirmLbl.innerHTML = 'Before you move on: are you sure you\'re not just settling for less, or playing down how you really feel? <strong>Now is the opportunity to be honest and stand up for yourself and what you actually want in life.</strong>';
     const confirmCheckWrap = document.createElement('label');
     confirmCheckWrap.className = 'confirm-check-wrap';
@@ -1352,11 +1470,14 @@ function renderControlAttitude(key) {
     confirmCheckWrap.appendChild(confirmInput);
     confirmCheckWrap.appendChild(confirmBox);
     confirmCheckWrap.appendChild(confirmText);
+    confirmCheckWrap.style.marginTop = '0';
     const confirmErr = document.createElement('p');
     confirmErr.className = 'yn-error';
     confirmErr.textContent = 'Please confirm before continuing.';
-    confirmWrap.appendChild(confirmLbl);
-    confirmWrap.appendChild(confirmCheckWrap);
+    const confirmCheckRow = indentPastBullet(confirmCheckWrap, 'indent-row-center');
+    confirmCheckRow.style.marginTop = '.5rem';
+    confirmWrap.appendChild(indentPastBullet(confirmLbl, 'indent-row-center'));
+    confirmWrap.appendChild(confirmCheckRow);
     confirmWrap.appendChild(confirmErr);
 
     ['yes', 'no'].forEach(val => {
@@ -1691,23 +1812,16 @@ function initDeeperStep() {
     const visionItems    = _deeperState[`deeper_${key}_vision_items`] || [];
     const commitmentYn   = _deeperState[`deeper_${key}_commitment_yn`] || '';
     const visionActualYn  = _deeperState[`deeper_${key}_vision_actual_yn`] || '';
-    const head = `<h3 class="deeper-area-name">${labelHtml}</h3>${desc ? `<p class="fulfillment-area-desc">${desc}</p>` : ''}`;
     return [
-      `<div class="deeper-subpage" id="deeper-sub-${key}-cause" hidden>
-        ${head}
-        <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">What's the matter?</h3>
+      `<div class="deeper-subpage" id="deeper-sub-${key}-cause" data-area="${label}" hidden>
+        <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">What's the Matter?</h3>
         <div class="deeper-field">
           <label>Why does ${labelHtml} only feel like a ${data.fulfillment}/5 right now?</label>
-          <ul class="guide-points">
-            <li>List the points you feel dissatisfied or unfulfilled with.</li>
-            <li>List circumstances, not feelings — e.g. "I work 60 hours a week," not "I feel drained."</li>
-          </ul>
           <div id="cause-list-${key}"></div>
         </div>
       </div>`,
-      `<div class="deeper-subpage" id="deeper-sub-${key}-vision" hidden>
-        ${head}
-        <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Your Vision</h3>
+      `<div class="deeper-subpage" id="deeper-sub-${key}-vision" data-area="${label}" hidden>
+        <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Vision</h3>
         <div class="deeper-field yn-field" data-key="${key}" data-role="vision">
           <label>${q3Toggle}</label>
           <div class="yn-btns">
@@ -1718,53 +1832,54 @@ function initDeeperStep() {
           <p class="yn-error">Please select one.</p>
         </div>
       </div>`,
-      `<div class="deeper-subpage" id="deeper-sub-${key}-vision-describe" hidden>
-        ${head}
-        <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Your Vision</h3>
+      `<div class="deeper-subpage" id="deeper-sub-${key}-vision-describe" data-area="${label}" hidden>
+        <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Vision</h3>
         <div class="deeper-field">
           <label>Describe what your 5/5 in ${labelHtml} would look like.</label>
           <div class="yn-expand">
             <div id="vision-list-${key}" data-placeholder="${q3Expand}" style="margin-top:.9rem"></div>
             <div class="values-reveal" ${visionItems.filter(i => i && i.trim()).length ? '' : 'hidden'}>
               <div class="deeper-field vision-actual-field" data-key="${key}">
-                <label>Are you sure you <strong>ACTUALLY WANT THESE?</strong> Or are these things you think you're <strong>SUPPOSED TO</strong> want, or <strong>WOULD LIKE TO</strong> want, but don't really?</label>
-                <label class="confirm-check-wrap">
-                  <input type="checkbox" class="confirm-check vision-actual-check" name="deeper_${key}_vision_actual" value="yes" ${visionActualYn === 'yes' ? 'checked' : ''}>
-                  <span class="confirm-check-box"></span>
-                  <span class="confirm-check-text">I genuinely want these</span>
-                </label>
+                <div class="indent-row-center">
+                  <span class="cause-bullet" style="visibility:hidden">•</span>
+                  <label class="confirm-note">Are you sure you <strong>ACTUALLY WANT THESE?</strong> Or are these things you think you're <strong>SUPPOSED TO</strong> want, or <strong>WOULD LIKE TO</strong> want, but don't really?</label>
+                </div>
+                <div class="indent-row-center" style="margin-top:.5rem">
+                  <span class="cause-bullet" style="visibility:hidden">•</span>
+                  <label class="confirm-check-wrap" style="margin-top:0">
+                    <input type="checkbox" class="confirm-check vision-actual-check" name="deeper_${key}_vision_actual" value="yes" ${visionActualYn === 'yes' ? 'checked' : ''}>
+                    <span class="confirm-check-box"></span>
+                    <span class="confirm-check-text">I genuinely want these</span>
+                  </label>
+                </div>
                 <p class="yn-error">Please confirm before continuing.</p>
               </div>
             </div>
           </div>
         </div>
       </div>`,
-      `<div class="deeper-subpage" id="deeper-sub-${key}-vision-item-achievable" hidden>
-        ${head}
-        <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Your Vision</h3>
-        <p class="guide-text" style="margin-top:1.6rem">Only mark something as "Literally impossible" if it is genuinely, objectively impossible — like reversing death or defying a law of nature (unless you believe this is possible as well). If it feels out of reach for you personally, that is a limiting belief, not an impossibility. Mark those as achievable.</p>
-        <div class="deeper-field vision-achievable-field" style="margin-top:1.4rem">
+      `<div class="deeper-subpage" id="deeper-sub-${key}-vision-item-achievable" data-area="${label}" hidden>
+        <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Vision</h3>
+        <div class="deeper-field vision-achievable-field">
           <label>For each point in your vision, is it theoretically achievable?</label>
           <div id="vision-item-achievable-${key}" style="margin-top:.9rem"></div>
         </div>
       </div>`,
-      `<div class="deeper-subpage" id="deeper-sub-${key}-vision-achievable-check" hidden>
-        ${head}
-        <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Your Vision</h3>
-        <div id="vision-achievable-check-${key}" style="margin-top:1.4rem"></div>
+      `<div class="deeper-subpage" id="deeper-sub-${key}-vision-achievable-check" data-area="${label}" hidden>
+        <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Vision</h3>
+        <div id="vision-achievable-check-${key}"></div>
       </div>`,
-      `<div class="deeper-subpage" id="deeper-sub-${key}-vision-revised" hidden>
-        ${head}
-        <div class="deeper-field" style="margin-top:1.4rem">
+      `<div class="deeper-subpage" id="deeper-sub-${key}-vision-revised" data-area="${label}" hidden>
+        <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Vision</h3>
+        <div class="deeper-field">
           <label>Create your revised vision — only things that are theoretically achievable.</label>
           <div id="vision-revised-${key}" style="margin-top:.9rem"></div>
         </div>
         <div id="vision-revised-completeness-${key}" style="margin-top:1.4rem"></div>
       </div>`,
-      `<div class="deeper-subpage" id="deeper-sub-${key}-vision-commitment" hidden>
-        ${head}
+      `<div class="deeper-subpage" id="deeper-sub-${key}-vision-commitment" data-area="${label}" hidden>
         <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Conviction</h3>
-        <div id="vision-commitment-recap-${key}" class="recap-block" style="margin-top:1.4rem;margin-bottom:1.6rem" hidden></div>
+        <div id="vision-commitment-recap-${key}" class="recap-block" style="margin-bottom:1.6rem" hidden></div>
         <div class="deeper-field yn-field" data-key="${key}" data-role="commitment">
           <label><strong>WILL</strong> you achieve this?</label>
           <div class="yn-btns">
@@ -1774,28 +1889,25 @@ function initDeeperStep() {
           <p class="yn-error">Please select one.</p>
         </div>
       </div>`,
-      `<div class="deeper-subpage" id="deeper-sub-${key}-acts-list" hidden>
-        ${head}
+      `<div class="deeper-subpage" id="deeper-sub-${key}-acts-list" data-area="${label}" hidden>
         <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Your Contribution</h3>
         <div id="recap-causes-${key}-acts-list" data-label="Why ${label} feels like a ${data.fulfillment}/5" class="recap-block" hidden></div>
-        <div class="deeper-field" style="margin-top:1.4rem">
+        <div class="deeper-field">
           <label>How are you contributing to this?</label>
-          <p class="guide-text" style="margin:.4rem 0 .8rem;font-size:.68rem">Include things you're doing, and things you know you could be doing but aren't.</p>
           <div id="acts-items-${key}" style="margin-top:.5rem"></div>
         </div>
         <div id="acts-confirm-${key}" style="margin-top:1.2rem" hidden></div>
       </div>`,
-      `<div class="deeper-subpage" id="deeper-sub-${key}-acts-values" hidden>
-        ${head}
+      `<div class="deeper-subpage" id="deeper-sub-${key}-acts-values" data-area="${label}" hidden>
+        <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Hidden Values</h3>
         <div id="recap-acts-${key}" data-label="How you are contributing to this" class="recap-block" hidden></div>
-        <div class="deeper-field" style="margin-top:1.4rem">
+        <div class="deeper-field">
           <label>If you're brutally honest with yourself, which values might you have that you are serving with these actions/inactions?</label>
           <div id="acts-value-groups-${key}" style="margin-top:.9rem"></div>
         </div>
       </div>`,
-      `<div class="deeper-subpage" id="deeper-sub-${key}-control" hidden>
-        ${head}
-        <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Outside of your control</h3>
+      `<div class="deeper-subpage" id="deeper-sub-${key}-control" data-area="${label}" hidden>
+        <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Acceptance</h3>
         <div id="recap-causes-${key}-control" data-label="Why ${label} feels like a ${data.fulfillment}/5" class="recap-block" hidden></div>
         <div id="recap-not-achievable-${key}" class="recap-block" style="margin-bottom:1.4rem" hidden></div>
         <div class="deeper-field yn-field" data-key="${key}" data-role="control">
@@ -1810,10 +1922,8 @@ function initDeeperStep() {
           </div>
         </div>
       </div>`,
-      `<div class="deeper-subpage" id="deeper-sub-${key}-control-attitude" hidden>
-        ${head}
-        <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">The Art of Acceptance</h3>
-        <p class="guide-text" style="margin-top:1.6rem">What we can't change, we can still choose how to meet. The stories we attach to our circumstances, and our attitude towards them, matter more than most people realise.</p>
+      `<div class="deeper-subpage" id="deeper-sub-${key}-control-attitude" data-area="${label}" hidden>
+        <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Acceptance</h3>
         <div id="control-attitude-${key}"></div>
       </div>`,
     ];
@@ -2025,11 +2135,6 @@ function initDeeperStep() {
     ta.addEventListener('input', () => { _deeperState[ta.name] = ta.value; });
   });
 
-  function scrollToVisible(el) {
-    const offset = (document.getElementById('bar')?.offsetHeight || 0) + 24;
-    window.scrollTo({ top: window.scrollY + el.getBoundingClientRect().top - offset, behavior: 'smooth' });
-  }
-
   // Per-sub-page validation
   window._validateDeeperSubPage = function(idx) {
     const sp = allSubPages[idx];
@@ -2041,17 +2146,14 @@ function initDeeperStep() {
 
     const unansweredYn = [...subEl.querySelectorAll('.yn-field')].find(f => !f.dataset.noValidate && !f.querySelector('.yn-btn.selected'));
     if (unansweredYn) {
-      scrollToVisible(unansweredYn);
-      setFormErr('Please select an answer before continuing.');
+      setFormErr('Please select an answer before continuing.', unansweredYn);
       return false;
     }
 
     if (qtype === 'cause') {
       const causes = (_deeperState['deeper_' + key + '_causes'] || []).filter(c => c && c.trim());
       if (!causes.length) {
-        const cl = document.getElementById('cause-list-' + key);
-        if (cl) scrollToVisible(cl);
-        setFormErr('Please add at least one reason before continuing.');
+        setFormErr('Please add at least one reason before continuing.', document.getElementById('cause-list-' + key));
         return false;
       }
     }
@@ -2068,9 +2170,7 @@ function initDeeperStep() {
     if (qtype === 'control' && _deeperState['deeper_' + key + '_control_yn'] === 'yes') {
       const filledItems = (_deeperState['deeper_' + key + '_control_items'] || []).filter(i => i && i.trim());
       if (!filledItems.length) {
-        const cl = document.getElementById('control-list-' + key);
-        if (cl) scrollToVisible(cl);
-        setFormErr('Please add at least one circumstance before continuing.');
+        setFormErr('Please add at least one circumstance before continuing.', document.getElementById('control-list-' + key));
         return false;
       }
     }
@@ -2081,20 +2181,18 @@ function initDeeperStep() {
       const feelingYn       = _deeperState['deeper_' + key + '_control_feeling_yn'] || {};
       const feelingConfirm  = _deeperState['deeper_' + key + '_control_feeling_confirm'] || {};
       const attEl = document.getElementById('control-attitude-' + key);
+      const itemBlock = (it) => [...(attEl?.querySelectorAll('.deeper-block') || [])].find(b => b.dataset.item === it) || attEl;
       for (const item of filledItems) {
         if (!(Array.isArray(feelings[item]) && feelings[item].some(f => f && f.trim()))) {
-          if (attEl) scrollToVisible(attEl);
-          setFormErr('Please describe how you feel about each circumstance before continuing.');
+          setFormErr('Please describe how you feel about each circumstance before continuing.', itemBlock(item));
           return false;
         }
         if (!feelingYn[item]) {
-          if (attEl) scrollToVisible(attEl);
-          setFormErr('Please answer whether this is how you want to feel before continuing.');
+          setFormErr('Please answer whether this is how you want to feel before continuing.', itemBlock(item));
           return false;
         }
         if (feelingYn[item] === 'yes' && feelingConfirm[item] !== 'yes') {
-          if (attEl) scrollToVisible(attEl);
-          setFormErr('Please confirm before continuing.');
+          setFormErr('Please confirm before continuing.', itemBlock(item));
           return false;
         }
       }
@@ -2104,9 +2202,7 @@ function initDeeperStep() {
       const items     = (_deeperState['deeper_' + key + '_acts_raw_items'] || []).filter(i => i && i.trim());
       const isNothing = !!_deeperState['deeper_' + key + '_acts_raw_nothing'];
       if (!items.length && !isNothing) {
-        const listEl = document.getElementById('acts-items-' + key);
-        if (listEl) scrollToVisible(listEl);
-        setFormErr('Please add at least one item or select "Nothing".');
+        setFormErr('Please add at least one item or select "Nothing".', document.getElementById('acts-items-' + key));
         return false;
       }
       if (!_deeperState['deeper_' + key + '_acts_confirm']) {
@@ -2123,30 +2219,23 @@ function initDeeperStep() {
         Array.isArray(valuesByItem[item]) && valuesByItem[item].some(v => v && v.trim())
       );
       if (!allCovered) {
-        const gc = document.getElementById('acts-value-groups-' + key);
-        if (gc) scrollToVisible(gc);
-        setFormErr('Every action needs at least one value attributed to it before continuing.');
+        setFormErr('Every action needs at least one value attributed to it before continuing.', document.getElementById('acts-value-groups-' + key));
         return false;
       }
     }
-
-
 
     if (qtype === 'vision-describe') {
       const yn = _deeperState['deeper_' + key + '_vision_yn'];
       if (yn === 'yes' || yn === 'partially') {
         const vItems = (_deeperState['deeper_' + key + '_vision_items'] || []).filter(i => i && i.trim());
         if (!vItems.length) {
-          const vc = document.getElementById('vision-list-' + key);
-          if (vc) scrollToVisible(vc);
-          setFormErr('Please describe what it would take before continuing.');
+          setFormErr('Please describe what it would take before continuing.', document.getElementById('vision-list-' + key));
           return false;
         }
       }
       const unchecked = [...subEl.querySelectorAll('.vision-actual-field')].find(f => !f.closest('[hidden]') && !f.querySelector('.vision-actual-check')?.checked);
       if (unchecked) {
-        scrollToVisible(unchecked);
-        setFormErr('Please confirm before continuing.');
+        setFormErr('Please confirm before continuing.', unchecked);
         return false;
       }
     }
@@ -2158,18 +2247,14 @@ function initDeeperStep() {
         : [];
       const achievable = _deeperState['deeper_' + key + '_vision_item_achievable'] || {};
       if (vItems.some((_, i) => !achievable[i])) {
-        const gc = document.getElementById('vision-item-achievable-' + key);
-        if (gc) scrollToVisible(gc);
-        setFormErr('Please mark each point as achievable or not before continuing.');
+        setFormErr('Please mark each point as achievable or not before continuing.', document.getElementById('vision-item-achievable-' + key));
         return false;
       }
     }
 
     if (qtype === 'vision-achievable-check') {
       if (!_deeperState['deeper_' + key + '_vision_achievable_check']) {
-        const gc = document.getElementById('vision-achievable-check-' + key);
-        if (gc) scrollToVisible(gc);
-        setFormErr('Please answer before continuing.');
+        setFormErr('Please answer before continuing.', document.getElementById('vision-achievable-check-' + key));
         return false;
       }
     }
@@ -2177,18 +2262,14 @@ function initDeeperStep() {
     if (qtype === 'vision-revised') {
       const revised = (_deeperState['deeper_' + key + '_vision_revised_items'] || []).filter(i => i && i.trim());
       if (!revised.length) {
-        const gc = document.getElementById('vision-revised-' + key);
-        if (gc) scrollToVisible(gc);
-        setFormErr('Please describe your revised vision before continuing.');
+        setFormErr('Please describe your revised vision before continuing.', document.getElementById('vision-revised-' + key));
         return false;
       }
     }
 
     if (qtype === 'vision-commitment') {
       if (!_deeperState['deeper_' + key + '_commitment_yn']) {
-        const gc = document.getElementById('deeper-sub-' + key + '-vision-commitment');
-        if (gc) scrollToVisible(gc);
-        setFormErr('Please select one before continuing.');
+        setFormErr('Please select one before continuing.', document.getElementById('deeper-sub-' + key + '-vision-commitment'));
         return false;
       }
     }
@@ -2210,33 +2291,34 @@ function initFitSignalsStep() {
   if (!container) return;
 
   const questions = [
-    { id: 'q2', type: 'singleselect', headline: 'Readiness',
+    { id: 'q2', type: 'singleselect', headline: 'Readiness', title: 'Capacity',
       label: 'Do you feel like you have the mental and emotional capacity to tackle your challenges and create change right now?',
-      bullets: ['Sometimes creating the change we want in life requires going against our habitual programming, which can feel like being up against ourselves and therefore consuming energy and effort.'],
       options: ['Yes, whatever it takes', 'Yes, but I need to go easy on myself', "No, I'm exhausted"],
       followup: { triggerValue: "No, I'm exhausted", label: 'What do you think you need right now?', stateKey: 'fs_q2_needs' } },
-    { id: 'q3', type: 'multiselect', headline: 'Inner state',
+    { id: 'q3', type: 'multiselect', headline: 'Inner state', title: 'Symptoms',
       label: 'Do you struggle with any of these on a regular basis?',
       options: ['Anxiety', 'Depression', 'PTSD', 'Apathy', 'Anger or resentment', 'Frustration or pressure', 'Meaninglessness', 'Panic attacks', 'Hypochondria', 'Other', 'None'],
       other: 'Other', none: 'None' },
-    { id: 'q4', type: 'multiselect', headline: 'Compulsive patterns',
+    { id: 'q4', type: 'multiselect', headline: 'Compulsive patterns', title: 'Coping',
       label: 'Do you struggle with any addictions or compulsive habits?',
       options: ['Alcohol', 'Drugs', 'Pharmaceuticals', 'Pornography', 'Gambling', 'Social media', 'Gaming', 'Food', 'Other', 'None'],
       other: 'Other', none: 'None' },
-    { id: 'q5l', type: 'multiselect', headline: 'Lifestyle',
+    { id: 'q5l', type: 'multiselect', headline: 'Lifestyle', title: 'Lifestyle',
       label: 'Which of the following do you struggle to maintain consistently?',
       options: ['Sleep', 'Exercise', 'Healthy eating', 'Social connection', 'Time outdoors', 'Downtime / switching off', 'Hobbies or creative outlets', 'Other', 'None'],
       other: 'Other', none: 'None' },
-    { id: 'q5', type: 'scale5', headline: 'The mainstream',
+    { id: 'q5', type: 'scale5', headline: 'The mainstream', title: 'Personality',
       label: 'How do you feel when you imagine living the life of mainstream society — a steady job, a mortgage, blending in?',
       low: "Can't think of anything worse", high: "It's exactly what I want" },
-    { id: 'q6', type: 'track-record', headline: 'Track record',
+    { id: 'q6', type: 'track-record', headline: 'Track record', title: 'Attempts',
       label: 'What have you tried in the past to deal with your situation(s)?' },
-    { id: 'q7', type: 'singleselect', headline: 'The stakes',
+    { id: 'q7', type: 'singleselect', headline: 'The stakes', title: 'Commitment',
       label: 'If your life looks exactly the same in 3 years from now, how would you feel?',
-      note: 'Remember. This isn\'t about passing a test. There are no "right" or "wrong" answers. The only right answer is the honest one.',
       options: ["I'd be fine with it", "Disappointing, but I'd manage", "Like I'd wasted something important", "Unacceptable — it cannot happen"] },
-    { id: 'q8', type: 'textarea', optional: true, headline: 'Anything else',
+    { id: 'q9', type: 'singleselect', headline: 'Coaching Ambitions', title: 'Coaching Ambitions',
+      label: 'Are you or do you have any ambitions of working as a coach yourself?',
+      options: ['Yes', 'Maybe', 'No'] },
+    { id: 'q8', type: 'textarea', optional: true, headline: 'Anything else', title: 'Anything else?',
       label: "Is there anything else you'd like to share that wasn't addressed in this assessment?",
       placeholder: 'Optional — write as much or as little as you like.' },
   ];
@@ -2249,10 +2331,13 @@ function initFitSignalsStep() {
     page.id = 'fs-sub-' + q.id;
     page.hidden = true;
 
-    const headTitle = document.createElement('h3');
-    headTitle.className = 'deeper-area-name';
-    headTitle.textContent = q.headline;
-    page.appendChild(headTitle);
+    page.dataset.area = q.headline;
+
+    const qTitle = document.createElement('h3');
+    qTitle.className = 'deeper-page-title';
+    qTitle.style.cssText = 'font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem';
+    qTitle.textContent = q.title;
+    page.appendChild(qTitle);
 
     const qlbl = document.createElement('p');
     qlbl.className = 'fulfillment-area-desc';
@@ -2292,7 +2377,7 @@ function initFitSignalsStep() {
         followupEl.hidden = _fsState['fs_' + q.id] !== 'yes';
         followupEl.style.marginTop = '1.4rem';
         const fLbl = document.createElement('label');
-        fLbl.style.cssText = 'font-family:var(--sc);font-size:.78rem;letter-spacing:.15em;color:var(--ink);display:block;margin-bottom:.7rem;text-align:center';
+        fLbl.style.cssText = 'font-family:var(--body);font-weight:300;font-size:clamp(1.05rem,1.7vw,1.2rem);line-height:1.8;color:var(--muted);display:block;margin-bottom:.7rem;text-align:center;background:var(--bg2);border-radius:3px;padding:1.1rem 1.6rem';
         fLbl.textContent = q.followup.label;
         const fBtns = document.createElement('div');
         fBtns.className = 'yn-btns';
@@ -2343,7 +2428,7 @@ function initFitSignalsStep() {
         followupEl.style.marginTop = '1.4rem';
         followupEl.hidden = _fsState['fs_' + q.id] !== q.followup.triggerValue;
         const fLbl = document.createElement('label');
-        fLbl.style.cssText = 'font-family:var(--sc);font-size:.78rem;letter-spacing:.15em;color:var(--ink);display:block;margin-bottom:.7rem;text-align:center';
+        fLbl.style.cssText = 'font-family:var(--body);font-weight:300;font-size:clamp(1.05rem,1.7vw,1.2rem);line-height:1.8;color:var(--muted);display:block;margin-bottom:.7rem;text-align:center;background:var(--bg2);border-radius:3px;padding:1.1rem 1.6rem';
         fLbl.textContent = q.followup.label;
         const fList = document.createElement('div');
         fList.id = 'fs-followup-' + q.id;
@@ -2371,11 +2456,15 @@ function initFitSignalsStep() {
 
     if (q.type === 'multiselect') {
       if (!Array.isArray(_fsState['fs_' + q.id])) _fsState['fs_' + q.id] = [];
-      const checks = document.createElement('div');
-      checks.className = 'acts-checkboxes';
-      checks.style.cssText = 'margin-top:.8rem;max-width:fit-content;margin-left:auto;margin-right:auto';
       const cbEls = [];
       let otherWrap = null;
+      // Fixed width rather than fit-content, so the box's size (and centering)
+      // never changes based on content — showing/hiding the "Other" field, or
+      // it being in a one-row vs. two-row second box, can't shift anything.
+      const checks = document.createElement('div');
+      checks.className = 'acts-checkboxes';
+      checks.style.cssText = 'margin-top:.8rem;width:20rem;margin-left:auto;margin-right:auto';
+      field.appendChild(checks);
       q.options.forEach((opt, i) => {
         const row = document.createElement('label');
         row.className = 'acts-check-label';
@@ -2414,11 +2503,13 @@ function initFitSignalsStep() {
           otherWrap = document.createElement('div');
           otherWrap.id = 'fs-other-' + q.id;
           otherWrap.hidden = !_fsState['fs_' + q.id].includes(q.other);
-          otherWrap.style.cssText = 'margin-left:1.6rem;margin-top:.4rem';
+          // Indented to match where the checkbox LABEL text starts (checkbox
+          // width + its gap), so the field lines up with the checkboxes above
+          // it instead of sitting at the row's outer edge.
+          otherWrap.style.cssText = 'margin-left:1.6rem';
           checks.appendChild(otherWrap);
         }
       });
-      field.appendChild(checks);
     }
 
     if (q.type === 'scale5') {
@@ -2484,15 +2575,13 @@ function initFitSignalsStep() {
   window._fitSubPageIdx = 0;
 
   const fsSections = [
-    { num: '06', title: 'Inner State.', desc: 'A look at your emotional and psychological baseline — the internal conditions from which everything else arises.', maxIdx: 3 },
-    { num: '07', title: 'Personality.', desc: 'A look at who you are and what actually drives you — beneath the surface-level goals.', maxIdx: Infinity }
+    { num: '06', title: 'Inner State.', maxIdx: 3 },
+    { num: '07', title: 'Personality.', maxIdx: Infinity }
   ];
 
   function updateFsHeader(idx) {
-    const sec = fsSections.find(s => idx <= s.maxIdx);
     const el = document.getElementById('fs-section-head');
-    if (!el || !sec) return;
-    el.innerHTML = `<span class="num">${sec.num}</span><div><h2>${sec.title}</h2><p>${sec.desc}</p></div>`;
+    if (el) el.innerHTML = '';
   }
 
   let _fsKeyHandler = null;
@@ -2521,35 +2610,49 @@ function initFitSignalsStep() {
   window._validateFitSubPage = function(idx) {
     const q = questions[idx];
     clearFormErr();
+    const page = document.getElementById('fs-sub-' + q.id);
     if (q.type === 'yesno' && !_fsState['fs_' + q.id]) {
-      setFormErr('Please select an answer before continuing.'); return false;
+      setFormErr('Please select an answer before continuing.', page?.querySelector('.yn-btns')); return false;
     }
     if (q.type === 'singleselect' && !_fsState['fs_' + q.id]) {
-      setFormErr('Please select an answer before continuing.'); return false;
+      setFormErr('Please select an answer before continuing.', page?.querySelector('.yn-btns')); return false;
     }
     if (q.type === 'singleselect' && q.followup && _fsState['fs_' + q.id] === q.followup.triggerValue) {
       const items = (_fsState[q.followup.stateKey] || []).filter(i => i && i.trim());
-      if (!items.length) { setFormErr('Please describe what you need before continuing.'); return false; }
+      if (!items.length) { setFormErr('Please describe what you need before continuing.', document.getElementById('fs-followup-' + q.id)); return false; }
     }
     if (q.type === 'multiselect' && !_fsState['fs_' + q.id]?.length) {
-      setFormErr('Please select at least one option before continuing.'); return false;
+      setFormErr('Please select at least one option before continuing.', page?.querySelector('.acts-checkboxes')); return false;
     }
     if (q.type === 'multiselect' && q.other && _fsState['fs_' + q.id]?.includes(q.other)) {
       const items = (_fsState['fs_' + q.id + '_other_items'] || []).filter(i => i && i.trim());
-      if (!items.length) { setFormErr('Please specify your answer before continuing.'); return false; }
+      if (!items.length) { setFormErr('Please specify your answer before continuing.', document.getElementById('fs-other-' + q.id)); return false; }
     }
     if (q.type === 'scale5' && !_fsState['fs_' + q.id]) {
-      setFormErr('Please select a number before continuing.'); return false;
+      setFormErr('Please select a number before continuing.', page?.querySelector('.number-btn')?.parentElement); return false;
     }
     if (q.type === 'textarea' && !q.optional && !_fsState['fs_' + q.id]?.trim()) {
-      setFormErr('Please write your answer before continuing.'); return false;
+      setFormErr('Please write your answer before continuing.', page?.querySelector('textarea')); return false;
     }
     if (q.type === 'track-record' && !_fsState['fs_q6_nothing']) {
-      const items = (_fsState['fs_q6_items'] || []).filter(item => item.what?.trim());
-      if (!items.length) { setFormErr('Please describe at least one thing you have tried.'); return false; }
-      for (const item of items) {
-        if (!item.howWell) { setFormErr('Please rate how well each attempt worked before continuing.'); return false; }
-        if (!item.why?.trim()) { setFormErr('Please explain what got in the way for each attempt before continuing.'); return false; }
+      const cardEl = (i) => document.querySelector('#fs-track-record-list [data-index="' + i + '"]');
+      const allItems = _fsState['fs_q6_items'] || [];
+      // Only attempts with a "what" filled in need howWell/why — an empty trailing
+      // row (e.g. from "+ Add another") is skipped rather than blocking submission.
+      const filled = allItems.map((item, i) => ({ item, i })).filter(({ item }) => item.what?.trim());
+      if (!filled.length) {
+        setFormErr('Please describe at least one thing you have tried.', cardEl(0)?.querySelector('[data-role="what-row"]'));
+        return false;
+      }
+      const missingHowWell = filled.find(({ item }) => !item.howWell);
+      if (missingHowWell) {
+        setFormErr('Please rate how well each attempt worked before continuing.', cardEl(missingHowWell.i)?.querySelector('[data-role="scale-row"]'));
+        return false;
+      }
+      const missingWhy = filled.find(({ item }) => !item.why?.trim());
+      if (missingWhy) {
+        setFormErr('Please explain what got in the way for each attempt before continuing.', cardEl(missingWhy.i)?.querySelector('[data-role="why-row"]'));
+        return false;
       }
     }
     return true;
@@ -2599,8 +2702,9 @@ const FIT_LABELS = {
   q6: 'What have you tried in the past to deal with your situation(s)?',
   q7: 'If your life looks exactly the same in 3 years from now, how would you feel?',
   q8: "Is there anything else you'd like to share that wasn't addressed in this assessment?",
+  q9: 'Are you or do you have any ambitions of working as a coach yourself?',
 };
-const FIT_ORDER = ['q2', 'q3', 'q4', 'q5l', 'q5', 'q6', 'q7', 'q8'];
+const FIT_ORDER = ['q2', 'q3', 'q4', 'q5l', 'q5', 'q6', 'q7', 'q9', 'q8'];
 
 function _prettyKey(k) {
   return String(k).replace(/^deeper_/, '').replace(/_/g, ' ').trim();
@@ -2635,7 +2739,7 @@ function captureDeeperFromDom() {
   const rows = [];
   try {
     document.querySelectorAll('.deeper-subpage').forEach((sp) => {
-      const area = (sp.querySelector('.deeper-area-name')?.textContent || '').trim();
+      const area = (sp.dataset.area || sp.querySelector('.deeper-area-name')?.textContent || '').trim();
 
       // Control-attitude: one row per circumstance they must accept, combining their
       // feeling about it and whether they want to feel that way — instead of the same

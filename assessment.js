@@ -1312,7 +1312,7 @@ function renderControlAttitude(key) {
     feelingWrap.className = 'deeper-field';
     feelingWrap.style.marginBottom = '1rem';
     const feelingLbl = document.createElement('span');
-    feelingLbl.style.cssText = 'font-family:var(--body);font-weight:300;font-size:clamp(1.05rem,1.7vw,1.2rem);line-height:1.8;color:var(--muted);display:block;margin-bottom:.5rem;text-align:center;background:var(--bg2);border-radius:3px;padding:1.1rem 1.6rem';
+    feelingLbl.style.cssText = 'font-family:var(--body);font-weight:300;font-size:var(--q-size);line-height:1.8;color:var(--muted);display:block;margin-bottom:.5rem;text-align:center;background:var(--bg2);border-radius:3px;padding:1.1rem 1.6rem';
     feelingLbl.textContent = 'How do you feel about this?';
     feelingWrap.appendChild(feelingLbl);
 
@@ -1439,7 +1439,7 @@ function renderControlAttitude(key) {
     const ynWrap = document.createElement('div');
     ynWrap.className = 'deeper-field';
     const ynLbl = document.createElement('label');
-    ynLbl.style.cssText = 'font-family:var(--body);font-weight:300;font-size:clamp(1.05rem,1.7vw,1.2rem);line-height:1.8;color:var(--muted);display:block;margin-bottom:.5rem;text-align:center';
+    ynLbl.style.cssText = 'font-family:var(--body);font-weight:300;font-size:var(--q-size);line-height:1.8;color:var(--muted);display:block;margin-bottom:.5rem;text-align:center';
     ynLbl.textContent = 'Is this how you want to feel about it?';
     const btns = document.createElement('div');
     btns.className = 'yn-btns';
@@ -2297,7 +2297,7 @@ function initFitSignalsStep() {
       followup: { triggerValue: "No, I'm exhausted", label: 'What do you think you need right now?', stateKey: 'fs_q2_needs' } },
     { id: 'q3', type: 'multiselect', headline: 'Inner state', title: 'Symptoms',
       label: 'Do you struggle with any of these on a regular basis?',
-      options: ['Anxiety', 'Depression', 'PTSD', 'Apathy', 'Anger or resentment', 'Frustration or pressure', 'Meaninglessness', 'Panic attacks', 'Hypochondria', 'Other', 'None'],
+      options: ['Anxiety', 'Depression', 'PTSD', 'Apathy', 'Anger or resentment', 'Frustration or pressure', 'Meaninglessness', 'Panic attacks', 'Hypochondria', 'Insomnia', 'Other', 'None'],
       other: 'Other', none: 'None' },
     { id: 'q4', type: 'multiselect', headline: 'Compulsive patterns', title: 'Coping',
       label: 'Do you struggle with any addictions or compulsive habits?',
@@ -2377,7 +2377,7 @@ function initFitSignalsStep() {
         followupEl.hidden = _fsState['fs_' + q.id] !== 'yes';
         followupEl.style.marginTop = '1.4rem';
         const fLbl = document.createElement('label');
-        fLbl.style.cssText = 'font-family:var(--body);font-weight:300;font-size:clamp(1.05rem,1.7vw,1.2rem);line-height:1.8;color:var(--muted);display:block;margin-bottom:.7rem;text-align:center;background:var(--bg2);border-radius:3px;padding:1.1rem 1.6rem';
+        fLbl.style.cssText = 'font-family:var(--body);font-weight:300;font-size:var(--q-size);line-height:1.8;color:var(--muted);display:block;margin-bottom:.7rem;text-align:center;background:var(--bg2);border-radius:3px;padding:1.1rem 1.6rem';
         fLbl.textContent = q.followup.label;
         const fBtns = document.createElement('div');
         fBtns.className = 'yn-btns';
@@ -2428,7 +2428,7 @@ function initFitSignalsStep() {
         followupEl.style.marginTop = '1.4rem';
         followupEl.hidden = _fsState['fs_' + q.id] !== q.followup.triggerValue;
         const fLbl = document.createElement('label');
-        fLbl.style.cssText = 'font-family:var(--body);font-weight:300;font-size:clamp(1.05rem,1.7vw,1.2rem);line-height:1.8;color:var(--muted);display:block;margin-bottom:.7rem;text-align:center;background:var(--bg2);border-radius:3px;padding:1.1rem 1.6rem';
+        fLbl.style.cssText = 'font-family:var(--body);font-weight:300;font-size:var(--q-size);line-height:1.8;color:var(--muted);display:block;margin-bottom:.7rem;text-align:center;background:var(--bg2);border-radius:3px;padding:1.1rem 1.6rem';
         fLbl.textContent = q.followup.label;
         const fList = document.createElement('div');
         fList.id = 'fs-followup-' + q.id;
@@ -2823,6 +2823,7 @@ function buildQaSummary(answers) {
     ['Age', answers.age || '(not given)'],
     ['Gender', answers.gender || '(not given)'],
     ['Occupation', answers.work_status || '(not given)'],
+    ['Time taken', answers.time_taken || '(not recorded)'],
   ];
   contact.forEach(([, a]) => mark(a));
   groups.push({ title: 'About them', rows: contact });
@@ -2926,6 +2927,16 @@ window.submitAssessment = async function submitAssessment(form, submitButton) {
   answers.conformity_signal    = answers.vision_scale;
   answers.truth_directness     = s5[q7] ?? 3;
   answers.potential_signal     = s5[q7] ?? 3;
+
+  // How long they spent on the whole assessment, start to finish — shown to
+  // Dan in the notification email, not to the person taking it.
+  try {
+    const secs = window.getAssessmentDurationSeconds ? window.getAssessmentDurationSeconds() : null;
+    if (secs != null) {
+      const m = Math.floor(secs / 60), s = secs % 60;
+      answers.time_taken = m > 0 ? `${m}m ${s}s` : `${s}s`;
+    }
+  } catch (_e) { /* best effort */ }
 
   // Readable question-by-question capture for the notify email (never fatal).
   try { answers.qa_summary = buildQaSummary(answers); } catch (_e) { /* summary is best-effort */ }

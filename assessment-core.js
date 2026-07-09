@@ -265,10 +265,10 @@ function renderResult(result, emailState = "pending") {
   ].join("");
 
   const emailCopy = {
-    pending: "Sending your Authenticity Map to your inbox…",
-    sent: "A copy of your Authenticity Map is on its way to your inbox.",
+    pending: "Sending your Authenticity Map to your inbox… If it doesn't show up shortly, check your spam folder.",
+    sent: "A copy of your Authenticity Map is on its way to your inbox. If you don't see it soon, check your spam folder.",
     skipped: "Your map is ready here. (Email delivery isn't configured in this preview.)",
-    warning: "Your map is ready here. We couldn't confirm the email — check back shortly.",
+    warning: "Your map is ready here. We couldn't confirm the email — check back shortly, and check your spam folder too.",
     viewed: "This is your saved Authenticity Map — yours to revisit any time.",
   }[emailState] || "";
 

@@ -24,6 +24,7 @@
     --body:"Spectral",Georgia,serif;
     --sc:"Alegreya SC",serif;
     --measure:38rem;
+    --q-size:clamp(.95rem,1.5vw,1.1rem);
   }
   html{font-size:19px}
   *{box-sizing:border-box;margin:0;padding:0}
@@ -34,7 +35,7 @@
   h1,h1.display{font-size:clamp(1.9rem,3vw,2.8rem)}
   h2{font-size:clamp(1.4rem,2.8vw,2rem)}
   .sc{font-family:var(--sc);font-weight:500;letter-spacing:.1em}
-  .lede{font-size:clamp(1.05rem,1.7vw,1.2rem);line-height:1.8;color:#6f685a}
+  .lede{font-size:var(--q-size);line-height:1.8;color:#6f685a}
 
   /* header */
   header{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;justify-content:space-between;align-items:center;padding:1.4rem 2.4rem;transition:background .3s ease}
@@ -61,7 +62,7 @@
   .assessment-section-head{display:block;text-align:center;margin-bottom:2.4rem}
   .assessment-section-head .num{display:block;font-family:var(--sc);font-size:.72rem;letter-spacing:.2em;color:var(--accent);margin-bottom:.6rem}
   .assessment-section-head h2{font-family:var(--display);font-weight:400;font-size:clamp(1.3rem,2.4vw,1.7rem);line-height:1.1;letter-spacing:.01em;margin-bottom:.5rem}
-  .assessment-section-head p{color:#7a7268;font-size:clamp(1.05rem,1.7vw,1.2rem);line-height:1.8;background:var(--bg2);border-radius:3px;padding:1.1rem 1.6rem}
+  .assessment-section-head p{color:#7a7268;font-size:var(--q-size);line-height:1.8;background:var(--bg2);border-radius:3px;padding:1.1rem 1.6rem}
   .question-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.6rem}
   .field{display:flex;flex-direction:column;gap:.6rem}
   .field.wide{grid-column:1/-1}
@@ -107,7 +108,7 @@
   .transcript-toggle:hover{color:var(--ink)}
   .transcript-body{display:none;margin-top:1rem;font-size:.88rem;line-height:1.85;color:var(--accent)}
   .transcript-body.open{display:block}
-  .guide-text{font-size:clamp(1.05rem,1.7vw,1.2rem);line-height:1.85;color:var(--accent);text-align:center}
+  .guide-text{font-size:var(--q-size);line-height:1.85;color:var(--accent);text-align:center}
   .guide-text p+p{margin-top:.9rem}
   .guide-points{list-style:none;margin:1.1rem auto 0;padding:0;max-width:32rem;text-align:left;font-size:clamp(1.02rem,1.6vw,1.15rem);line-height:1.7}
   .guide-points li{position:relative;padding-left:1.5rem;color:var(--accent)}
@@ -147,7 +148,7 @@
   .fulfillment-nav-buttons{display:flex;gap:1rem;justify-content:center;align-items:center;width:100%}
   .fulfillment-error{display:none;width:100%;text-align:center;font-family:var(--sc);font-size:.68rem;letter-spacing:.15em;color:#c0392b;margin:0 0 .8rem}
   .fulfillment-error.visible{display:block}
-  .fulfillment-area-desc{text-align:center;font-size:clamp(1.05rem,1.7vw,1.2rem);color:var(--muted);margin-top:-.2rem;margin-bottom:1.8rem;line-height:1.8;background:var(--bg2);border-radius:3px;padding:1.1rem 1.6rem}
+  .fulfillment-area-desc{text-align:center;font-size:var(--q-size);color:var(--muted);margin-top:-.2rem;margin-bottom:1.8rem;line-height:1.8;background:var(--bg2);border-radius:3px;padding:1.1rem 1.6rem}
 
   /* pie chart */
   .pie-wrap{max-width:480px;margin:1.6rem auto 2rem}
@@ -189,7 +190,7 @@
   .deeper-page-title{font-family:var(--display);font-weight:400;font-size:clamp(1.3rem,2.4vw,1.7rem);line-height:1.1;letter-spacing:.01em;text-align:center}
   .deeper-field{display:flex;flex-direction:column;gap:.5rem;margin-bottom:1.2rem}
   .deeper-field:last-child{margin-bottom:0}
-  .deeper-field>label{font-family:var(--body);font-weight:300;font-size:clamp(1.05rem,1.7vw,1.2rem);line-height:1.8;color:var(--muted);text-align:center;display:block;background:var(--bg2);border-radius:3px;padding:1.1rem 1.6rem}
+  .deeper-field>label{font-family:var(--body);font-weight:300;font-size:var(--q-size);line-height:1.8;color:var(--muted);text-align:center;display:block;background:var(--bg2);border-radius:3px;padding:1.1rem 1.6rem}
   .deeper-field>label strong{font-weight:700}
   .confirm-check{position:absolute;opacity:0;width:0;height:0}
   .confirm-check-wrap{display:flex;align-items:center;justify-content:flex-start;gap:.7rem;cursor:pointer;margin-top:.5rem;user-select:none}
@@ -253,7 +254,7 @@
   .focus-reveal-head{text-align:center;padding:2.4rem 0 3rem}
   .focus-reveal-eyebrow{font-size:.72rem;letter-spacing:.3em;color:var(--accent);margin-bottom:1.2rem}
   .focus-reveal-title{font-family:var(--display);font-size:clamp(1.3rem,2.4vw,1.7rem);font-weight:400;line-height:1.1;letter-spacing:.01em;margin-bottom:1.2rem}
-  .focus-reveal-sub{color:var(--muted);font-size:clamp(1.05rem,1.7vw,1.2rem);max-width:28rem;margin:0 auto;line-height:1.8;background:var(--bg2);border-radius:3px;padding:1.1rem 1.6rem}
+  .focus-reveal-sub{color:var(--muted);font-size:var(--q-size);max-width:28rem;margin:0 auto;line-height:1.8;background:var(--bg2);border-radius:3px;padding:1.1rem 1.6rem}
 
   /* focus recommendation */
   .rec-list{display:flex;flex-direction:column}
@@ -349,7 +350,7 @@
           <div class="assessment-section-head">
             <div>
               <h2>Importance</h2>
-              <p>Regardless of where each area stands right now, how important is that area to you in general?</p>
+              <p>Regardless of where each area stands right now, how important is that area to you in general? Rank the areas according to their overall importance to you, with 01 being the most important.</p>
             </div>
           </div>
           <div id="importance-rows" class="drag-list"></div>
@@ -362,7 +363,7 @@
       <section class="assessment-section">
         <div class="focus-reveal-head">
           <h2 class="focus-reveal-title">Urgency</h2>
-          <p class="focus-reveal-sub">If something is approaching a critical threshold, flag it here — regardless of how important it is long-term. Pick up to 3, or none if nothing's pressing.</p>
+          <p class="focus-reveal-sub">You can pick up to three areas that you regard as urgent and need to be taken care of most right now. You can also consider which areas, if improved, would have the greatest positive spill-over effect on other areas. If nothing is more urgent or important than anything else, just choose "Nothing's pressing right now".</p>
         </div>
         <div id="urgent-rows" class="rec-list"></div>
         <div id="urgent-hidden-inputs"></div>
@@ -372,7 +373,7 @@
       <section class="assessment-section">
         <div class="focus-reveal-head">
           <h2 class="focus-reveal-title">Focus</h2>
-          <p class="focus-reveal-sub">This is the area the assessment has surfaced for you. Tap to swap it out.</p>
+          <p class="focus-reveal-sub">Choose the area you would like to focus on for the rest of the assessment. The area that has been evaluated for you based on your previous answers is highlighted. Tap a different area to swap it out.</p>
         </div>
         <div id="rec-list" class="rec-list"></div>
         <div id="focus-hidden-inputs"></div>
@@ -393,7 +394,7 @@
       <section class="assessment-section">
         <div class="assessment-section-head">
           <div>
-            <h2>You finished the assessment</h2>
+            <h2>You've completed the assessment</h2>
           </div>
         </div>
         <div class="question-grid">
@@ -488,6 +489,9 @@
     };
     window.stopStopwatch=function(){
       clearInterval(_swInterval);
+    };
+    window.getAssessmentDurationSeconds=function(){
+      return _swStart?Math.floor((Date.now()-_swStart)/1000):null;
     };
   })();
   if('IntersectionObserver' in window && !matchMedia('(prefers-reduced-motion: reduce)').matches){

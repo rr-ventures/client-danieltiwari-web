@@ -65,9 +65,9 @@ function numeric(value, fallback = 0) {
 function topFocusAreas(answers) {
   return AREAS.map(([key, label]) => {
     const fulfillment = numeric(answers[`fulfillment_${key}`], 5);
-    const importance = numeric(answers[`importance_${key}`], 2);
-    const score = (11 - fulfillment) + importance;
-    return { key, label, fulfillment, importance, score };
+    const urgent = !!answers[`urgency_${key}`];
+    const score = (6 - fulfillment) * 2 + (urgent ? 8 : 0);
+    return { key, label, fulfillment, score };
   })
     .sort((a, b) => b.score - a.score)
     .slice(0, 2);
@@ -136,11 +136,11 @@ function calculateResult(answers) {
 
 function notifyEmailHtml(answers, result) {
   const rows = Object.entries(answers)
-    .filter(([key]) => !key.startsWith("fulfillment_") && !key.startsWith("importance_") && !key.startsWith("urgency_") && key !== "qa_summary")
+    .filter(([key]) => !key.startsWith("fulfillment_") && !key.startsWith("urgency_") && key !== "qa_summary")
     .map(([key, value]) => `<tr><td style="padding: 6px 10px; border-bottom: 1px solid #ddd;"><strong>${escapeHtml(key)}</strong></td><td style="padding: 6px 10px; border-bottom: 1px solid #ddd;">${escapeHtml(value)}</td></tr>`)
     .join("");
   const focus = result.focusAreas
-    .map((area) => `<li>${escapeHtml(area.label)}: fulfilment ${area.fulfillment}/5, importance ${area.importance}/3</li>`)
+    .map((area) => `<li>${escapeHtml(area.label)}: fulfilment ${area.fulfillment}/5</li>`)
     .join("");
 
   return `

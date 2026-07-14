@@ -48,7 +48,6 @@ function wrapListAddBtn(btn) {
 function ampSafe(text) {
   return String(text).replace(/&/g, '<span class="amp">&</span>');
 }
-const _scaleState = {};       // "urgency_career": "2"
 const _fulfillmentState = {}; // "career": "7"
 const _deeperState = {};      // "career_cause": "...", "career_vision": "..."
 const _fsState = {};          // fit signals answers
@@ -86,79 +85,8 @@ function getWheelValues() {
   return AREAS.map(([key, label]) => ({
     key, label,
     fulfillment: parseInt(document.querySelector(`input[name="fulfillment_${key}"]`)?.value || 5),
-    importance: parseInt(document.querySelector(`input[name="importance_${key}"]`)?.value || 2),
     urgency: document.querySelector(`input[name="urgency_${key}"]`) ? 1 : 0,
   }));
-}
-
-const SCALE_LABELS = { 1: "Not so important", 2: "Important", 3: "Extremely important" };
-
-function buildScaleRows(containerId, type) {
-  const container = document.getElementById(containerId);
-  const legend = `
-    <div class="scale-legend-sentinel"></div>
-    <div class="scale-legend-row">
-      <span></span>
-      <div class="scale-legend-labels">
-        <span>${SCALE_LABELS[1]}</span>
-        <span>${SCALE_LABELS[3]}</span>
-      </div>
-    </div>
-  `;
-  container.innerHTML = legend + AREAS.map(([key, label], i) => `
-    <div class="scale-row">
-      <div class="scale-area">
-        <span class="num">${String(i + 1).padStart(2, "0")}</span>
-        <strong>${label}</strong>
-      </div>
-      <div class="scale-btns" data-key="${key}" data-type="${type}">
-        <button type="button" class="scale-btn" data-val="1" title="${SCALE_LABELS[1]}">1</button>
-        <button type="button" class="scale-btn" data-val="2" title="${SCALE_LABELS[2]}">2</button>
-        <button type="button" class="scale-btn" data-val="3" title="${SCALE_LABELS[3]}">3</button>
-      </div>
-      <input type="hidden" name="${type}_${key}" value="2">
-    </div>
-  `).join("");
-  const answeredKeys = new Set();
-  container.querySelectorAll(".scale-btns").forEach(group => {
-    const key = group.dataset.key;
-    const type = group.dataset.type;
-    const stateKey = `${type}_${key}`;
-    const savedVal = _scaleState[stateKey];
-    if (savedVal) {
-      const btn = group.querySelector(`[data-val="${savedVal}"]`);
-      if (btn) { btn.classList.add("selected"); container.querySelector(`input[name="${type}_${key}"]`).value = savedVal; answeredKeys.add(key); }
-    }
-    group.querySelectorAll(".scale-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
-        group.querySelectorAll(".scale-btn").forEach(b => b.classList.remove("selected"));
-        btn.classList.add("selected");
-        _scaleState[stateKey] = btn.dataset.val;
-        container.querySelector(`input[name="${type}_${key}"]`).value = btn.dataset.val;
-        answeredKeys.add(key);
-        group.closest(".scale-row")?.classList.remove("unanswered");
-        if (answeredKeys.size === AREAS.length && window.clearFormError) window.clearFormError();
-      });
-    });
-  });
-  window._validateRanking = window._validateRanking || {};
-  window._validateRanking[containerId] = function() {
-    if (answeredKeys.size === AREAS.length) return true;
-    container.querySelectorAll(".scale-btns").forEach(group => {
-      group.closest(".scale-row")?.classList.toggle("unanswered", !answeredKeys.has(group.dataset.key));
-    });
-    return false;
-  };
-
-  if (window._legendStickyObserver) window._legendStickyObserver.disconnect();
-  const sentinel = container.querySelector(".scale-legend-sentinel");
-  const legendRow = container.querySelector(".scale-legend-row");
-  const headerH = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--header-h")) || 0;
-  window._legendStickyObserver = new IntersectionObserver(
-    ([entry]) => legendRow.classList.toggle("is-stuck", !entry.isIntersecting),
-    { rootMargin: `-${headerH}px 0px 0px 0px`, threshold: 0 }
-  );
-  window._legendStickyObserver.observe(sentinel);
 }
 
 /* ---- Step 0: Fulfillment (one at a time) ---- */
@@ -254,11 +182,6 @@ function initFulfillmentStep() {
       renderFulfillmentCard(0);
     }, { once: true });
   }
-}
-
-/* ---- Step 1: Importance ---- */
-function initImportanceStep() {
-  buildScaleRows("importance-rows", "importance");
 }
 
 /* ---- Step 3: Spillover ---- */
@@ -378,10 +301,8 @@ function initFocusStep() {
   let selected = existingFocusKeys;
 
   function getReason(area) {
-    const importanceLabel = (SCALE_LABELS[area.importance] || "Important").toLowerCase();
     if (area.urgency) return `flagged as urgent · ${area.fulfillment}/5 fulfilled`;
-    if (area.fulfillment <= 2) return `${area.fulfillment}/5 fulfilled · ${importanceLabel}`;
-    return `${importanceLabel} · ${area.fulfillment}/5 fulfilled`;
+    return `${area.fulfillment}/5 fulfilled`;
   }
 
   function updateFocusInputs() {
@@ -513,14 +434,53 @@ function renderCauseList(key) {
   build();
 }
 
-/* ---- Values attributed to each action/inaction, one bullet list per item ---- */
-function renderActsValuesByItem(key) {
-  const container = document.getElementById('acts-value-groups-' + key);
-  if (!container) return;
+// Normalizes free-typed text into a stable lookup key (trim + lowercase), so the
+// same value named under two different reasons is treated as the same answer.
+function valueKey(s) {
+  return (s || '').trim().toLowerCase();
+}
+
+// Every distinct string typed across an item -> string[] map (case-insensitive
+// dedup, first-typed casing kept). Shared by the "hidden values" pages.
+function distinctFreeTextValues(items, byItemObj) {
+  const seen = [];
+  const seenNorm = new Set();
+  items.forEach((it) => {
+    (byItemObj[it] || []).forEach((v) => {
+      const t = (v || '').trim();
+      const norm = t.toLowerCase();
+      if (t && !seenNorm.has(norm)) { seenNorm.add(norm); seen.push(t); }
+    });
+  });
+  return seen;
+}
+
+// The distinct reasons named on the "Reasons" page for a given area — this is
+// what the "Hidden Values" page (and everything after it) groups by, instead
+// of the raw action/inaction items.
+function distinctReasonsForArea(key) {
   const items = (_deeperState['deeper_' + key + '_acts_items'] || []).filter(it => it && it.trim());
-  const stateKey = 'deeper_' + key + '_acts_values_by_item';
+  const reasonsByItem = _deeperState['deeper_' + key + '_acts_reasons_by_item'] || {};
+  return distinctFreeTextValues(items, reasonsByItem);
+}
+
+/* ---- Generic: one bullet list per item. Optionally offers cross-item "also
+   applies here?" quick-add suggestions so the same answer never has to be
+   typed out twice — off for the "reasons" page, on for "hidden values".
+   Also optionally offers an inline Yes/No "keep this?" toggle next to each
+   typed answer (used on "hidden values" to ask whether they want to continue
+   living by it) — keyed by the answer's own text, so the same value typed
+   under two different reasons shares one answer. Shared by both pages. ---- */
+function renderGroupedListByItem(containerId, items, stateKey, hintText, placeholder, showSuggestions = true, continueStateKey = null) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
   if (typeof _deeperState[stateKey] !== 'object' || !_deeperState[stateKey]) _deeperState[stateKey] = {};
-  const valuesByItem = _deeperState[stateKey];
+  const byItem = _deeperState[stateKey];
+
+  if (continueStateKey && (typeof _deeperState[continueStateKey] !== 'object' || !_deeperState[continueStateKey])) {
+    _deeperState[continueStateKey] = {};
+  }
+  const decisions = continueStateKey ? _deeperState[continueStateKey] : null;
 
   container.innerHTML = '';
   if (!items.length) return;
@@ -528,24 +488,14 @@ function renderActsValuesByItem(key) {
   const hidden = document.createElement('input');
   hidden.type = 'hidden';
   hidden.name = stateKey;
-  function syncHidden() { hidden.value = JSON.stringify(valuesByItem); }
+  function syncHidden() { hidden.value = JSON.stringify(byItem); }
 
-  // Every distinct value typed anywhere on this page, across all actions/inactions —
-  // offered as quick-add checkboxes on the OTHER items so the same value never has
-  // to be typed out twice. Matching is case-insensitive (e.g. "Security" and
-  // "security" count as the same value); the first-typed casing is kept for display.
-  function allTypedValues() {
-    const seen = [];
-    const seenNorm = new Set();
-    items.forEach((it) => {
-      (valuesByItem[it] || []).forEach((v) => {
-        const t = (v || '').trim();
-        const norm = t.toLowerCase();
-        if (t && !seenNorm.has(norm)) { seenNorm.add(norm); seen.push(t); }
-      });
-    });
-    return seen;
-  }
+  let continueHidden = null;
+  function syncContinueHidden() { if (continueHidden) continueHidden.value = JSON.stringify(decisions); }
+
+  // Matching is case-insensitive (e.g. "Security" and "security" count as the
+  // same answer); the first-typed casing is kept for display.
+  function allTyped() { return distinctFreeTextValues(items, byItem); }
 
   const refreshSuggestionsFns = [];
   function refreshAllSuggestions() {
@@ -553,8 +503,8 @@ function renderActsValuesByItem(key) {
   }
 
   items.forEach((item) => {
-    if (!Array.isArray(valuesByItem[item]) || !valuesByItem[item].length) valuesByItem[item] = [''];
-    const values = valuesByItem[item];
+    if (!Array.isArray(byItem[item]) || !byItem[item].length) byItem[item] = [''];
+    const values = byItem[item];
 
     const block = document.createElement('div');
     block.className = 'acts-group';
@@ -566,14 +516,14 @@ function renderActsValuesByItem(key) {
     itemLblRow.style.marginBottom = '.6rem';
     block.appendChild(itemLblRow);
 
-    // Quick-add checkboxes for values already named under other actions/inactions
-    // on this page. Checking one fills it into this item's list below instead of
-    // making the person retype a value they already named elsewhere.
+    // Quick-add checkboxes for answers already named under other items on this
+    // page. Checking one fills it into this item's list below instead of making
+    // the person retype an answer they already named elsewhere.
     const suggestWrap = document.createElement('div');
     suggestWrap.className = 'acts-suggest-wrap';
-    block.appendChild(suggestWrap);
+    if (showSuggestions) block.appendChild(suggestWrap);
 
-    block.appendChild(createListHint(VALUE_LIST_HINT));
+    block.appendChild(createListHint(hintText));
 
     const list = document.createElement('div');
     list.className = 'cause-list';
@@ -591,11 +541,24 @@ function renderActsValuesByItem(key) {
         inp.type = 'text';
         inp.className = 'cause-input';
         inp.value = val;
-        inp.placeholder = 'e.g. Security, comfort, avoiding failure…';
+        inp.placeholder = placeholder;
+
+        let keepBlock = null;
+        function updateKeepToggle() {
+          if (!keepBlock) return;
+          const has = !!inp.value.trim();
+          keepBlock.hidden = !has;
+          if (has) {
+            const k = valueKey(inp.value);
+            keepBlock.querySelectorAll('.keep-btn').forEach((b) => b.classList.toggle('selected', decisions[k] === b.dataset.val));
+          }
+        }
+
         inp.addEventListener('input', () => {
           values[i] = inp.value;
           syncHidden();
           list.querySelectorAll('.cause-remove').forEach(b => { b.hidden = values.length === 1; });
+          updateKeepToggle();
         });
         inp.addEventListener('blur', () => { refreshAllSuggestions(); });
         inp.addEventListener('keydown', (e) => {
@@ -622,6 +585,42 @@ function renderActsValuesByItem(key) {
         });
         row.appendChild(bullet); row.appendChild(inp); row.appendChild(rm);
         list.appendChild(row);
+
+        if (continueStateKey) {
+          const keepInner = document.createElement('div');
+          const keepQ = document.createElement('p');
+          keepQ.className = 'list-hint';
+          keepQ.style.marginBottom = '.4rem';
+          keepQ.textContent = 'Do you want to continue living by this value in the current context?';
+          keepInner.appendChild(keepQ);
+
+          const btnsWrap = document.createElement('div');
+          btnsWrap.className = 'yn-btns';
+          btnsWrap.style.justifyContent = 'flex-start';
+          [{ v: 'yes', label: 'Yes' }, { v: 'no', label: 'No' }].forEach(({ v, label: btnLabel }) => {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.dataset.val = v;
+            b.className = 'yn-btn keep-btn' + (decisions[valueKey(val)] === v ? ' selected' : '');
+            b.textContent = btnLabel;
+            b.addEventListener('click', () => {
+              const k = valueKey(inp.value);
+              if (!k) return;
+              decisions[k] = v;
+              syncContinueHidden();
+              keepBlock.querySelectorAll('.keep-btn').forEach((bb) => bb.classList.remove('selected'));
+              b.classList.add('selected');
+              if (window.clearFormError) window.clearFormError();
+            });
+            btnsWrap.appendChild(b);
+          });
+          keepInner.appendChild(btnsWrap);
+
+          keepBlock = indentPastBullet(keepInner, 'list-hint-row');
+          keepBlock.style.marginBottom = '.8rem';
+          keepBlock.hidden = !val.trim();
+          list.appendChild(keepBlock);
+        }
       });
     }
     buildRows();
@@ -640,7 +639,7 @@ function renderActsValuesByItem(key) {
 
     function refreshSuggestions() {
       const already = new Set(values.map((v) => (v || '').trim().toLowerCase()).filter(Boolean));
-      const options = allTypedValues().filter((v) => !already.has(v.toLowerCase()));
+      const options = allTyped().filter((v) => !already.has(v.toLowerCase()));
       suggestWrap.innerHTML = '';
       if (!options.length) return;
       const suggestLbl = document.createElement('p');
@@ -669,8 +668,10 @@ function renderActsValuesByItem(key) {
       });
       suggestWrap.appendChild(indentPastBullet(checks, 'indent-row-center'));
     }
-    refreshSuggestions();
-    refreshSuggestionsFns.push(refreshSuggestions);
+    if (showSuggestions) {
+      refreshSuggestions();
+      refreshSuggestionsFns.push(refreshSuggestions);
+    }
 
     container.appendChild(block);
   });
@@ -678,9 +679,32 @@ function renderActsValuesByItem(key) {
   syncHidden();
   container.appendChild(hidden);
 
+  if (continueStateKey) {
+    continueHidden = document.createElement('input');
+    continueHidden.type = 'hidden';
+    continueHidden.name = continueStateKey;
+    syncContinueHidden();
+    container.appendChild(continueHidden);
+  }
+
   const listErr = document.createElement('p');
   listErr.className = 'yn-error list-error';
   container.appendChild(listErr);
+}
+
+// Reasons attributed to each action/inaction, one bullet list per item.
+function renderActsReasonsByItem(key) {
+  const items = (_deeperState['deeper_' + key + '_acts_items'] || []).filter(it => it && it.trim());
+  renderGroupedListByItem('acts-reason-groups-' + key, items, 'deeper_' + key + '_acts_reasons_by_item',
+    CAUSE_LIST_HINT, 'e.g. Fear of judgment, comfort, avoiding a hard conversation…', false);
+}
+
+// Values attributed to each REASON (not the raw action/inaction) — one bullet
+// list per distinct reason named on the previous page.
+function renderActsValuesByItem(key) {
+  const items = distinctReasonsForArea(key);
+  renderGroupedListByItem('acts-value-groups-' + key, items, 'deeper_' + key + '_acts_values_by_item',
+    VALUE_LIST_HINT, 'e.g. Security, comfort, avoiding failure…', true, 'deeper_' + key + '_acts_values_continue');
 }
 
 function renderSimpleBulletList(containerId, stateKey, placeholder, nothingStateKey, stateObj, hintText) {
@@ -780,7 +804,7 @@ function renderSimpleBulletList(containerId, stateKey, placeholder, nothingState
         build();
       });
       const lbl = document.createElement('span');
-      lbl.textContent = 'Nothing';
+      lbl.textContent = "I don't think I'm contributing to it.";
       nothingWrap.appendChild(cb);
       nothingWrap.appendChild(lbl);
       container.appendChild(nothingWrap);
@@ -941,11 +965,16 @@ function renderActsGroups(key) {
   const isNothing = !!_deeperState['deeper_' + key + '_acts_raw_nothing'];
   const items = isNothing ? [] : (_deeperState['deeper_' + key + '_acts_raw_items'] || []).filter(i => i && i.trim());
   _deeperState['deeper_' + key + '_acts_items'] = items;
+  renderActsReasonsByItem(key);
   renderActsValuesByItem(key);
 }
 
+function renderActsItemReasons(key) {
+  renderActsReasonsByItem(key);
+}
+
 function renderActsItemValues(key) {
-  renderActsGroups(key);
+  renderActsValuesByItem(key);
 }
 
 function renderActsConfirm(key) {
@@ -1752,8 +1781,8 @@ function initDeeperStep() {
   const areaMap = Object.fromEntries(AREAS.map(([key, label, desc]) => [key, { label, desc }]));
   const wheelMap = Object.fromEntries(wheel.map(a => [a.key, a]));
 
-  // Sub-pages: 5 per area
-  const qtypes = ['cause', 'vision', 'vision-describe', 'vision-item-achievable', 'vision-achievable-check', 'vision-revised', 'vision-commitment', 'acts-list', 'acts-values', 'control', 'control-attitude'];
+  // Sub-pages per area — the flow skips whichever ones don't apply to that person.
+  const qtypes = ['cause', 'vision', 'vision-describe', 'vision-item-achievable', 'vision-achievable-check', 'vision-revised', 'vision-commitment', 'acts-list', 'acts-reasons', 'acts-values', 'control', 'control-attitude'];
   const allSubPages = selectedKeys.flatMap(key => qtypes.map(qtype => ({ key, qtype })));
 
   container.innerHTML = selectedKeys.flatMap(key => {
@@ -1837,7 +1866,7 @@ function initDeeperStep() {
         <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Conviction</h3>
         <div id="vision-commitment-recap-${key}" class="recap-block" style="margin-bottom:1.6rem" hidden></div>
         <div class="deeper-field yn-field" data-key="${key}" data-role="commitment">
-          <label><strong>WILL</strong> you achieve this?</label>
+          <label><strong>WILL</strong> you achieve this? If it's not a clear yes, it's a no.</label>
           <div class="yn-btns">
             <button type="button" class="yn-btn${commitmentYn === 'certain'  ? ' selected' : ''}" data-val="certain">There is no other way</button>
             <button type="button" class="yn-btn${commitmentYn === 'doubtful' ? ' selected' : ''}" data-val="doubtful">I have doubts</button>
@@ -1854,11 +1883,19 @@ function initDeeperStep() {
         </div>
         <div id="acts-confirm-${key}" style="margin-top:1.2rem" hidden></div>
       </div>`,
+      `<div class="deeper-subpage" id="deeper-sub-${key}-acts-reasons" data-area="${label}" hidden>
+        <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Reasons</h3>
+        <div id="recap-acts-${key}-acts-reasons" data-label="How you are contributing to this" class="recap-block" hidden></div>
+        <div class="deeper-field">
+          <label>What are the reasons for why you are doing/not doing this?</label>
+          <div id="acts-reason-groups-${key}" style="margin-top:.9rem"></div>
+        </div>
+      </div>`,
       `<div class="deeper-subpage" id="deeper-sub-${key}-acts-values" data-area="${label}" hidden>
         <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Hidden Values</h3>
-        <div id="recap-acts-${key}" data-label="How you are contributing to this" class="recap-block" hidden></div>
+        <div id="recap-acts-${key}" data-label="Your reasons" class="recap-block" hidden></div>
         <div class="deeper-field">
-          <label>If you're brutally honest with yourself, which values might you have that you are serving with these actions/inactions?</label>
+          <label>If you're brutally honest with yourself, which values might you have that you are serving with these reasons? For each one, also say whether you want to continue living by it in the current context.</label>
           <div id="acts-value-groups-${key}" style="margin-top:.9rem"></div>
         </div>
       </div>`,
@@ -1909,10 +1946,18 @@ function initDeeperStep() {
       showDeeperSubPage(idx + direction, direction);
       return;
     }
-    if (sp.qtype === 'acts-values') {
+    if (sp.qtype === 'acts-reasons') {
       const isNothing = !!_deeperState['deeper_' + sp.key + '_acts_raw_nothing'];
       const items = isNothing ? [] : (_deeperState['deeper_' + sp.key + '_acts_raw_items'] || []).filter(i => i && i.trim());
       if (!items.length) {
+        showDeeperSubPage(idx + direction, direction);
+        return;
+      }
+      _deeperState['deeper_' + sp.key + '_acts_items'] = items;
+      renderActsItemReasons(sp.key);
+    }
+    if (sp.qtype === 'acts-values') {
+      if (!distinctReasonsForArea(sp.key).length) {
         showDeeperSubPage(idx + direction, direction);
         return;
       }
@@ -1973,15 +2018,18 @@ function initDeeperStep() {
     window._deeperSubPageIdx = idx;
     if (window.updateAssessmentProgress) window.updateAssessmentProgress();
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    if (!window._historyNav) history.pushState({ step: 4, sub: idx }, '');
+    if (!window._historyNav) history.pushState({ step: 3, sub: idx }, '');
     const { key, qtype } = sp;
     const causes = (_deeperState['deeper_' + key + '_causes'] || []).filter(c => c && c.trim());
     if (qtype === 'acts-list' || qtype === 'control') {
       fillRecapBlock(document.getElementById('recap-causes-' + key + '-' + qtype), causes);
     }
-    if (qtype === 'acts-values') {
+    if (qtype === 'acts-reasons') {
       const actsItems = (_deeperState['deeper_' + key + '_acts_items'] || []).filter(i => i && i.trim());
-      fillRecapBlock(document.getElementById('recap-acts-' + key), actsItems);
+      fillRecapBlock(document.getElementById('recap-acts-' + key + '-acts-reasons'), actsItems);
+    }
+    if (qtype === 'acts-values') {
+      fillRecapBlock(document.getElementById('recap-acts-' + key), distinctReasonsForArea(key));
     }
     if (qtype === 'control') {
       const controlItemsKey = 'deeper_' + key + '_control_items';
@@ -2158,7 +2206,7 @@ function initDeeperStep() {
       const items     = (_deeperState['deeper_' + key + '_acts_raw_items'] || []).filter(i => i && i.trim());
       const isNothing = !!_deeperState['deeper_' + key + '_acts_raw_nothing'];
       if (!items.length && !isNothing) {
-        setFormErr('Please add at least one item or select "Nothing".', document.getElementById('acts-items-' + key));
+        setFormErr('Please add at least one item or select "I don\'t think I\'m contributing to it."', document.getElementById('acts-items-' + key));
         return false;
       }
       if (!_deeperState['deeper_' + key + '_acts_confirm']) {
@@ -2168,14 +2216,32 @@ function initDeeperStep() {
       }
     }
 
-    if (qtype === 'acts-values') {
+    if (qtype === 'acts-reasons') {
       const filledItems = (_deeperState['deeper_' + key + '_acts_items'] || []).filter(i => i && i.trim());
+      const reasonsByItem = _deeperState['deeper_' + key + '_acts_reasons_by_item'] || {};
+      const allCovered = filledItems.every(item =>
+        Array.isArray(reasonsByItem[item]) && reasonsByItem[item].some(v => v && v.trim())
+      );
+      if (!allCovered) {
+        setFormErr('Every action needs at least one reason attributed to it before continuing.', document.getElementById('acts-reason-groups-' + key));
+        return false;
+      }
+    }
+
+    if (qtype === 'acts-values') {
+      const filledItems = distinctReasonsForArea(key);
       const valuesByItem = _deeperState['deeper_' + key + '_acts_values_by_item'] || {};
       const allCovered = filledItems.every(item =>
         Array.isArray(valuesByItem[item]) && valuesByItem[item].some(v => v && v.trim())
       );
       if (!allCovered) {
-        setFormErr('Every action needs at least one value attributed to it before continuing.', document.getElementById('acts-value-groups-' + key));
+        setFormErr('Every reason needs at least one value attributed to it before continuing.', document.getElementById('acts-value-groups-' + key));
+        return false;
+      }
+      const distinctValues = distinctFreeTextValues(filledItems, valuesByItem);
+      const decisions = _deeperState['deeper_' + key + '_acts_values_continue'] || {};
+      if (distinctValues.some((v) => !decisions[valueKey(v)])) {
+        setFormErr('Please say whether you want to continue living by each value before continuing.', document.getElementById('acts-value-groups-' + key));
         return false;
       }
     }
@@ -2248,7 +2314,7 @@ function initFitSignalsStep() {
 
   const questions = [
     { id: 'q2', type: 'singleselect', headline: 'Readiness', title: 'Capacity',
-      label: 'Do you feel like you have the mental and emotional capacity to tackle your challenges and create change right now?',
+      label: 'Assuming you were fully committed to the changes you want to create: Do you feel like you have the mental and emotional capacity to tackle your challenges and create change right now?',
       options: ['Yes, whatever it takes', 'Yes, but I need to go easy on myself', "No, I'm exhausted"],
       followup: { triggerValue: "No, I'm exhausted", label: 'What do you think you need right now?', stateKey: 'fs_q2_needs' } },
     { id: 'q3', type: 'multiselect', headline: 'Inner state', title: 'Symptoms',
@@ -2548,7 +2614,7 @@ function initFitSignalsStep() {
     if (window.updateAssessmentProgress) window.updateAssessmentProgress();
     updateFsHeader(idx);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    if (!window._historyNav) history.pushState({ step: 5, sub: idx }, '');
+    if (!window._historyNav) history.pushState({ step: 4, sub: idx }, '');
 
     if (_fsKeyHandler) { document.removeEventListener('keydown', _fsKeyHandler); _fsKeyHandler = null; }
     const q = questions[idx];
@@ -2624,13 +2690,12 @@ window.onStepChange = function(step) {
     _fulfillmentKeyHandler = null;
   }
   if (step === 0) initFulfillmentStep();
-  if (step === 1) initImportanceStep();
-  if (step === 2) initUrgencyFlagStep();
-  if (step === 3) initFocusStep();
-  if (step === 4) initDeeperStep();
-  if (step === 5) initFitSignalsStep();
+  if (step === 1) initUrgencyFlagStep();
+  if (step === 2) initFocusStep();
+  if (step === 3) initDeeperStep();
+  if (step === 4) initFitSignalsStep();
   const btnNext = document.getElementById('btn-next');
-  if (btnNext) btnNext.textContent = step === 6 ? 'Get my results →' : 'Next →';
+  if (btnNext) btnNext.textContent = step === 5 ? 'Get my results →' : 'Next →';
 };
 
 // Initialize step 0 — showStep(0) ran before this script loaded
@@ -2650,7 +2715,7 @@ function revealShareLink(resultUrl) {
 // ---- Human-readable capture of every question + answer, for the notify email.
 // Labels mirror the fit-signals `questions` array in initFitSignalsStep; keep in sync.
 const FIT_LABELS = {
-  q2: 'Do you feel you have the mental and emotional capacity to tackle your challenges and create change right now?',
+  q2: 'Assuming you were fully committed to the changes you want to create: Do you feel like you have the mental and emotional capacity to tackle your challenges and create change right now?',
   q3: 'Do you struggle with any of these on a regular basis?',
   q4: 'Do you struggle with any addictions or compulsive habits?',
   q5l: 'Which of the following do you struggle to maintain consistently?',
@@ -2724,6 +2789,23 @@ function captureDeeperFromDom() {
         return;
       }
 
+      // Hidden values: one row per named value, saying whether they want to keep
+      // living by it. Bypasses the generic scan below on purpose — that scan
+      // would otherwise pick up the first "keep this value?" button on the page
+      // and treat it as if it were the whole question's one answer.
+      const valuesMatch = sp.id.match(/^deeper-sub-(.+)-acts-values$/);
+      if (valuesMatch) {
+        const areaKey = valuesMatch[1];
+        const items = distinctReasonsForArea(areaKey);
+        const valuesByItem = _deeperState['deeper_' + areaKey + '_acts_values_by_item'] || {};
+        const decisions = _deeperState['deeper_' + areaKey + '_acts_values_continue'] || {};
+        distinctFreeTextValues(items, valuesByItem).forEach((value) => {
+          const ans = decisions[valueKey(value)] === 'yes' ? 'Yes' : decisions[valueKey(value)] === 'no' ? 'No' : '(no answer given)';
+          rows.push([area ? `${area} — "${value}"` : `"${value}"`, `Continue living by this: ${ans}`]);
+        });
+        return;
+      }
+
       sp.querySelectorAll('.deeper-field').forEach((field) => {
         if (field.classList.contains('vision-actual-field')) return; // mandatory confirm checkbox — answer is always the same, not worth showing
         if (field.classList.contains('vision-achievable-field')) return; // per-item achievable/not-achievable ratings — not needed in the email
@@ -2737,12 +2819,13 @@ function captureDeeperFromDom() {
         const sel = [...field.querySelectorAll('.yn-btn.selected')].find(mine);
         if (sel) a = sel.textContent.trim();
         if (!a) {
-          // The "which values" question lists a bullet-list of values under each
-          // action/inaction — there are no checkboxes here, just free-text values.
-          const isActsValuesField = !!field.querySelector('[id^="acts-value-groups-"]');
+          // The "reasons" question lists a bullet-list of free text under each
+          // item — there are no checkboxes here to worry about. (The "which
+          // values" field is handled entirely above, via valuesMatch.)
+          const isGroupedFreeTextField = !!field.querySelector('[id^="acts-reason-groups-"]');
           const texts = [...field.querySelectorAll('input:not([type=checkbox]):not([type=radio]):not([type=hidden]), textarea')]
             .filter(mine).map((i) => i.value.trim()).filter(Boolean);
-          const checks = isActsValuesField ? [] : [...field.querySelectorAll('input[type=checkbox]')]
+          const checks = isGroupedFreeTextField ? [] : [...field.querySelectorAll('input[type=checkbox]')]
             .filter((c) => mine(c) && c.checked)
             .map((c) => (c.closest('label')?.textContent || 'Yes').replace(/\s+/g, ' ').trim());
           const combined = [...texts, ...checks];
@@ -2793,10 +2876,10 @@ function buildQaSummary(answers) {
   // ---- Life areas — ALL of them ----
   let areaRows = [];
   try {
-    areaRows = getWheelValues().map((a) => [a.label, `Fulfilment ${a.fulfillment}/5 · Importance ${a.importance}`]);
+    areaRows = getWheelValues().map((a) => [a.label, `Fulfilment ${a.fulfillment}/5`]);
   } catch (_e) {
     (typeof AREAS !== 'undefined' ? AREAS : []).forEach(([key, label]) =>
-      areaRows.push([label, `Fulfilment ${answers['fulfillment_' + key] ?? '?'}/5 · Importance ${answers['importance_' + key] ?? '?'}`]));
+      areaRows.push([label, `Fulfilment ${answers['fulfillment_' + key] ?? '?'}/5`]));
   }
   if (areaRows.length) { areaRows.forEach(([, a]) => mark(a)); groups.push({ title: 'Life areas — all 10, with ratings', rows: areaRows, subNumbered: true }); }
 
@@ -2855,7 +2938,7 @@ function buildQaSummary(answers) {
     // the same when present, and neither is real content worth showing.
     '_confirm', '_confirm_shown',
     '_vision_item_achievable', '_vision_achievable_check', '_vision_items',
-    '_acts_values_by_item', '_omits_groups',
+    '_acts_values_by_item', '_acts_reasons_by_item', '_acts_values_continue', '_omits_groups',
     '_control_feeling',
   ];
   const extra = [];

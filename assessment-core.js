@@ -78,7 +78,6 @@ function wheelData(answers) {
   return AREAS.map(([key, label]) => ({
     key, label,
     fulfillment: numeric(answers[`fulfillment_${key}`], 3),
-    importance: numeric(answers[`importance_${key}`], 2),
     urgency: numeric(answers[`urgency_${key}`], 0),
   }));
 }
@@ -89,7 +88,7 @@ const URGENCY_BOOST = 8;
 
 function topFocusAreas(wheel) {
   return wheel
-    .map((a) => ({ ...a, gap: a.importance - a.fulfillment, score: (6 - a.fulfillment) * 2 + a.importance + (a.urgency ? URGENCY_BOOST : 0) }))
+    .map((a) => ({ ...a, score: (6 - a.fulfillment) * 2 + (a.urgency ? URGENCY_BOOST : 0) }))
     .sort((a, b) => b.score - a.score)
     .slice(0, 2);
 }
@@ -179,7 +178,7 @@ function renderWheel(wheel) {
 
 function rankAllAreas(wheel) {
   return wheel
-    .map((a) => ({ ...a, score: (6 - a.fulfillment) * 2 + a.importance + (a.urgency ? URGENCY_BOOST : 0) }))
+    .map((a) => ({ ...a, score: (6 - a.fulfillment) * 2 + (a.urgency ? URGENCY_BOOST : 0) }))
     .sort((a, b) => b.score - a.score);
 }
 
@@ -249,7 +248,7 @@ function renderResult(result, emailState = "pending") {
     return `
     <li>
       <strong>${f.label}</strong>
-      <span class="nums">fulfilment ${f.fulfillment}/5 · importance ${f.importance}/3${f.urgency ? " · flagged urgent" : ""}</span>
+      <span class="nums">fulfilment ${f.fulfillment}/5${f.urgency ? " · flagged urgent" : ""}</span>
       <p class="read">${read.looks ? `It can look like ${read.looks}.` : ""} <em>First shift —</em> ${read.shift || ""}</p>
     </li>`;
   }).join("");

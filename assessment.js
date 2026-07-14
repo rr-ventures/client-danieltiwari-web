@@ -471,7 +471,7 @@ function distinctReasonsForArea(key) {
    typed answer (used on "hidden values" to ask whether they want to continue
    living by it) — keyed by the answer's own text, so the same value typed
    under two different reasons shares one answer. Shared by both pages. ---- */
-function renderGroupedListByItem(containerId, items, stateKey, hintText, placeholder, showSuggestions = true, continueStateKey = null) {
+function renderGroupedListByItem(containerId, items, stateKey, hintText, placeholder, showSuggestions = true, continueStateKey = null, itemLabelFn = null) {
   const container = document.getElementById(containerId);
   if (!container) return;
   if (typeof _deeperState[stateKey] !== 'object' || !_deeperState[stateKey]) _deeperState[stateKey] = {};
@@ -510,7 +510,7 @@ function renderGroupedListByItem(containerId, items, stateKey, hintText, placeho
     block.className = 'acts-group';
     const itemLbl = document.createElement('p');
     itemLbl.className = 'acts-item-heading';
-    itemLbl.textContent = item;
+    itemLbl.textContent = itemLabelFn ? itemLabelFn(item) : item;
     itemLbl.style.marginBottom = '0';
     const itemLblRow = indentPastBullet(itemLbl, 'indent-row-center');
     itemLblRow.style.marginBottom = '.6rem';
@@ -699,12 +699,36 @@ function renderActsReasonsByItem(key) {
     CAUSE_LIST_HINT, 'e.g. Fear of judgment, comfort, avoiding a hard conversation…', false);
 }
 
+// Which action/inaction item(s) named each distinct reason — used so the
+// "Hidden Values" page can show the action/inaction next to the reason it
+// belongs to, even though values are grouped by reason, not by action/inaction.
+function actionsForReason(key) {
+  const items = (_deeperState['deeper_' + key + '_acts_items'] || []).filter(it => it && it.trim());
+  const reasonsByItem = _deeperState['deeper_' + key + '_acts_reasons_by_item'] || {};
+  const map = {};
+  items.forEach((it) => {
+    (reasonsByItem[it] || []).forEach((r) => {
+      const t = (r || '').trim();
+      if (!t) return;
+      const norm = t.toLowerCase();
+      if (!map[norm]) map[norm] = [];
+      if (!map[norm].includes(it)) map[norm].push(it);
+    });
+  });
+  return map;
+}
+
 // Values attributed to each REASON (not the raw action/inaction) — one bullet
 // list per distinct reason named on the previous page.
 function renderActsValuesByItem(key) {
   const items = distinctReasonsForArea(key);
+  const actionsByReason = actionsForReason(key);
+  const itemLabelFn = (reason) => {
+    const actions = actionsByReason[reason.trim().toLowerCase()] || [];
+    return actions.length ? actions.join('; ') + ' — ' + reason : reason;
+  };
   renderGroupedListByItem('acts-value-groups-' + key, items, 'deeper_' + key + '_acts_values_by_item',
-    VALUE_LIST_HINT, 'e.g. Security, comfort, avoiding failure…', true, 'deeper_' + key + '_acts_values_continue');
+    VALUE_LIST_HINT, 'e.g. Security, comfort, avoiding failure…', true, 'deeper_' + key + '_acts_values_continue', itemLabelFn);
 }
 
 function renderSimpleBulletList(containerId, stateKey, placeholder, nothingStateKey, stateObj, hintText) {
@@ -1887,7 +1911,7 @@ function initDeeperStep() {
         <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Reasons</h3>
         <div id="recap-acts-${key}-acts-reasons" data-label="How you are contributing to this" class="recap-block" hidden></div>
         <div class="deeper-field">
-          <label>What are the reasons for why you are doing/not doing this?</label>
+          <label>What are the reasons for why you are doing/not doing the above?</label>
           <div id="acts-reason-groups-${key}" style="margin-top:.9rem"></div>
         </div>
       </div>`,
@@ -2110,7 +2134,7 @@ function initDeeperStep() {
   window._showDeeperSubPage = showDeeperSubPage;
   showDeeperSubPage(0);
 
-  selectedKeys.forEach(k => { renderCauseList(k); renderSimpleBulletList('acts-items-' + k, 'deeper_' + k + '_acts_raw_items', 'Describe what you are doing, or could be doing…', 'deeper_' + k + '_acts_raw_nothing', undefined, GENERIC_LIST_HINT); renderActsConfirm(k); renderActsGroups(k); renderControlList(k); renderControlAttitude(k); renderVisionList(k); });
+  selectedKeys.forEach(k => { renderCauseList(k); renderSimpleBulletList('acts-items-' + k, 'deeper_' + k + '_acts_raw_items', 'Describe what you are doing, or could be doing…', 'deeper_' + k + '_acts_raw_nothing', undefined, 'One action/inaction per line — press "+ Add another" for the next.'); renderActsConfirm(k); renderActsGroups(k); renderControlList(k); renderControlAttitude(k); renderVisionList(k); });
 
   // Wire up yn-field toggles
   container.querySelectorAll('.yn-field').forEach(field => {

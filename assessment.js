@@ -91,22 +91,35 @@ function getWheelValues() {
   }));
 }
 
+const SCALE_LABELS = { 1: "Not so important", 2: "Important", 3: "Extremely important" };
+
 function buildScaleRows(containerId, type) {
   const container = document.getElementById(containerId);
-  container.innerHTML = AREAS.map(([key, label], i) => `
+  const legend = `
+    <div class="scale-legend-sentinel"></div>
+    <div class="scale-legend-row">
+      <span></span>
+      <div class="scale-legend-labels">
+        <span>${SCALE_LABELS[1]}</span>
+        <span>${SCALE_LABELS[3]}</span>
+      </div>
+    </div>
+  `;
+  container.innerHTML = legend + AREAS.map(([key, label], i) => `
     <div class="scale-row">
       <div class="scale-area">
         <span class="num">${String(i + 1).padStart(2, "0")}</span>
         <strong>${label}</strong>
       </div>
       <div class="scale-btns" data-key="${key}" data-type="${type}">
-        <button type="button" class="scale-btn" data-val="1">1</button>
-        <button type="button" class="scale-btn" data-val="2">2</button>
-        <button type="button" class="scale-btn" data-val="3">3</button>
+        <button type="button" class="scale-btn" data-val="1" title="${SCALE_LABELS[1]}">1</button>
+        <button type="button" class="scale-btn" data-val="2" title="${SCALE_LABELS[2]}">2</button>
+        <button type="button" class="scale-btn" data-val="3" title="${SCALE_LABELS[3]}">3</button>
       </div>
       <input type="hidden" name="${type}_${key}" value="2">
     </div>
   `).join("");
+  const answeredKeys = new Set();
   container.querySelectorAll(".scale-btns").forEach(group => {
     const key = group.dataset.key;
     const type = group.dataset.type;
@@ -114,7 +127,7 @@ function buildScaleRows(containerId, type) {
     const savedVal = _scaleState[stateKey];
     if (savedVal) {
       const btn = group.querySelector(`[data-val="${savedVal}"]`);
-      if (btn) { btn.classList.add("selected"); container.querySelector(`input[name="${type}_${key}"]`).value = savedVal; }
+      if (btn) { btn.classList.add("selected"); container.querySelector(`input[name="${type}_${key}"]`).value = savedVal; answeredKeys.add(key); }
     }
     group.querySelectorAll(".scale-btn").forEach(btn => {
       btn.addEventListener("click", () => {
@@ -122,9 +135,30 @@ function buildScaleRows(containerId, type) {
         btn.classList.add("selected");
         _scaleState[stateKey] = btn.dataset.val;
         container.querySelector(`input[name="${type}_${key}"]`).value = btn.dataset.val;
+        answeredKeys.add(key);
+        group.closest(".scale-row")?.classList.remove("unanswered");
+        if (answeredKeys.size === AREAS.length && window.clearFormError) window.clearFormError();
       });
     });
   });
+  window._validateRanking = window._validateRanking || {};
+  window._validateRanking[containerId] = function() {
+    if (answeredKeys.size === AREAS.length) return true;
+    container.querySelectorAll(".scale-btns").forEach(group => {
+      group.closest(".scale-row")?.classList.toggle("unanswered", !answeredKeys.has(group.dataset.key));
+    });
+    return false;
+  };
+
+  if (window._legendStickyObserver) window._legendStickyObserver.disconnect();
+  const sentinel = container.querySelector(".scale-legend-sentinel");
+  const legendRow = container.querySelector(".scale-legend-row");
+  const headerH = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--header-h")) || 0;
+  window._legendStickyObserver = new IntersectionObserver(
+    ([entry]) => legendRow.classList.toggle("is-stuck", !entry.isIntersecting),
+    { rootMargin: `-${headerH}px 0px 0px 0px`, threshold: 0 }
+  );
+  window._legendStickyObserver.observe(sentinel);
 }
 
 /* ---- Step 0: Fulfillment (one at a time) ---- */
@@ -222,85 +256,9 @@ function initFulfillmentStep() {
   }
 }
 
-function buildRankingRows(containerId, hiddenContainerId, type) {
-  const n = AREAS.length;
-  const container = document.getElementById(containerId);
-
-  const savedInputs = document.querySelectorAll(`#${hiddenContainerId} input`);
-  let orderedAreas = [...AREAS];
-  let hasMoved = false;
-  if (savedInputs.length) {
-    const valMap = {};
-    savedInputs.forEach(inp => { valMap[inp.name.replace(`${type}_`, "")] = parseInt(inp.value); });
-    orderedAreas = [...AREAS].sort((a, b) => (valMap[b[0]] || 0) - (valMap[a[0]] || 0));
-    hasMoved = orderedAreas.some(([key], i) => key !== AREAS[i][0]);
-  }
-  container.innerHTML = orderedAreas.map(([key, label, desc], i) => `
-    <div class="drag-item" data-key="${key}">
-      <span class="drag-rank">${String(i + 1).padStart(2, "0")}</span>
-      <div class="drag-label-wrap">
-        <span class="drag-label">${label.replace(/&/g, '<span class="amp">&</span>')}</span>
-        ${desc ? `<span class="drag-desc">${desc}</span>` : ""}
-      </div>
-      <div class="move-btns">
-        <button type="button" class="move-btn move-up" aria-label="Move up">↑</button>
-        <button type="button" class="move-btn move-down" aria-label="Move down">↓</button>
-      </div>
-    </div>
-  `).join("");
-
-  let warning = container.nextElementSibling;
-  if (!warning || !warning.classList.contains("rank-warning")) {
-    warning = document.createElement("p");
-    warning.className = "rank-warning";
-    warning.textContent = "Please rank these by moving them up or down before continuing.";
-    container.insertAdjacentElement("afterend", warning);
-  } else {
-    warning.classList.remove("visible");
-  }
-
-  function refresh() {
-    const items = [...container.querySelectorAll(".drag-item")];
-    items.forEach((item, i) => {
-      item.querySelector(".drag-rank").textContent = String(i + 1).padStart(2, "0");
-      item.querySelector(".move-up").disabled = i === 0;
-      item.querySelector(".move-down").disabled = i === items.length - 1;
-    });
-    document.getElementById(hiddenContainerId).innerHTML = items.map((item, i) =>
-      `<input type="hidden" name="${type}_${item.dataset.key}" value="${n - i}">`
-    ).join("");
-  }
-
-  container.addEventListener("click", e => {
-    const btn = e.target.closest(".move-btn");
-    if (!btn) return;
-    const item = btn.closest(".drag-item");
-    const before = btn.getBoundingClientRect().top;
-    if (btn.classList.contains("move-up") && item.previousElementSibling) {
-      container.insertBefore(item, item.previousElementSibling);
-    } else if (btn.classList.contains("move-down") && item.nextElementSibling) {
-      container.insertBefore(item.nextElementSibling, item);
-    }
-    hasMoved = true;
-    warning.classList.remove("visible");
-    refresh();
-    const after = btn.getBoundingClientRect().top;
-    window.scrollBy({ top: after - before, behavior: "instant" });
-    btn.blur();
-  });
-
-  window._validateRanking = window._validateRanking || {};
-  window._validateRanking[containerId] = function() {
-    if (!hasMoved) { return false; }
-    return true;
-  };
-
-  refresh();
-}
-
 /* ---- Step 1: Importance ---- */
 function initImportanceStep() {
-  buildRankingRows("importance-rows", "importance-hidden-inputs", "importance");
+  buildScaleRows("importance-rows", "importance");
 }
 
 /* ---- Step 3: Spillover ---- */
@@ -414,18 +372,16 @@ function initUrgencyFlagStep() {
 
 /* ---- Step 3: Focus recommendation ---- */
 function initFocusStep() {
-  const n = AREAS.length;
-
   const existingFocusKeys = new Set(
     [...document.querySelectorAll('#focus-hidden-inputs input')].map(i => i.value)
   );
   let selected = existingFocusKeys;
 
   function getReason(area) {
-    const importanceRank = n + 1 - area.importance;
+    const importanceLabel = (SCALE_LABELS[area.importance] || "Important").toLowerCase();
     if (area.urgency) return `flagged as urgent · ${area.fulfillment}/5 fulfilled`;
-    if (area.fulfillment <= 2) return `${area.fulfillment}/5 fulfilled · #${importanceRank} in importance`;
-    return `#${importanceRank} in importance · ${area.fulfillment}/5 fulfilled`;
+    if (area.fulfillment <= 2) return `${area.fulfillment}/5 fulfilled · ${importanceLabel}`;
+    return `${importanceLabel} · ${area.fulfillment}/5 fulfilled`;
   }
 
   function updateFocusInputs() {
@@ -2842,7 +2798,7 @@ function buildQaSummary(answers) {
     (typeof AREAS !== 'undefined' ? AREAS : []).forEach(([key, label]) =>
       areaRows.push([label, `Fulfilment ${answers['fulfillment_' + key] ?? '?'}/5 · Importance ${answers['importance_' + key] ?? '?'}`]));
   }
-  if (areaRows.length) { areaRows.forEach(([, a]) => mark(a)); groups.push({ title: 'Life areas — all 11, with ratings', rows: areaRows, subNumbered: true }); }
+  if (areaRows.length) { areaRows.forEach(([, a]) => mark(a)); groups.push({ title: 'Life areas — all 10, with ratings', rows: areaRows, subNumbered: true }); }
 
   // ---- Where they chose to focus ----
   try {

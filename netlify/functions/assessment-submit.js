@@ -23,7 +23,6 @@ const AREAS = [
   ["money", "Money / Finances"],
   ["lifestyle", "Lifestyle"],
   ["environment", "Environment"],
-  ["spirituality", "Spirituality / Meaning"],
   ["fun_adventure", "Fun & Adventure"],
 ];
 
@@ -66,7 +65,7 @@ function numeric(value, fallback = 0) {
 function topFocusAreas(answers) {
   return AREAS.map(([key, label]) => {
     const fulfillment = numeric(answers[`fulfillment_${key}`], 5);
-    const importance = numeric(answers[`importance_${key}`], 5);
+    const importance = numeric(answers[`importance_${key}`], 2);
     const score = (11 - fulfillment) + importance;
     return { key, label, fulfillment, importance, score };
   })
@@ -141,7 +140,7 @@ function notifyEmailHtml(answers, result) {
     .map(([key, value]) => `<tr><td style="padding: 6px 10px; border-bottom: 1px solid #ddd;"><strong>${escapeHtml(key)}</strong></td><td style="padding: 6px 10px; border-bottom: 1px solid #ddd;">${escapeHtml(value)}</td></tr>`)
     .join("");
   const focus = result.focusAreas
-    .map((area) => `<li>${escapeHtml(area.label)}: fulfilment ${area.fulfillment}/5, importance ${area.importance}/${AREAS.length}</li>`)
+    .map((area) => `<li>${escapeHtml(area.label)}: fulfilment ${area.fulfillment}/5, importance ${area.importance}/3</li>`)
     .join("");
 
   return `

@@ -16,7 +16,6 @@ const AREAS = [
   ["money", "Finances", "Placeholder text."],
   ["lifestyle", "Lifestyle", "Placeholder text."],
   ["environment", "Environment", "Placeholder text."],
-  ["spirituality", "Meaning & Spirituality", "Placeholder text."],
   ["fun_adventure", "Fun & Adventure", "Placeholder text."],
 ];
 
@@ -67,7 +66,6 @@ const AREA_READ = {
   money:        { looks: "numbers quietly driving decisions you wouldn't otherwise make", shift: "separate what you actually need from what you're trying to prove." },
   lifestyle:    { looks: "days that run on autopilot, full on paper but thin on anything you'd actually call alive", shift: "put one thing on the calendar this week you'd genuinely look forward to, not just get through." },
   environment:  { looks: "living in a place chosen by circumstance rather than by design, a home or city that doesn't reflect who you're becoming", shift: "change one thing about the physical space you spend the most time in, so it actually matches the direction you're heading." },
-  spirituality: { looks: "competence without much sense of why any of it matters", shift: "make space for one question bigger than your to-do list." },
   fun_adventure: { looks: "a life managed so tightly there's no room left for surprise, risk, or anything you haven't already approved of in advance", shift: "do one thing this week you can't fully predict the outcome of." },
 };
 
@@ -80,7 +78,7 @@ function wheelData(answers) {
   return AREAS.map(([key, label]) => ({
     key, label,
     fulfillment: numeric(answers[`fulfillment_${key}`], 3),
-    importance: numeric(answers[`importance_${key}`], 5),
+    importance: numeric(answers[`importance_${key}`], 2),
     urgency: numeric(answers[`urgency_${key}`], 0),
   }));
 }
@@ -251,7 +249,7 @@ function renderResult(result, emailState = "pending") {
     return `
     <li>
       <strong>${f.label}</strong>
-      <span class="nums">fulfilment ${f.fulfillment}/5 · importance ${f.importance}/${AREAS.length}${f.urgency ? " · flagged urgent" : ""}</span>
+      <span class="nums">fulfilment ${f.fulfillment}/5 · importance ${f.importance}/3${f.urgency ? " · flagged urgent" : ""}</span>
       <p class="read">${read.looks ? `It can look like ${read.looks}.` : ""} <em>First shift —</em> ${read.shift || ""}</p>
     </li>`;
   }).join("");
@@ -287,7 +285,7 @@ function renderResult(result, emailState = "pending") {
 
       <div class="result-score">
         <div class="score-num">${result.score.pct}<span>/100</span></div>
-        <div class="score-meta"><strong>${result.score.tier}</strong><span>Overall life fulfilment, across the eleven areas you rated.</span></div>
+        <div class="score-meta"><strong>${result.score.tier}</strong><span>Overall life fulfilment, across the ten areas you rated.</span></div>
       </div>
 
       <div class="result-block">

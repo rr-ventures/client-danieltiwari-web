@@ -1919,7 +1919,7 @@ function initDeeperStep() {
         <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Hidden Values</h3>
         <div id="recap-acts-${key}" data-label="Your reasons" class="recap-block" hidden></div>
         <div class="deeper-field">
-          <label>If you're brutally honest with yourself, which values might you have that you are serving with these reasons? For each one, also say whether you want to continue living by it in the current context.</label>
+          <label>If you're brutally honest with yourself, which values might you have that you are serving with each reason? For each one, also say whether you want to continue living by it in the current context or not.</label>
           <div id="acts-value-groups-${key}" style="margin-top:.9rem"></div>
         </div>
       </div>`,

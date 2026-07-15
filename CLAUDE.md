@@ -69,3 +69,19 @@ Telegram staging flow.
 Reece's fleet auto-saves your work; you don't manage branches or ask Dan about git
 plumbing. But you MUST still verify the push landed (above) before claiming a
 website change is sent — that verification is not optional.
+
+## Local preview (`dist/`) goes stale after a pull — resync it every time
+
+`dist/` is a local-only preview copy (gitignored, not tracked by git — confirm with
+`git check-ignore -v dist/<file>` if unsure). A `git pull` updates the real source
+files but does **not** touch `dist/`, so right after pulling, whatever is being
+previewed locally (e.g. `localhost:3000`) can still be showing yesterday's version
+even though the pull succeeded. This already caused a false "the sync didn't work"
+report once — don't repeat it.
+
+**Whenever you pull updates in this repo, immediately resync `dist/` from the
+current source files before telling Dan anything is up to date or checking it in a
+browser.** Don't wait for an unrelated edit to trigger it as a side effect. If you
+don't know the exact resync mechanism in the current session, at minimum copy the
+changed source files over their `dist/` counterparts yourself before reporting the
+pull as complete.

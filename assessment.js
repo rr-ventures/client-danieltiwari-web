@@ -100,6 +100,7 @@ function renderFulfillmentCard(index, savedVal = null) {
   const card = document.getElementById("fulfillment-card");
   card.innerHTML = `
     <h3 class="deeper-area-name">${label}</h3>
+    ${desc ? `<p class="deeper-area-desc">${desc}</p>` : ""}
     <div class="number-scale">
       ${[1,2,3,4,5].map(n => `<button type="button" class="number-btn" data-val="${n}">${n}</button>`).join("")}
     </div>
@@ -455,9 +456,15 @@ function distinctFreeTextValues(items, byItemObj) {
   return seen;
 }
 
-// The distinct reasons named on the "Reasons" page for a given area — this is
-// what the "Hidden Values" page (and everything after it) groups by, instead
-// of the raw action/inaction items.
+// The individual action/inaction items named on the "Contributions" page for
+// a given area — what the "Hidden Values" page groups by, one box per action,
+// regardless of whether two actions share the same typed reason.
+function distinctActionsForArea(key) {
+  return (_deeperState['deeper_' + key + '_acts_items'] || []).filter(it => it && it.trim());
+}
+
+// The distinct reasons named on the "Reasons" page for a given area — used to
+// recap "your reasons" at the top of the Hidden Values page.
 function distinctReasonsForArea(key) {
   const items = (_deeperState['deeper_' + key + '_acts_items'] || []).filter(it => it && it.trim());
   const reasonsByItem = _deeperState['deeper_' + key + '_acts_reasons_by_item'] || {};
@@ -508,9 +515,26 @@ function renderGroupedListByItem(containerId, items, stateKey, hintText, placeho
 
     const block = document.createElement('div');
     block.className = 'acts-group';
-    const itemLbl = document.createElement('p');
+    // itemLabelFn may return a plain string (rendered as-is) or
+    // { action, reason } (rendered as small italic action text on top of the
+    // reason beneath it) — used by the Hidden Values page.
+    const labelResult = itemLabelFn ? itemLabelFn(item) : item;
+    const itemLbl = document.createElement('div');
     itemLbl.className = 'acts-item-heading';
-    itemLbl.textContent = itemLabelFn ? itemLabelFn(item) : item;
+    if (labelResult && typeof labelResult === 'object') {
+      const actionLine = document.createElement('p');
+      actionLine.className = 'acts-item-action';
+      actionLine.textContent = labelResult.action;
+      itemLbl.appendChild(actionLine);
+      if (labelResult.reason) {
+        const reasonLine = document.createElement('p');
+        reasonLine.className = 'acts-item-reason';
+        reasonLine.textContent = labelResult.reason;
+        itemLbl.appendChild(reasonLine);
+      }
+    } else {
+      itemLbl.textContent = labelResult;
+    }
     itemLbl.style.marginBottom = '0';
     const itemLblRow = indentPastBullet(itemLbl, 'indent-row-center');
     itemLblRow.style.marginBottom = '.6rem';
@@ -699,33 +723,16 @@ function renderActsReasonsByItem(key) {
     CAUSE_LIST_HINT, 'e.g. Fear of judgment, comfort, avoiding a hard conversation…', false);
 }
 
-// Which action/inaction item(s) named each distinct reason — used so the
-// "Hidden Values" page can show the action/inaction next to the reason it
-// belongs to, even though values are grouped by reason, not by action/inaction.
-function actionsForReason(key) {
-  const items = (_deeperState['deeper_' + key + '_acts_items'] || []).filter(it => it && it.trim());
-  const reasonsByItem = _deeperState['deeper_' + key + '_acts_reasons_by_item'] || {};
-  const map = {};
-  items.forEach((it) => {
-    (reasonsByItem[it] || []).forEach((r) => {
-      const t = (r || '').trim();
-      if (!t) return;
-      const norm = t.toLowerCase();
-      if (!map[norm]) map[norm] = [];
-      if (!map[norm].includes(it)) map[norm].push(it);
-    });
-  });
-  return map;
-}
-
-// Values attributed to each REASON (not the raw action/inaction) — one bullet
-// list per distinct reason named on the previous page.
+// Values attributed to each action/inaction — one bullet list per action
+// named on the "Contributions" page, labelled with that action's own typed
+// reason(s) for context. Every action gets its own box, even if it shares
+// its reason wording with another action.
 function renderActsValuesByItem(key) {
-  const items = distinctReasonsForArea(key);
-  const actionsByReason = actionsForReason(key);
-  const itemLabelFn = (reason) => {
-    const actions = actionsByReason[reason.trim().toLowerCase()] || [];
-    return actions.length ? actions.join('; ') + ' — ' + reason : reason;
+  const items = distinctActionsForArea(key);
+  const reasonsByItem = _deeperState['deeper_' + key + '_acts_reasons_by_item'] || {};
+  const itemLabelFn = (item) => {
+    const reasons = (reasonsByItem[item] || []).map((r) => (r || '').trim()).filter(Boolean);
+    return { action: item, reason: reasons.join('; ') };
   };
   renderGroupedListByItem('acts-value-groups-' + key, items, 'deeper_' + key + '_acts_values_by_item',
     VALUE_LIST_HINT, 'e.g. Security, comfort, avoiding failure…', true, 'deeper_' + key + '_acts_values_continue', itemLabelFn);
@@ -2134,7 +2141,7 @@ function initDeeperStep() {
   window._showDeeperSubPage = showDeeperSubPage;
   showDeeperSubPage(0);
 
-  selectedKeys.forEach(k => { renderCauseList(k); renderSimpleBulletList('acts-items-' + k, 'deeper_' + k + '_acts_raw_items', 'Describe what you are doing, or could be doing…', 'deeper_' + k + '_acts_raw_nothing', undefined, 'One action/inaction per line — press "+ Add another" for the next.'); renderActsConfirm(k); renderActsGroups(k); renderControlList(k); renderControlAttitude(k); renderVisionList(k); });
+  selectedKeys.forEach(k => { renderCauseList(k); renderSimpleBulletList('acts-items-' + k, 'deeper_' + k + '_acts_raw_items', 'Describe what you are doing, or could be doing…', 'deeper_' + k + '_acts_raw_nothing', undefined, 'One action or inaction per line — press "+ Add another" for the next.'); renderActsConfirm(k); renderActsGroups(k); renderControlList(k); renderControlAttitude(k); renderVisionList(k); });
 
   // Wire up yn-field toggles
   container.querySelectorAll('.yn-field').forEach(field => {
@@ -2253,13 +2260,13 @@ function initDeeperStep() {
     }
 
     if (qtype === 'acts-values') {
-      const filledItems = distinctReasonsForArea(key);
+      const filledItems = distinctActionsForArea(key);
       const valuesByItem = _deeperState['deeper_' + key + '_acts_values_by_item'] || {};
       const allCovered = filledItems.every(item =>
         Array.isArray(valuesByItem[item]) && valuesByItem[item].some(v => v && v.trim())
       );
       if (!allCovered) {
-        setFormErr('Every reason needs at least one value attributed to it before continuing.', document.getElementById('acts-value-groups-' + key));
+        setFormErr('Every action needs at least one value attributed to it before continuing.', document.getElementById('acts-value-groups-' + key));
         return false;
       }
       const distinctValues = distinctFreeTextValues(filledItems, valuesByItem);
@@ -2820,7 +2827,7 @@ function captureDeeperFromDom() {
       const valuesMatch = sp.id.match(/^deeper-sub-(.+)-acts-values$/);
       if (valuesMatch) {
         const areaKey = valuesMatch[1];
-        const items = distinctReasonsForArea(areaKey);
+        const items = distinctActionsForArea(areaKey);
         const valuesByItem = _deeperState['deeper_' + areaKey + '_acts_values_by_item'] || {};
         const decisions = _deeperState['deeper_' + areaKey + '_acts_values_continue'] || {};
         distinctFreeTextValues(items, valuesByItem).forEach((value) => {

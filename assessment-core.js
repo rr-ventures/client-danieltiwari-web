@@ -7,16 +7,16 @@
    these top-level bindings are visible to the scripts that follow.
    ============================================================ */
 const AREAS = [
-  ["career", "Work & Vocation", "Placeholder text."],
-  ["relationships", "Intimate Relationships", "Placeholder text."],
-  ["friendships", "Friendships", "Placeholder text."],
-  ["family", "Family", "Placeholder text."],
-  ["health", "Health & Vitality", "Placeholder text."],
-  ["attractiveness", "Attractiveness & Appearance", "Placeholder text."],
-  ["money", "Finances", "Placeholder text."],
-  ["lifestyle", "Lifestyle", "Placeholder text."],
-  ["environment", "Environment", "Placeholder text."],
-  ["fun_adventure", "Fun & Adventure", "Placeholder text."],
+  ["career", "Work & Vocation", "How fulfilled you feel by the work you do and the path you're on."],
+  ["relationships", "Intimate Relationships", "Your romantic relationship, or how satisfied you are with your dating life."],
+  ["friendships", "Friendships", "The quality and depth of your close friendships."],
+  ["family", "Family", "Your relationship with your parents, siblings, or children."],
+  ["health", "Health & Vitality", "Your physical health, energy levels, and fitness."],
+  ["attractiveness", "Attractiveness & Appearance", "How you feel about the way you look and present yourself."],
+  ["money", "Finances", "Your income, savings, and overall financial security."],
+  ["lifestyle", "Lifestyle", "How your day-to-day life is structured, and how much you enjoy it."],
+  ["environment", "Environment", "The people, places, and spaces you spend your time in."],
+  ["fun_adventure", "Fun & Adventure", "How much play, excitement, and new experience is in your life."],
 ];
 
 const CALENDLY = "https://cal.eu/danieltiwari/connect";

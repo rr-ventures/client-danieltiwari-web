@@ -14,6 +14,13 @@ const { sendResendEmail, mailConfig } = require("../lib/send");
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 exports.handler = async () => {
+  // NURTURE_PAUSED: set true in Netlify env to stop all sends while the
+  // sequence copy is being rewritten. Already-enrolled leads keep their
+  // recorded progress untouched and simply resume once unpaused.
+  if (/^(1|true|yes)$/i.test(String(process.env.NURTURE_PAUSED || ""))) {
+    return { statusCode: 200, body: JSON.stringify({ ok: true, paused: true, processed: 0, sent: 0, completed: 0, warnings: [] }) };
+  }
+
   const store = dripStore();
   const { from, replyTo } = mailConfig();
 

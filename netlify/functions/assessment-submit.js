@@ -226,6 +226,10 @@ exports.handler = async (event) => {
 
   // ---- recipients (TEST_MODE overrides the lead recipient to one inbox) ----
   const TEST_MODE = /^(1|true|yes)$/i.test(String(process.env.TEST_MODE || ""));
+  // NURTURE_PAUSED: set true in Netlify env to stop the day-0 email + drip
+  // enrollment while the sequence copy is being rewritten. The assessment
+  // result itself (result page + Dan's internal notification) still fires.
+  const NURTURE_PAUSED = /^(1|true|yes)$/i.test(String(process.env.NURTURE_PAUSED || ""));
   const TEST_EMAIL = process.env.TEST_EMAIL || "reece.j.rainer@gmail.com";
   const { from, replyTo, bookUrl } = mailConfig();
   const notifyTo = TEST_MODE ? TEST_EMAIL : (process.env.NOTIFY_TO || process.env.DAN_NOTIFY_EMAIL || "email@danieltiwari.com");
@@ -245,33 +249,39 @@ exports.handler = async (event) => {
   const sequence = buildBranch(result.route, mergeFields);
   const dayZero = sequence.find((e) => e.day === 0) || sequence[0];
 
-  const dayZeroSend = sendResendEmail({
-    from,
-    to: [leadTo],
-    reply_to: replyTo,
-    subject: dayZero.subject,
-    html: dayZero.html,
-    tags: [{ name: "source", value: "assessment_sequence" }],
-  }).catch((err) => ({ error: err.message, subject: dayZero.subject }));
+  const dayZeroSend = NURTURE_PAUSED
+    ? Promise.resolve({ skipped: true, reason: "nurture paused" })
+    : sendResendEmail({
+        from,
+        to: [leadTo],
+        reply_to: replyTo,
+        subject: dayZero.subject,
+        html: dayZero.html,
+        tags: [{ name: "source", value: "assessment_sequence" }],
+      }).catch((err) => ({ error: err.message, subject: dayZero.subject }));
 
   // persist drip progress (day 0 marked sent). The drip store holds the lead's
   // real email so subsequent emails reach them; in TEST_MODE we store TEST_EMAIL.
+  // While paused, skip enrollment entirely so nobody is queued up for a rush
+  // of catch-up sends once the sequence is turned back on with new copy.
   let dripWarning;
-  const writeDrip = (async () => {
-    try {
-      await dripStore().setJSON(id, {
-        email: leadTo,
-        branch: result.route,
-        name: fullNameOf(answers),
-        mergeFields,
-        startedAt: new Date().toISOString(),
-        sentDays: [dayZero.day],
-        done: sequence.length === 1,
-      });
-    } catch (error) {
-      dripWarning = `drip store failed: ${error.message}`;
-    }
-  })();
+  const writeDrip = NURTURE_PAUSED
+    ? Promise.resolve()
+    : (async () => {
+        try {
+          await dripStore().setJSON(id, {
+            email: leadTo,
+            branch: result.route,
+            name: fullNameOf(answers),
+            mergeFields,
+            startedAt: new Date().toISOString(),
+            sentDays: [dayZero.day],
+            done: sequence.length === 1,
+          });
+        } catch (error) {
+          dripWarning = `drip store failed: ${error.message}`;
+        }
+      })();
 
   const notifyEmail = sendResendEmail({
     from,

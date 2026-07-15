@@ -51,6 +51,7 @@ function ampSafe(text) {
 const _fulfillmentState = {}; // "career": "7"
 const _deeperState = {};      // "career_cause": "...", "career_vision": "..."
 const _fsState = {};          // fit signals answers
+const _pageFeedbackState = {}; // testing-phase only: "page label" -> tester's free-text note
 let _fulfillmentKeyHandler = null;
 let _spilloverState = null;
 
@@ -96,7 +97,6 @@ function renderFulfillmentCard(index, savedVal = null) {
   const isLast = index === AREAS.length - 1;
   if (!savedVal) savedVal = _fulfillmentState[key] || null;
   window._fulfillmentCardIndex = index;
-  if (window.updateAssessmentProgress) window.updateAssessmentProgress();
   const card = document.getElementById("fulfillment-card");
   card.innerHTML = `
     <h3 class="deeper-area-name">${label}</h3>
@@ -114,6 +114,10 @@ function renderFulfillmentCard(index, savedVal = null) {
       </div>
     </div>
   `;
+  // Fires after the card's HTML above is in place, not before — the page
+  // feedback widget reads the area name straight from this card, so calling
+  // this too early left it tagging notes with the previous area's name.
+  if (window.updateAssessmentProgress) window.updateAssessmentProgress();
   let selected = savedVal;
   if (savedVal) {
     card.querySelector(`.number-btn[data-val="${savedVal}"]`)?.classList.add("selected");
@@ -2733,16 +2737,6 @@ window.onStepChange = function(step) {
 initFulfillmentStep();
 
 /* ---- Submission ---- */
-function revealShareLink(resultUrl) {
-  if (!resultUrl) return;
-  const actions = document.querySelector("#authenticity-map .result-actions");
-  if (!actions || actions.querySelector(".share-link")) return;
-  const wrap = document.createElement("p");
-  wrap.className = "share-link form-note";
-  wrap.innerHTML = `<span class="dot"></span>Your map has a private home you can return to or share: <a href="${resultUrl}">${resultUrl.replace(/^https?:\/\//, "")}</a>`;
-  actions.appendChild(wrap);
-}
-
 // ---- Human-readable capture of every question + answer, for the notify email.
 // Labels mirror the fit-signals `questions` array in initFitSignalsStep; keep in sync.
 const FIT_LABELS = {
@@ -2820,6 +2814,22 @@ function captureDeeperFromDom() {
         return;
       }
 
+      // Reasons: one row per action/inaction, listing that action's own typed
+      // reasons — instead of one flat, unlabelled list of every reason on the
+      // page with no way to tell which action each one is justifying.
+      const reasonsMatch = sp.id.match(/^deeper-sub-(.+)-acts-reasons$/);
+      if (reasonsMatch) {
+        const areaKey = reasonsMatch[1];
+        const items = distinctActionsForArea(areaKey);
+        const reasonsByItem = _deeperState['deeper_' + areaKey + '_acts_reasons_by_item'] || {};
+        items.forEach((item) => {
+          const reasons = (reasonsByItem[item] || []).map((r) => (r || '').trim()).filter(Boolean);
+          if (!reasons.length) return;
+          rows.push([area ? `${area} — ${item}` : item, reasons.join('; ')]);
+        });
+        return;
+      }
+
       // Hidden values: one row per named value, saying whether they want to keep
       // living by it. Bypasses the generic scan below on purpose — that scan
       // would otherwise pick up the first "keep this value?" button on the page
@@ -2850,13 +2860,9 @@ function captureDeeperFromDom() {
         const sel = [...field.querySelectorAll('.yn-btn.selected')].find(mine);
         if (sel) a = sel.textContent.trim();
         if (!a) {
-          // The "reasons" question lists a bullet-list of free text under each
-          // item — there are no checkboxes here to worry about. (The "which
-          // values" field is handled entirely above, via valuesMatch.)
-          const isGroupedFreeTextField = !!field.querySelector('[id^="acts-reason-groups-"]');
           const texts = [...field.querySelectorAll('input:not([type=checkbox]):not([type=radio]):not([type=hidden]), textarea')]
             .filter(mine).map((i) => i.value.trim()).filter(Boolean);
-          const checks = isGroupedFreeTextField ? [] : [...field.querySelectorAll('input[type=checkbox]')]
+          const checks = [...field.querySelectorAll('input[type=checkbox]')]
             .filter((c) => mine(c) && c.checked)
             .map((c) => (c.closest('label')?.textContent || 'Yes').replace(/\s+/g, ' ').trim());
           const combined = [...texts, ...checks];
@@ -2888,6 +2894,15 @@ function buildQaSummary(answers) {
   const shownNorm = new Set();
   const norm = (s) => String(s ?? '').trim().toLowerCase();
   const mark = (a) => { const n = norm(Array.isArray(a) ? a.join('; ') : a); if (n) shownNorm.add(n); };
+
+  // ---- Testing-phase page feedback, shown first so it doesn't get missed ----
+  const feedbackRows = Object.entries(_pageFeedbackState)
+    .map(([page, note]) => [page, (note || '').trim()])
+    .filter(([, note]) => note);
+  if (feedbackRows.length) {
+    feedbackRows.forEach(([, a]) => mark(a));
+    groups.push({ title: 'Testing feedback (from the tester)', rows: feedbackRows });
+  }
 
   const areaLabel = {};
   (typeof AREAS !== 'undefined' ? AREAS : []).forEach(([k, l]) => { areaLabel[k] = l; });
@@ -2988,6 +3003,69 @@ function buildQaSummary(answers) {
   return groups;
 }
 
+// Shown in place of the full Authenticity Map while the assessment is still
+// being tested — Dan reviews answers via the notification email himself and
+// follows up directly, rather than the page revealing results on the spot.
+function renderTestingThankYou() {
+  const el = document.getElementById("assessment-result");
+  if (!el) return;
+  el.hidden = false;
+  el.innerHTML = `
+    <div class="result-panel">
+      <span class="eyebrow"><span class="dot"></span>Thank you</span>
+      <h2>Thanks for testing this with me.</h2>
+      <p class="lede">I've got your answers — you'll hear from me soon.</p>
+    </div>`;
+}
+
+// ---- Testing-phase page feedback widget ----
+// Figures out a human-readable label for whichever screen is currently
+// visible, so a tester's note can be tied back to the exact page it was
+// written on. Works for the main sections (fulfillment/urgency/focus/you)
+// and for every deeper-question and fit-signals sub-page, since both share
+// the .deeper-subpage / .deeper-page-title markup.
+function currentFeedbackPageLabel() {
+  const activeSection = document.querySelector(".assessment-section.active");
+  if (!activeSection) return "Assessment";
+  const activeSub = activeSection.querySelector(".deeper-subpage:not([hidden])");
+  if (activeSub) {
+    const area = (activeSub.dataset.area || "").trim();
+    const pageTitle = (activeSub.querySelector(".deeper-page-title")?.textContent || "").trim();
+    return [area, pageTitle].filter(Boolean).join(" — ") || activeSub.id || "Assessment";
+  }
+  const areaCard = (activeSection.querySelector(".deeper-area-name")?.textContent || "").trim();
+  const heading = (activeSection.querySelector("h2, .focus-reveal-title")?.textContent || "").trim();
+  return [heading, areaCard].filter(Boolean).join(" — ") || "Assessment";
+}
+
+function initPageFeedbackWidget() {
+  const widget = document.getElementById("page-feedback-widget");
+  const toggle = document.getElementById("page-feedback-toggle");
+  const panel = document.getElementById("page-feedback-panel");
+  const textarea = document.getElementById("page-feedback-text");
+  if (!widget || !toggle || !panel || !textarea) return;
+
+  toggle.addEventListener("click", () => {
+    panel.hidden = !panel.hidden;
+    if (!panel.hidden) textarea.focus();
+  });
+  textarea.addEventListener("input", () => {
+    _pageFeedbackState[currentFeedbackPageLabel()] = textarea.value;
+  });
+
+  function refresh() {
+    widget.hidden = false;
+    textarea.value = _pageFeedbackState[currentFeedbackPageLabel()] || "";
+  }
+
+  const origUpdateProgress = window.updateAssessmentProgress;
+  window.updateAssessmentProgress = function () {
+    if (origUpdateProgress) origUpdateProgress();
+    refresh();
+  };
+}
+initPageFeedbackWidget();
+
 window.submitAssessment = async function submitAssessment(form, submitButton) {
   const answers = collectAnswers(form);
 
@@ -3026,25 +3104,17 @@ window.submitAssessment = async function submitAssessment(form, submitButton) {
   // Readable question-by-question capture for the notify email (never fatal).
   try { answers.qa_summary = buildQaSummary(answers); } catch (_e) { /* summary is best-effort */ }
 
-  const result = calculateResult(answers);
   if (window.stopStopwatch) window.stopStopwatch();
-  renderResult(result, "pending");
-  renderPrintResult(result);
+  renderTestingThankYou();
   document.getElementById("assessment-result")?.scrollIntoView({ behavior: "smooth", block: "start" });
   submitButton.disabled = true;
   submitButton.classList.add("is-loading");
   try {
-    const response = await fetch("/api/assessment-submit", {
+    await fetch("/api/assessment-submit", {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(answers),
     });
-    const data = await response.json().catch(() => ({}));
-    if (data.emailWarning) renderResult(result, "warning");
-    else if (data.emailSkipped) renderResult(result, "skipped");
-    else if (response.ok) renderResult(result, "sent");
-    else renderResult(result, "warning");
-    revealShareLink(data.resultUrl);
   } catch {
-    renderResult(result, "warning");
+    /* thank-you page doesn't depend on the response; the submission itself still went out */
   } finally {
     submitButton.disabled = false;
     submitButton.classList.remove("is-loading");

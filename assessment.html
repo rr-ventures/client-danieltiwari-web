@@ -48,6 +48,15 @@
   .assess-progress-label{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-family:var(--sc);font-size:.68rem;letter-spacing:.15em;color:var(--muted);white-space:nowrap}
   @media (max-width:480px){.assess-progress-label{font-size:.6rem;letter-spacing:.1em}}
 
+  /* testing-phase page feedback widget */
+  .page-feedback-widget{position:fixed;right:1.2rem;bottom:1.2rem;z-index:60;font-family:var(--body)}
+  .page-feedback-toggle{font-family:var(--sc);font-size:.68rem;letter-spacing:.1em;background:var(--ink);color:var(--bg);border:none;border-radius:999px;padding:.7rem 1.2rem;cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,.18)}
+  .page-feedback-panel{position:absolute;right:0;bottom:calc(100% + .6rem);width:min(20rem,80vw);background:var(--bg2);border:1px solid var(--hair);border-radius:6px;padding:1rem;box-shadow:0 6px 24px rgba(0,0,0,.15)}
+  .page-feedback-label{display:block;font-size:.82rem;color:var(--muted);line-height:1.55;margin-bottom:.6rem}
+  .page-feedback-textarea{display:block;width:100%;min-height:5.5rem;font-family:var(--body);font-size:.9rem;color:var(--ink);padding:.6rem;border:1px solid var(--hair);border-radius:4px;resize:vertical;background:var(--bg)}
+  .page-feedback-hint{font-size:.7rem;color:var(--muted);margin:.6rem 0 0}
+  @media (max-width:480px){.page-feedback-widget{right:.8rem;bottom:.8rem}.page-feedback-panel{width:min(17rem,78vw)}}
+
   /* buttons */
   .btn{display:inline-block;font-family:var(--sc);font-size:.8rem;font-weight:500;letter-spacing:.18em;padding:1.1rem 2.6rem;border:1px solid;border-radius:2px;transition:background .2s,color .2s,border-color .2s;cursor:pointer;text-decoration:none}
   .btn-primary,.btn.btn-primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
@@ -290,6 +299,19 @@
   <a class="header-back sc" href="/">Back to site</a>
   <div id="assess-progress-bar" class="assess-progress-bar" hidden><div id="assess-progress-fill" class="assess-progress-fill"></div></div>
 </header>
+
+<!-- Testing-phase only: lets a tester flag feedback on whichever page they're
+     currently on. Stays visible throughout the quiz; each note is tagged
+     with the page it was written on and included in Daniel's notification
+     email. Remove this whole block once testing wraps up. -->
+<div id="page-feedback-widget" class="page-feedback-widget" hidden>
+  <div id="page-feedback-panel" class="page-feedback-panel" hidden>
+    <label for="page-feedback-text" class="page-feedback-label">Feedback on this page — anything confusing, broken, or worth flagging?</label>
+    <textarea id="page-feedback-text" class="page-feedback-textarea" placeholder="Type your thoughts…"></textarea>
+    <p class="page-feedback-hint">Saved automatically — I'll see this alongside your answers.</p>
+  </div>
+  <button type="button" id="page-feedback-toggle" class="page-feedback-toggle">Feedback on this page</button>
+</div>
 
 <main id="main">
   <div class="assessment-wrap" style="padding-top:clamp(7rem,14vh,11rem)">

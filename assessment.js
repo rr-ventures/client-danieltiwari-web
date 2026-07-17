@@ -528,7 +528,7 @@ function renderGroupedListByItem(containerId, items, stateKey, hintText, placeho
     if (labelResult && typeof labelResult === 'object') {
       const actionLine = document.createElement('p');
       actionLine.className = 'acts-item-action';
-      actionLine.textContent = labelResult.action;
+      actionLine.textContent = (labelResult.action || '').trim().replace(/\.+$/, '') + ' because:';
       itemLbl.appendChild(actionLine);
       if (labelResult.reason) {
         const reasonLine = document.createElement('p');
@@ -724,7 +724,7 @@ function renderGroupedListByItem(containerId, items, stateKey, hintText, placeho
 function renderActsReasonsByItem(key) {
   const items = (_deeperState['deeper_' + key + '_acts_items'] || []).filter(it => it && it.trim());
   renderGroupedListByItem('acts-reason-groups-' + key, items, 'deeper_' + key + '_acts_reasons_by_item',
-    CAUSE_LIST_HINT, 'e.g. Fear of judgment, comfort, avoiding a hard conversation…', false);
+    CAUSE_LIST_HINT, '', false);
 }
 
 // Values attributed to each action/inaction — one bullet list per action

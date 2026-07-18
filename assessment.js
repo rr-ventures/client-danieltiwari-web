@@ -6,7 +6,6 @@
    ============================================================ */
 
 const CAUSE_LIST_HINT = 'One reason per line — press "+ Add another" for the next.';
-const VALUE_LIST_HINT = 'One value per line — press "+ Add another" for the next value.';
 const VISION_LIST_HINT = 'One part of your vision per line — press "+ Add another" for the next.';
 const CONTROL_LIST_HINT = 'One thing outside your control per line — press "+ Add another" for the next.';
 const FEELING_LIST_HINT = 'One feeling per line — press "+ Add another" for the next.';
@@ -317,7 +316,6 @@ function initFocusStep() {
 
   function renderFocus() {
     const ranked = rankAllAreas(getWheelValues());
-    if (!selected.size) selected = new Set(ranked.slice(0, 1).map(a => a.key));
 
     const list = document.getElementById("rec-list");
     list.innerHTML = ranked.map((area, i) => `
@@ -363,7 +361,7 @@ function renderCauseList(key) {
 
   function syncAndUpdate() {
     const hidden = container.querySelector('input[type="hidden"]');
-    if (hidden) hidden.value = JSON.stringify(causes);
+    if (hidden) hidden.value = JSON.stringify(dedupedForSubmit(causes));
     renderActsGroups(key);
   }
 
@@ -427,7 +425,7 @@ function renderCauseList(key) {
     const hidden = document.createElement('input');
     hidden.type = 'hidden';
     hidden.name = 'deeper_' + key + '_causes';
-    hidden.value = JSON.stringify(causes);
+    hidden.value = JSON.stringify(dedupedForSubmit(causes));
     container.appendChild(createListHint(CAUSE_LIST_HINT));
     container.appendChild(list);
     container.appendChild(wrapListAddBtn(addBtn));
@@ -445,121 +443,197 @@ function valueKey(s) {
   return (s || '').trim().toLowerCase();
 }
 
-// Every distinct string typed across an item -> string[] map (case-insensitive
-// dedup, first-typed casing kept). Shared by the "hidden values" pages.
-function distinctFreeTextValues(items, byItemObj) {
-  const seen = [];
-  const seenNorm = new Set();
-  items.forEach((it) => {
-    (byItemObj[it] || []).forEach((v) => {
-      const t = (v || '').trim();
-      const norm = t.toLowerCase();
-      if (t && !seenNorm.has(norm)) { seenNorm.add(norm); seen.push(t); }
-    });
+// Shared by every repeatable free-text list (causes, values, feelings, vision,
+// control items, etc): returns a COPY of `list` with case-insensitive/trimmed
+// duplicates collapsed to their first occurrence — the extra rows are never
+// removed from the page itself, only from what actually gets submitted/stored.
+// `keyFn` extracts the comparable text — defaults to the entry itself, but
+// list-of-objects callers (e.g. track record's `{ what, howWell, why }`) pass
+// one to read the right field.
+function dedupedForSubmit(list, keyFn = (v) => v) {
+  const seen = new Set();
+  return list.filter((v) => {
+    const k = valueKey(keyFn(v));
+    if (!k) return true;
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
   });
-  return seen;
+}
+
+// Non-blank, case-insensitive/trimmed-distinct version of a raw typed list
+// (causes/acts-items/control-items/vision-items), first-typed casing kept.
+// Used wherever a later question builds one block PER typed item (e.g. the
+// vision "achievable?" question, control-item feelings, acts reasons/values)
+// so retyping the same item twice on the earlier list doesn't duplicate the
+// later per-item question — the earlier list itself still shows every row.
+function distinctNonBlank(list) {
+  const seen = new Set();
+  const out = [];
+  (list || []).forEach((v) => {
+    const t = (v || '').trim();
+    if (!t) return;
+    const k = t.toLowerCase();
+    if (seen.has(k)) return;
+    seen.add(k);
+    out.push(t);
+  });
+  return out;
 }
 
 // The individual action/inaction items named on the "Contributions" page for
-// a given area — what the "Hidden Values" page groups by, one box per action,
-// regardless of whether two actions share the same typed reason.
+// a given area.
 function distinctActionsForArea(key) {
   return (_deeperState['deeper_' + key + '_acts_items'] || []).filter(it => it && it.trim());
 }
 
-// The distinct reasons named on the "Reasons" page for a given area — used to
-// recap "your reasons" at the top of the Hidden Values page.
-function distinctReasonsForArea(key) {
-  const items = (_deeperState['deeper_' + key + '_acts_items'] || []).filter(it => it && it.trim());
-  const reasonsByItem = _deeperState['deeper_' + key + '_acts_reasons_by_item'] || {};
-  return distinctFreeTextValues(items, reasonsByItem);
+// Every "why" thread recorded for a given action — an array of ladders, each
+// ladder a chain of layers going deeper ("why do you do this?" -> "why does
+// THAT matter?" -> ...) until the person marks one terminal. Initializes a
+// single blank thread the first time an action is seen.
+function whyThreadsForAction(key, action) {
+  const stateKey = 'deeper_' + key + '_why_threads';
+  if (typeof _deeperState[stateKey] !== 'object' || !_deeperState[stateKey]) _deeperState[stateKey] = {};
+  const byAction = _deeperState[stateKey];
+  if (!Array.isArray(byAction[action]) || !byAction[action].length) {
+    byAction[action] = [{ layers: [''], terminal: false }];
+  }
+  return byAction[action];
 }
 
-/* ---- Generic: one bullet list per item. Optionally offers cross-item "also
-   applies here?" quick-add suggestions so the same answer never has to be
-   typed out twice — off for the "reasons" page, on for "hidden values".
-   Also optionally offers an inline Yes/No "keep this?" toggle next to each
-   typed answer (used on "hidden values" to ask whether they want to continue
-   living by it) — keyed by the answer's own text, so the same value typed
-   under two different reasons shares one answer. Shared by both pages. ---- */
-function renderGroupedListByItem(containerId, items, stateKey, hintText, placeholder, showSuggestions = true, continueStateKey = null, itemLabelFn = null) {
-  const container = document.getElementById(containerId);
+// Every thread across every action for a given area that's been carried all
+// the way to a stated terminal value — i.e. every real answer this page has
+// produced so far, in order. Blank/abandoned threads are skipped.
+function terminalWhyThreads(key) {
+  const stateKey = 'deeper_' + key + '_why_threads';
+  const byAction = _deeperState[stateKey] || {};
+  const out = [];
+  distinctActionsForArea(key).forEach((action) => {
+    (byAction[action] || []).forEach((thread) => {
+      const layers = dedupedForSubmit(thread.layers);
+      if (thread.terminal && layers.length) out.push({ action, layers, value: layers[layers.length - 1] });
+    });
+  });
+  return out;
+}
+
+
+// ---- Merged Reasons + Hidden Values page ----
+// For each action/inaction, one or more independent "why" threads. Each
+// thread lets the person keep adding layers ("why does THAT matter to you?")
+// until they say a layer is the real, terminal reason — at that point it's
+// treated as the hidden value being served, and they're asked whether they
+// want to keep living by it. An action can run more than one thread (it can
+// serve more than one motive), and each threads its way down independently.
+function renderActsWhyLadders(key) {
+  const container = document.getElementById('acts-why-groups-' + key);
   if (!container) return;
-  if (typeof _deeperState[stateKey] !== 'object' || !_deeperState[stateKey]) _deeperState[stateKey] = {};
-  const byItem = _deeperState[stateKey];
-
-  if (continueStateKey && (typeof _deeperState[continueStateKey] !== 'object' || !_deeperState[continueStateKey])) {
-    _deeperState[continueStateKey] = {};
-  }
-  const decisions = continueStateKey ? _deeperState[continueStateKey] : null;
-
+  const items = distinctActionsForArea(key);
   container.innerHTML = '';
   if (!items.length) return;
 
-  const hidden = document.createElement('input');
-  hidden.type = 'hidden';
-  hidden.name = stateKey;
-  function syncHidden() { hidden.value = JSON.stringify(byItem); }
-
-  let continueHidden = null;
-  function syncContinueHidden() { if (continueHidden) continueHidden.value = JSON.stringify(decisions); }
-
-  // Matching is case-insensitive (e.g. "Security" and "security" count as the
-  // same answer); the first-typed casing is kept for display.
-  function allTyped() { return distinctFreeTextValues(items, byItem); }
-
-  const refreshSuggestionsFns = [];
-  function refreshAllSuggestions() {
-    refreshSuggestionsFns.forEach((fn) => fn());
+  const threadsHidden = document.createElement('input');
+  threadsHidden.type = 'hidden';
+  threadsHidden.name = 'deeper_' + key + '_why_threads';
+  function syncThreadsHidden() {
+    const byAction = _deeperState['deeper_' + key + '_why_threads'] || {};
+    const deduped = {};
+    Object.keys(byAction).forEach((action) => {
+      deduped[action] = byAction[action].map((t) => ({ layers: dedupedForSubmit(t.layers), terminal: t.terminal }));
+    });
+    threadsHidden.value = JSON.stringify(deduped);
   }
 
-  items.forEach((item) => {
-    if (!Array.isArray(byItem[item]) || !byItem[item].length) byItem[item] = [''];
-    const values = byItem[item];
+  const continueKey = 'deeper_' + key + '_acts_values_continue';
+  if (typeof _deeperState[continueKey] !== 'object' || !_deeperState[continueKey]) _deeperState[continueKey] = {};
+  const decisions = _deeperState[continueKey];
+  const continueHidden = document.createElement('input');
+  continueHidden.type = 'hidden';
+  continueHidden.name = continueKey;
+  function syncContinueHidden() { continueHidden.value = JSON.stringify(decisions); }
+
+  items.forEach((action) => {
+    const threads = whyThreadsForAction(key, action);
 
     const block = document.createElement('div');
     block.className = 'acts-group';
-    // itemLabelFn may return a plain string (rendered as-is) or
-    // { action, reason } (rendered as small italic action text on top of the
-    // reason beneath it) — used by the Hidden Values page.
-    const labelResult = itemLabelFn ? itemLabelFn(item) : item;
-    const itemLbl = document.createElement('div');
-    itemLbl.className = 'acts-item-heading';
-    if (labelResult && typeof labelResult === 'object') {
-      const actionLine = document.createElement('p');
-      actionLine.className = 'acts-item-action';
-      actionLine.textContent = (labelResult.action || '').trim().replace(/\.+$/, '') + ' because:';
-      itemLbl.appendChild(actionLine);
-      if (labelResult.reason) {
-        const reasonLine = document.createElement('p');
-        reasonLine.className = 'acts-item-reason';
-        reasonLine.textContent = labelResult.reason;
-        itemLbl.appendChild(reasonLine);
+
+    const actionLbl = document.createElement('p');
+    actionLbl.className = 'acts-item-heading';
+    actionLbl.textContent = action;
+    block.appendChild(indentPastBullet(actionLbl, 'indent-row-center'));
+
+    const threadsWrap = document.createElement('div');
+    block.appendChild(threadsWrap);
+
+    function buildThread(thread, threadIdx) {
+      const threadEl = document.createElement('div');
+      threadEl.className = 'why-thread';
+      threadEl.style.marginBottom = '1rem';
+      const tailWrap = document.createElement('div');
+
+      function refreshTail() {
+        tailWrap.innerHTML = '';
+        const lastVal = thread.layers[thread.layers.length - 1];
+        if (!lastVal || !lastVal.trim()) return;
+        if (!thread.terminal) {
+          const prompt = document.createElement('p');
+          prompt.className = 'list-hint';
+          prompt.textContent = 'Is this the real reason, or is there something even deeper?';
+          const btnsWrap = document.createElement('div');
+          btnsWrap.className = 'yn-btns';
+          btnsWrap.style.justifyContent = 'flex-start';
+          const doneBtn = document.createElement('button');
+          doneBtn.type = 'button'; doneBtn.className = 'yn-btn';
+          doneBtn.textContent = 'This is it';
+          doneBtn.addEventListener('click', () => {
+            thread.terminal = true;
+            syncThreadsHidden();
+            refreshTail();
+          });
+          const deeperBtn = document.createElement('button');
+          deeperBtn.type = 'button'; deeperBtn.className = 'yn-btn';
+          deeperBtn.textContent = "There's something deeper";
+          deeperBtn.addEventListener('click', () => {
+            thread.layers.push('');
+            syncThreadsHidden();
+            build();
+            const inputs = threadEl.querySelectorAll('.cause-input');
+            if (inputs.length) inputs[inputs.length - 1].focus();
+          });
+          btnsWrap.appendChild(doneBtn); btnsWrap.appendChild(deeperBtn);
+          tailWrap.appendChild(indentPastBullet(prompt, 'indent-row-center'));
+          tailWrap.appendChild(indentPastBullet(btnsWrap, 'indent-row-center'));
+        } else {
+          const keepWrap = document.createElement('div');
+          const keepQ = document.createElement('p');
+          keepQ.className = 'list-hint';
+          keepQ.textContent = 'Is this a value you want to continue living by in this context?';
+          const btnsWrap = document.createElement('div');
+          btnsWrap.className = 'yn-btns';
+          const k = valueKey(lastVal);
+          [{ v: 'yes', label: 'Yes' }, { v: 'no', label: 'No' }].forEach(({ v, label: btnLabel }) => {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'yn-btn' + (decisions[k] === v ? ' selected' : '');
+            b.textContent = btnLabel;
+            b.addEventListener('click', () => {
+              decisions[k] = v;
+              syncContinueHidden();
+              btnsWrap.querySelectorAll('.yn-btn').forEach((bb) => bb.classList.remove('selected'));
+              b.classList.add('selected');
+              if (window.clearFormError) window.clearFormError();
+            });
+            btnsWrap.appendChild(b);
+          });
+          keepWrap.appendChild(keepQ);
+          keepWrap.appendChild(btnsWrap);
+          tailWrap.appendChild(indentPastBullet(keepWrap, 'indent-row-center'));
+        }
       }
-    } else {
-      itemLbl.textContent = labelResult;
-    }
-    itemLbl.style.marginBottom = '0';
-    const itemLblRow = indentPastBullet(itemLbl, 'indent-row-center');
-    itemLblRow.style.marginBottom = '.6rem';
-    block.appendChild(itemLblRow);
 
-    // Quick-add checkboxes for answers already named under other items on this
-    // page. Checking one fills it into this item's list below instead of making
-    // the person retype an answer they already named elsewhere.
-    const suggestWrap = document.createElement('div');
-    suggestWrap.className = 'acts-suggest-wrap';
-    if (showSuggestions) block.appendChild(suggestWrap);
-
-    block.appendChild(createListHint(hintText));
-
-    const list = document.createElement('div');
-    list.className = 'cause-list';
-    block.appendChild(list);
-
-    function buildRows() {
-      list.innerHTML = '';
-      values.forEach((val, i) => {
+      thread.layers.forEach((val, layerIdx) => {
+        const isLast = layerIdx === thread.layers.length - 1;
         const row = document.createElement('div');
         row.className = 'cause-item';
         const bullet = document.createElement('span');
@@ -569,177 +643,74 @@ function renderGroupedListByItem(containerId, items, stateKey, hintText, placeho
         inp.type = 'text';
         inp.className = 'cause-input';
         inp.value = val;
-        inp.placeholder = placeholder;
-
-        let keepBlock = null;
-        function updateKeepToggle() {
-          if (!keepBlock) return;
-          const has = !!inp.value.trim();
-          keepBlock.hidden = !has;
-          if (has) {
-            const k = valueKey(inp.value);
-            keepBlock.querySelectorAll('.keep-btn').forEach((b) => b.classList.toggle('selected', decisions[k] === b.dataset.val));
-          }
-        }
-
+        inp.placeholder = layerIdx === 0 ? 'Why do you do this?' : 'Why does that matter to you?';
         inp.addEventListener('input', () => {
-          values[i] = inp.value;
-          syncHidden();
-          list.querySelectorAll('.cause-remove').forEach(b => { b.hidden = values.length === 1; });
-          updateKeepToggle();
+          thread.layers[layerIdx] = inp.value;
+          if (isLast && !inp.value.trim()) thread.terminal = false;
+          syncThreadsHidden();
+          refreshTail();
         });
-        inp.addEventListener('blur', () => { refreshAllSuggestions(); });
-        inp.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            e.stopPropagation();
-            values.push('');
-            buildRows();
-            const inputs = list.querySelectorAll('.cause-input');
-            if (inputs.length) inputs[inputs.length - 1].focus();
-          }
-        });
-        const rm = document.createElement('button');
-        rm.type = 'button';
-        rm.className = 'cause-remove';
-        rm.textContent = '×';
-        rm.hidden = values.length === 1;
-        rm.addEventListener('click', () => {
-          values.splice(i, 1);
-          if (!values.length) values.push('');
-          buildRows();
-          syncHidden();
-          refreshAllSuggestions();
-        });
-        row.appendChild(bullet); row.appendChild(inp); row.appendChild(rm);
-        list.appendChild(row);
-
-        if (continueStateKey) {
-          const keepInner = document.createElement('div');
-          const keepQ = document.createElement('p');
-          keepQ.className = 'list-hint';
-          keepQ.style.marginBottom = '.4rem';
-          keepQ.textContent = 'Do you want to continue living by this value in the current context?';
-          keepInner.appendChild(keepQ);
-
-          const btnsWrap = document.createElement('div');
-          btnsWrap.className = 'yn-btns';
-          btnsWrap.style.justifyContent = 'flex-start';
-          [{ v: 'yes', label: 'Yes' }, { v: 'no', label: 'No' }].forEach(({ v, label: btnLabel }) => {
-            const b = document.createElement('button');
-            b.type = 'button';
-            b.dataset.val = v;
-            b.className = 'yn-btn keep-btn' + (decisions[valueKey(val)] === v ? ' selected' : '');
-            b.textContent = btnLabel;
-            b.addEventListener('click', () => {
-              const k = valueKey(inp.value);
-              if (!k) return;
-              decisions[k] = v;
-              syncContinueHidden();
-              keepBlock.querySelectorAll('.keep-btn').forEach((bb) => bb.classList.remove('selected'));
-              b.classList.add('selected');
-              if (window.clearFormError) window.clearFormError();
-            });
-            btnsWrap.appendChild(b);
+        row.appendChild(bullet); row.appendChild(inp);
+        if (isLast && thread.layers.length > 1) {
+          const rm = document.createElement('button');
+          rm.type = 'button';
+          rm.className = 'cause-remove';
+          rm.textContent = '×';
+          rm.addEventListener('click', () => {
+            thread.layers.pop();
+            thread.terminal = false;
+            syncThreadsHidden();
+            build();
           });
-          keepInner.appendChild(btnsWrap);
-
-          keepBlock = indentPastBullet(keepInner, 'list-hint-row');
-          keepBlock.style.marginBottom = '.8rem';
-          keepBlock.hidden = !val.trim();
-          list.appendChild(keepBlock);
+          row.appendChild(rm);
         }
+        threadEl.appendChild(row);
       });
+      threadEl.appendChild(tailWrap);
+      refreshTail();
+
+      if (threads.length > 1) {
+        const rmThread = document.createElement('button');
+        rmThread.type = 'button';
+        rmThread.className = 'list-add-btn';
+        rmThread.style.marginTop = '.4rem';
+        rmThread.textContent = '− Remove this reason';
+        rmThread.addEventListener('click', () => {
+          threads.splice(threadIdx, 1);
+          if (!threads.length) threads.push({ layers: [''], terminal: false });
+          syncThreadsHidden();
+          build();
+        });
+        threadEl.appendChild(indentPastBullet(rmThread, 'indent-row-center'));
+      }
+
+      return threadEl;
     }
-    buildRows();
+
+    function build() {
+      threadsWrap.innerHTML = '';
+      threads.forEach((thread, i) => threadsWrap.appendChild(buildThread(thread, i)));
+    }
+    build();
 
     const addBtn = document.createElement('button');
     addBtn.type = 'button';
     addBtn.className = 'list-add-btn';
-    addBtn.textContent = '+ Add another';
+    addBtn.textContent = '+ Add another reason';
     addBtn.addEventListener('click', () => {
-      values.push('');
-      buildRows();
-      const inputs = list.querySelectorAll('.cause-input');
-      if (inputs.length) inputs[inputs.length - 1].focus();
+      threads.push({ layers: [''], terminal: false });
+      syncThreadsHidden();
+      build();
     });
     block.appendChild(wrapListAddBtn(addBtn));
-
-    function refreshSuggestions() {
-      const already = new Set(values.map((v) => (v || '').trim().toLowerCase()).filter(Boolean));
-      const options = allTyped().filter((v) => !already.has(v.toLowerCase()));
-      suggestWrap.innerHTML = '';
-      if (!options.length) return;
-      const suggestLbl = document.createElement('p');
-      suggestLbl.className = 'list-hint';
-      suggestLbl.textContent = 'Also applies here?';
-      suggestWrap.appendChild(indentPastBullet(suggestLbl, 'indent-row-center'));
-      const checks = document.createElement('div');
-      checks.className = 'acts-checkboxes';
-      options.forEach((opt) => {
-        const rowLbl = document.createElement('label');
-        rowLbl.className = 'acts-check-label';
-        const cb = document.createElement('input');
-        cb.type = 'checkbox';
-        cb.addEventListener('change', () => {
-          if (!cb.checked) return;
-          const blankIdx = values.findIndex((v) => !v || !v.trim());
-          if (blankIdx !== -1) values[blankIdx] = opt; else values.push(opt);
-          buildRows();
-          syncHidden();
-          refreshSuggestions();
-        });
-        const span = document.createElement('span');
-        span.textContent = opt;
-        rowLbl.appendChild(cb); rowLbl.appendChild(span);
-        checks.appendChild(rowLbl);
-      });
-      suggestWrap.appendChild(indentPastBullet(checks, 'indent-row-center'));
-    }
-    if (showSuggestions) {
-      refreshSuggestions();
-      refreshSuggestionsFns.push(refreshSuggestions);
-    }
 
     container.appendChild(block);
   });
 
-  syncHidden();
-  container.appendChild(hidden);
-
-  if (continueStateKey) {
-    continueHidden = document.createElement('input');
-    continueHidden.type = 'hidden';
-    continueHidden.name = continueStateKey;
-    syncContinueHidden();
-    container.appendChild(continueHidden);
-  }
-
-  const listErr = document.createElement('p');
-  listErr.className = 'yn-error list-error';
-  container.appendChild(listErr);
-}
-
-// Reasons attributed to each action/inaction, one bullet list per item.
-function renderActsReasonsByItem(key) {
-  const items = (_deeperState['deeper_' + key + '_acts_items'] || []).filter(it => it && it.trim());
-  renderGroupedListByItem('acts-reason-groups-' + key, items, 'deeper_' + key + '_acts_reasons_by_item',
-    CAUSE_LIST_HINT, '', false);
-}
-
-// Values attributed to each action/inaction — one bullet list per action
-// named on the "Contributions" page, labelled with that action's own typed
-// reason(s) for context. Every action gets its own box, even if it shares
-// its reason wording with another action.
-function renderActsValuesByItem(key) {
-  const items = distinctActionsForArea(key);
-  const reasonsByItem = _deeperState['deeper_' + key + '_acts_reasons_by_item'] || {};
-  const itemLabelFn = (item) => {
-    const reasons = (reasonsByItem[item] || []).map((r) => (r || '').trim()).filter(Boolean);
-    return { action: item, reason: reasons.join('; ') };
-  };
-  renderGroupedListByItem('acts-value-groups-' + key, items, 'deeper_' + key + '_acts_values_by_item',
-    VALUE_LIST_HINT, 'e.g. Security, comfort, avoiding failure…', true, 'deeper_' + key + '_acts_values_continue', itemLabelFn);
+  syncThreadsHidden();
+  container.appendChild(threadsHidden);
+  syncContinueHidden();
+  container.appendChild(continueHidden);
 }
 
 function renderSimpleBulletList(containerId, stateKey, placeholder, nothingStateKey, stateObj, hintText) {
@@ -751,7 +722,7 @@ function renderSimpleBulletList(containerId, stateKey, placeholder, nothingState
 
   function syncHidden() {
     const h = container.querySelector('input[name="' + stateKey + '"]');
-    if (h) h.value = JSON.stringify(items);
+    if (h) h.value = JSON.stringify(dedupedForSubmit(items));
   }
 
   function build() {
@@ -823,7 +794,7 @@ function renderSimpleBulletList(containerId, stateKey, placeholder, nothingState
     const hidden = document.createElement('input');
     hidden.type = 'hidden';
     hidden.name = stateKey;
-    hidden.value = JSON.stringify(items);
+    hidden.value = JSON.stringify(dedupedForSubmit(items));
     container.appendChild(hidden);
 
     if (nothingStateKey) {
@@ -998,18 +969,9 @@ function renderTrackRecordList(containerId) {
 
 function renderActsGroups(key) {
   const isNothing = !!_deeperState['deeper_' + key + '_acts_raw_nothing'];
-  const items = isNothing ? [] : (_deeperState['deeper_' + key + '_acts_raw_items'] || []).filter(i => i && i.trim());
+  const items = isNothing ? [] : distinctNonBlank(_deeperState['deeper_' + key + '_acts_raw_items']);
   _deeperState['deeper_' + key + '_acts_items'] = items;
-  renderActsReasonsByItem(key);
-  renderActsValuesByItem(key);
-}
-
-function renderActsItemReasons(key) {
-  renderActsReasonsByItem(key);
-}
-
-function renderActsItemValues(key) {
-  renderActsValuesByItem(key);
+  renderActsWhyLadders(key);
 }
 
 function renderActsConfirm(key) {
@@ -1104,7 +1066,7 @@ function renderVisionList(key) {
 
   function syncHidden() {
     const h = container.querySelector('input[type="hidden"]');
-    if (h) h.value = JSON.stringify(items);
+    if (h) h.value = JSON.stringify(dedupedForSubmit(items));
   }
 
   function build() {
@@ -1171,7 +1133,7 @@ function renderVisionList(key) {
     const hidden = document.createElement('input');
     hidden.type = 'hidden';
     hidden.name = 'deeper_' + key + '_vision_items';
-    hidden.value = JSON.stringify(items);
+    hidden.value = JSON.stringify(dedupedForSubmit(items));
     container.appendChild(createListHint(VISION_LIST_HINT));
     container.appendChild(list);
     container.appendChild(wrapListAddBtn(addBtn));
@@ -1197,7 +1159,7 @@ function renderControlList(key) {
   function syncAndUpdate() {
     _deeperState['deeper_' + key + '_control_items'] = items;
     const hidden = container.querySelector('input[type="hidden"]');
-    if (hidden) hidden.value = JSON.stringify(items);
+    if (hidden) hidden.value = JSON.stringify(dedupedForSubmit(items));
     renderControlAttitude(key);
   }
 
@@ -1260,7 +1222,7 @@ function renderControlList(key) {
     const hidden = document.createElement('input');
     hidden.type = 'hidden';
     hidden.name = 'deeper_' + key + '_control_items';
-    hidden.value = JSON.stringify(items);
+    hidden.value = JSON.stringify(dedupedForSubmit(items));
     container.appendChild(createListHint(CONTROL_LIST_HINT));
     container.appendChild(list);
     container.appendChild(wrapListAddBtn(addBtn));
@@ -1276,7 +1238,7 @@ function renderControlList(key) {
 function renderControlAttitude(key) {
   const container = document.getElementById('control-attitude-' + key);
   if (!container) return;
-  const items = (_deeperState['deeper_' + key + '_control_items'] || []).filter(i => i && i.trim());
+  const items = distinctNonBlank(_deeperState['deeper_' + key + '_control_items']);
   container.hidden = items.length === 0;
   if (!items.length) { container.innerHTML = ''; return; }
 
@@ -1292,7 +1254,14 @@ function renderControlAttitude(key) {
 
   function syncHidden(stateKey, stateObj) {
     const h = container.querySelector('input[name="' + stateKey + '"]');
-    if (h) h.value = JSON.stringify(stateObj);
+    if (!h) return;
+    if (stateKey === feelingKey) {
+      const deduped = {};
+      Object.keys(stateObj).forEach((k) => { deduped[k] = dedupedForSubmit(stateObj[k]); });
+      h.value = JSON.stringify(deduped);
+    } else {
+      h.value = JSON.stringify(stateObj);
+    }
   }
 
   // Every distinct feeling typed anywhere on this page, across all circumstances —
@@ -1534,7 +1503,10 @@ function renderControlAttitude(key) {
   if (allBlocks.length) { const last = allBlocks[allBlocks.length - 1]; last.style.borderBottom = 'none'; last.style.paddingBottom = '0'; }
 
   const h1 = document.createElement('input');
-  h1.type = 'hidden'; h1.name = feelingKey; h1.value = JSON.stringify(feelings);
+  h1.type = 'hidden'; h1.name = feelingKey;
+  const dedupedFeelings = {};
+  Object.keys(feelings).forEach((k) => { dedupedFeelings[k] = dedupedForSubmit(feelings[k]); });
+  h1.value = JSON.stringify(dedupedFeelings);
   container.appendChild(h1);
   const h2 = document.createElement('input');
   h2.type = 'hidden'; h2.name = feelingYnKey; h2.value = JSON.stringify(feelingYn);
@@ -1549,7 +1521,7 @@ function renderVisionItemAchievable(key) {
   if (!container) return;
   const vYn = _deeperState['deeper_' + key + '_vision_yn'];
   const vItems = (vYn === 'yes' || vYn === 'partially')
-    ? (_deeperState['deeper_' + key + '_vision_items'] || []).filter(i => i && i.trim())
+    ? distinctNonBlank(_deeperState['deeper_' + key + '_vision_items'])
     : [];
   const achievableKey = 'deeper_' + key + '_vision_item_achievable';
   if (typeof _deeperState[achievableKey] !== 'object' || !_deeperState[achievableKey]) {
@@ -1609,7 +1581,7 @@ function renderVisionAchievableCheck(key) {
   if (!container) return;
   const vYn = _deeperState['deeper_' + key + '_vision_yn'];
   const vItems = (vYn === 'yes' || vYn === 'partially')
-    ? (_deeperState['deeper_' + key + '_vision_items'] || []).filter(i => i && i.trim())
+    ? distinctNonBlank(_deeperState['deeper_' + key + '_vision_items'])
     : [];
   const achievable = _deeperState['deeper_' + key + '_vision_item_achievable'] || {};
   const notAchievable = vItems.filter((_, i) => achievable[i] === 'no');
@@ -1710,11 +1682,11 @@ function renderVisionCommitment(key) {
   const isRevised = _deeperState['deeper_' + key + '_vision_achievable_check'] === 'revise';
   let items;
   if (isRevised) {
-    items = (_deeperState['deeper_' + key + '_vision_revised_items'] || []).filter(i => i && i.trim());
+    items = distinctNonBlank(_deeperState['deeper_' + key + '_vision_revised_items']);
   } else {
     const vYn = _deeperState['deeper_' + key + '_vision_yn'];
     const vItems = (vYn === 'yes' || vYn === 'partially')
-      ? (_deeperState['deeper_' + key + '_vision_items'] || []).filter(i => i && i.trim())
+      ? distinctNonBlank(_deeperState['deeper_' + key + '_vision_items'])
       : [];
     const achievable = _deeperState['deeper_' + key + '_vision_item_achievable'] || {};
     items = vItems.filter((_, i) => achievable[i] !== 'no');
@@ -1739,7 +1711,7 @@ function renderVisionRevised(key) {
 
   const vYn = _deeperState['deeper_' + key + '_vision_yn'];
   const vItems = (vYn === 'yes' || vYn === 'partially')
-    ? (_deeperState['deeper_' + key + '_vision_items'] || []).filter(i => i && i.trim())
+    ? distinctNonBlank(_deeperState['deeper_' + key + '_vision_items'])
     : [];
   const achievable = _deeperState['deeper_' + key + '_vision_item_achievable'] || {};
   const stillAchievable = vItems.filter((_, i) => achievable[i] !== 'no');
@@ -1817,7 +1789,7 @@ function initDeeperStep() {
   const wheelMap = Object.fromEntries(wheel.map(a => [a.key, a]));
 
   // Sub-pages per area — the flow skips whichever ones don't apply to that person.
-  const qtypes = ['cause', 'vision', 'vision-describe', 'vision-item-achievable', 'vision-achievable-check', 'vision-revised', 'vision-commitment', 'acts-list', 'acts-reasons', 'acts-values', 'control', 'control-attitude'];
+  const qtypes = ['cause', 'vision', 'vision-describe', 'vision-item-achievable', 'vision-achievable-check', 'vision-revised', 'vision-commitment', 'acts-list', 'acts-reasons', 'control', 'control-attitude'];
   const allSubPages = selectedKeys.flatMap(key => qtypes.map(qtype => ({ key, qtype })));
 
   container.innerHTML = selectedKeys.flatMap(key => {
@@ -1879,7 +1851,7 @@ function initDeeperStep() {
         </div>
       </div>`,
       `<div class="deeper-subpage" id="deeper-sub-${key}-vision-item-achievable" data-area="${label}" hidden>
-        <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Vision</h3>
+        <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Achievable</h3>
         <div class="deeper-field vision-achievable-field">
           <label>For each point in your vision, is it theoretically achievable?</label>
           <div id="vision-item-achievable-${key}" style="margin-top:.9rem"></div>
@@ -1919,19 +1891,11 @@ function initDeeperStep() {
         <div id="acts-confirm-${key}" style="margin-top:1.2rem" hidden></div>
       </div>`,
       `<div class="deeper-subpage" id="deeper-sub-${key}-acts-reasons" data-area="${label}" hidden>
-        <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Reasons</h3>
+        <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Hidden Values</h3>
         <div id="recap-acts-${key}-acts-reasons" data-label="How you are contributing to this" class="recap-block" hidden></div>
         <div class="deeper-field">
-          <label>What are the reasons for why you are doing/not doing the above?</label>
-          <div id="acts-reason-groups-${key}" style="margin-top:.9rem"></div>
-        </div>
-      </div>`,
-      `<div class="deeper-subpage" id="deeper-sub-${key}-acts-values" data-area="${label}" hidden>
-        <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Hidden Values</h3>
-        <div id="recap-acts-${key}" data-label="Your reasons" class="recap-block" hidden></div>
-        <div class="deeper-field">
-          <label>If you're brutally honest with yourself, which values might you have that you are serving with each reason? For each one, also say whether you want to continue living by it in the current context or not.</label>
-          <div id="acts-value-groups-${key}" style="margin-top:.9rem"></div>
+          <label>For each one, why do you do it, or not do it? Keep asking yourself why until you land on the real, possibly uncomfortable value underneath it.</label>
+          <div id="acts-why-groups-${key}" style="margin-top:.9rem"></div>
         </div>
       </div>`,
       `<div class="deeper-subpage" id="deeper-sub-${key}-control" data-area="${label}" hidden>
@@ -1983,20 +1947,13 @@ function initDeeperStep() {
     }
     if (sp.qtype === 'acts-reasons') {
       const isNothing = !!_deeperState['deeper_' + sp.key + '_acts_raw_nothing'];
-      const items = isNothing ? [] : (_deeperState['deeper_' + sp.key + '_acts_raw_items'] || []).filter(i => i && i.trim());
+      const items = isNothing ? [] : distinctNonBlank(_deeperState['deeper_' + sp.key + '_acts_raw_items']);
       if (!items.length) {
         showDeeperSubPage(idx + direction, direction);
         return;
       }
       _deeperState['deeper_' + sp.key + '_acts_items'] = items;
-      renderActsItemReasons(sp.key);
-    }
-    if (sp.qtype === 'acts-values') {
-      if (!distinctReasonsForArea(sp.key).length) {
-        showDeeperSubPage(idx + direction, direction);
-        return;
-      }
-      renderActsItemValues(sp.key);
+      renderActsWhyLadders(sp.key);
     }
     if (sp.qtype === 'vision-describe') {
       const vYn = _deeperState['deeper_' + sp.key + '_vision_yn'];
@@ -2014,7 +1971,7 @@ function initDeeperStep() {
     if (sp.qtype === 'vision-item-achievable') {
       const vYn = _deeperState['deeper_' + sp.key + '_vision_yn'];
       const vActual = _deeperState['deeper_' + sp.key + '_vision_actual_yn'];
-      const vItems = (_deeperState['deeper_' + sp.key + '_vision_items'] || []).filter(i => i && i.trim());
+      const vItems = distinctNonBlank(_deeperState['deeper_' + sp.key + '_vision_items']);
       if ((vYn !== 'yes' && vYn !== 'partially') || !vItems.length || vActual !== 'yes') {
         showDeeperSubPage(idx + direction, direction);
         return;
@@ -2023,7 +1980,7 @@ function initDeeperStep() {
     if (sp.qtype === 'vision-achievable-check') {
       const vYn = _deeperState['deeper_' + sp.key + '_vision_yn'];
       const vItems = (vYn === 'yes' || vYn === 'partially')
-        ? (_deeperState['deeper_' + sp.key + '_vision_items'] || []).filter(i => i && i.trim())
+        ? distinctNonBlank(_deeperState['deeper_' + sp.key + '_vision_items'])
         : [];
       const achievable = _deeperState['deeper_' + sp.key + '_vision_item_achievable'] || {};
       const hasNotAchievable = vItems.some((_, i) => achievable[i] === 'no');
@@ -2042,7 +1999,7 @@ function initDeeperStep() {
     if (sp.qtype === 'vision-commitment') {
       const vYn = _deeperState['deeper_' + sp.key + '_vision_yn'];
       const vActual = _deeperState['deeper_' + sp.key + '_vision_actual_yn'];
-      const vItems = (_deeperState['deeper_' + sp.key + '_vision_items'] || []).filter(i => i && i.trim());
+      const vItems = distinctNonBlank(_deeperState['deeper_' + sp.key + '_vision_items']);
       const achievableCheck = _deeperState['deeper_' + sp.key + '_vision_achievable_check'];
       if ((vYn !== 'yes' && vYn !== 'partially') || !vItems.length || vActual !== 'yes' || achievableCheck === 'unknown after vision was rejected as not achievable') {
         showDeeperSubPage(idx + direction, direction);
@@ -2055,7 +2012,7 @@ function initDeeperStep() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     if (!window._historyNav) history.pushState({ step: 3, sub: idx }, '');
     const { key, qtype } = sp;
-    const causes = (_deeperState['deeper_' + key + '_causes'] || []).filter(c => c && c.trim());
+    const causes = distinctNonBlank(_deeperState['deeper_' + key + '_causes']);
     if (qtype === 'acts-list' || qtype === 'control') {
       fillRecapBlock(document.getElementById('recap-causes-' + key + '-' + qtype), causes);
     }
@@ -2063,15 +2020,12 @@ function initDeeperStep() {
       const actsItems = (_deeperState['deeper_' + key + '_acts_items'] || []).filter(i => i && i.trim());
       fillRecapBlock(document.getElementById('recap-acts-' + key + '-acts-reasons'), actsItems);
     }
-    if (qtype === 'acts-values') {
-      fillRecapBlock(document.getElementById('recap-acts-' + key), distinctReasonsForArea(key));
-    }
     if (qtype === 'control') {
       const controlItemsKey = 'deeper_' + key + '_control_items';
 
       const vYn = _deeperState['deeper_' + key + '_vision_yn'];
       const vItems = (vYn === 'yes' || vYn === 'partially')
-        ? (_deeperState['deeper_' + key + '_vision_items'] || []).filter(i => i && i.trim())
+        ? distinctNonBlank(_deeperState['deeper_' + key + '_vision_items'])
         : [];
       const achievable    = _deeperState['deeper_' + key + '_vision_item_achievable'] || {};
       const notAchievable = vItems.filter((_, i) => achievable[i] === 'no');
@@ -2190,7 +2144,7 @@ function initDeeperStep() {
     }
 
     if (qtype === 'cause') {
-      const causes = (_deeperState['deeper_' + key + '_causes'] || []).filter(c => c && c.trim());
+      const causes = distinctNonBlank(_deeperState['deeper_' + key + '_causes']);
       if (!causes.length) {
         setFormErr('Please add at least one reason before continuing.', document.getElementById('cause-list-' + key));
         return false;
@@ -2199,7 +2153,7 @@ function initDeeperStep() {
 
     if (qtype === 'control' && _deeperState['deeper_' + key + '_control_yn'] === 'no') {
       const isNothing = !!_deeperState['deeper_' + key + '_acts_raw_nothing'];
-      const items = isNothing ? [] : (_deeperState['deeper_' + key + '_acts_raw_items'] || []).filter(i => i && i.trim());
+      const items = isNothing ? [] : distinctNonBlank(_deeperState['deeper_' + key + '_acts_raw_items']);
       if (!items.length) {
         setFormErr("Hold on — your situation has to consist of things you're contributing to, things that are outside your control and must be accepted, or both. There is no situation in which it's neither. Please go back and reconsider one of your answers.");
         return false;
@@ -2207,7 +2161,7 @@ function initDeeperStep() {
     }
 
     if (qtype === 'control' && _deeperState['deeper_' + key + '_control_yn'] === 'yes') {
-      const filledItems = (_deeperState['deeper_' + key + '_control_items'] || []).filter(i => i && i.trim());
+      const filledItems = distinctNonBlank(_deeperState['deeper_' + key + '_control_items']);
       if (!filledItems.length) {
         setFormErr('Please add at least one circumstance before continuing.', document.getElementById('control-list-' + key));
         return false;
@@ -2215,7 +2169,7 @@ function initDeeperStep() {
     }
 
     if (qtype === 'control-attitude') {
-      const filledItems     = (_deeperState['deeper_' + key + '_control_items'] || []).filter(i => i && i.trim());
+      const filledItems     = distinctNonBlank(_deeperState['deeper_' + key + '_control_items']);
       const feelings        = _deeperState['deeper_' + key + '_control_feeling'] || {};
       const feelingYn       = _deeperState['deeper_' + key + '_control_feeling_yn'] || {};
       const feelingConfirm  = _deeperState['deeper_' + key + '_control_feeling_confirm'] || {};
@@ -2238,7 +2192,7 @@ function initDeeperStep() {
     }
 
     if (qtype === 'acts-list') {
-      const items     = (_deeperState['deeper_' + key + '_acts_raw_items'] || []).filter(i => i && i.trim());
+      const items     = distinctNonBlank(_deeperState['deeper_' + key + '_acts_raw_items']);
       const isNothing = !!_deeperState['deeper_' + key + '_acts_raw_nothing'];
       if (!items.length && !isNothing) {
         setFormErr('Please add at least one item or select "I don\'t think I\'m contributing to it."', document.getElementById('acts-items-' + key));
@@ -2252,31 +2206,30 @@ function initDeeperStep() {
     }
 
     if (qtype === 'acts-reasons') {
-      const filledItems = (_deeperState['deeper_' + key + '_acts_items'] || []).filter(i => i && i.trim());
-      const reasonsByItem = _deeperState['deeper_' + key + '_acts_reasons_by_item'] || {};
-      const allCovered = filledItems.every(item =>
-        Array.isArray(reasonsByItem[item]) && reasonsByItem[item].some(v => v && v.trim())
-      );
-      if (!allCovered) {
-        setFormErr('Every action needs at least one reason attributed to it before continuing.', document.getElementById('acts-reason-groups-' + key));
-        return false;
-      }
-    }
+      const actions = distinctActionsForArea(key);
+      const byAction = _deeperState['deeper_' + key + '_why_threads'] || {};
+      const container = document.getElementById('acts-why-groups-' + key);
 
-    if (qtype === 'acts-values') {
-      const filledItems = distinctActionsForArea(key);
-      const valuesByItem = _deeperState['deeper_' + key + '_acts_values_by_item'] || {};
-      const allCovered = filledItems.every(item =>
-        Array.isArray(valuesByItem[item]) && valuesByItem[item].some(v => v && v.trim())
+      const hasUnresolvedThread = actions.some((action) =>
+        (byAction[action] || []).some((t) => !t.terminal && dedupedForSubmit(t.layers).length)
       );
-      if (!allCovered) {
-        setFormErr('Every action needs at least one value attributed to it before continuing.', document.getElementById('acts-value-groups-' + key));
+      if (hasUnresolvedThread) {
+        setFormErr('Please say "This is it" once you\'ve reached the real reason, for each one you\'ve started.', container);
         return false;
       }
-      const distinctValues = distinctFreeTextValues(filledItems, valuesByItem);
+
+      const allCovered = actions.every((action) =>
+        (byAction[action] || []).some((t) => t.terminal && dedupedForSubmit(t.layers).length)
+      );
+      if (!allCovered) {
+        setFormErr('Every action needs at least one reason before continuing.', container);
+        return false;
+      }
+
       const decisions = _deeperState['deeper_' + key + '_acts_values_continue'] || {};
-      if (distinctValues.some((v) => !decisions[valueKey(v)])) {
-        setFormErr('Please say whether you want to continue living by each value before continuing.', document.getElementById('acts-value-groups-' + key));
+      const terminals = terminalWhyThreads(key);
+      if (terminals.some((t) => !decisions[valueKey(t.value)])) {
+        setFormErr('Please say whether you want to continue living by each value before continuing.', container);
         return false;
       }
     }
@@ -2284,7 +2237,7 @@ function initDeeperStep() {
     if (qtype === 'vision-describe') {
       const yn = _deeperState['deeper_' + key + '_vision_yn'];
       if (yn === 'yes' || yn === 'partially') {
-        const vItems = (_deeperState['deeper_' + key + '_vision_items'] || []).filter(i => i && i.trim());
+        const vItems = distinctNonBlank(_deeperState['deeper_' + key + '_vision_items']);
         if (!vItems.length) {
           setFormErr('Please describe what it would take before continuing.', document.getElementById('vision-list-' + key));
           return false;
@@ -2300,7 +2253,7 @@ function initDeeperStep() {
     if (qtype === 'vision-item-achievable') {
       const vYn = _deeperState['deeper_' + key + '_vision_yn'];
       const vItems = (vYn === 'yes' || vYn === 'partially')
-        ? (_deeperState['deeper_' + key + '_vision_items'] || []).filter(i => i && i.trim())
+        ? distinctNonBlank(_deeperState['deeper_' + key + '_vision_items'])
         : [];
       const achievable = _deeperState['deeper_' + key + '_vision_item_achievable'] || {};
       if (vItems.some((_, i) => !achievable[i])) {
@@ -2317,7 +2270,7 @@ function initDeeperStep() {
     }
 
     if (qtype === 'vision-revised') {
-      const revised = (_deeperState['deeper_' + key + '_vision_revised_items'] || []).filter(i => i && i.trim());
+      const revised = distinctNonBlank(_deeperState['deeper_' + key + '_vision_revised_items']);
       if (!revised.length) {
         setFormErr('Please describe your revised vision before continuing.', document.getElementById('vision-revised-' + key));
         return false;
@@ -2675,14 +2628,14 @@ function initFitSignalsStep() {
       setFormErr('Please select an answer before continuing.', page?.querySelector('.yn-btns')); return false;
     }
     if (q.type === 'singleselect' && q.followup && _fsState['fs_' + q.id] === q.followup.triggerValue) {
-      const items = (_fsState[q.followup.stateKey] || []).filter(i => i && i.trim());
+      const items = distinctNonBlank(_fsState[q.followup.stateKey]);
       if (!items.length) { setFormErr('Please describe what you need before continuing.', document.getElementById('fs-followup-' + q.id)); return false; }
     }
     if (q.type === 'multiselect' && !_fsState['fs_' + q.id]?.length) {
       setFormErr('Please select at least one option before continuing.', page?.querySelector('.acts-checkboxes')); return false;
     }
     if (q.type === 'multiselect' && q.other && _fsState['fs_' + q.id]?.includes(q.other)) {
-      const items = (_fsState['fs_' + q.id + '_other_items'] || []).filter(i => i && i.trim());
+      const items = distinctNonBlank(_fsState['fs_' + q.id + '_other_items']);
       if (!items.length) { setFormErr('Please specify your answer before continuing.', document.getElementById('fs-other-' + q.id)); return false; }
     }
     if (q.type === 'scale5' && !_fsState['fs_' + q.id]) {
@@ -2758,7 +2711,7 @@ function _prettyKey(k) {
 function _fmtFitAnswer(id) {
   if (id === 'q6') {
     if (_fsState['fs_q6_nothing']) return 'Nothing';
-    const items = (_fsState['fs_q6_items'] || []).filter((i) => (i.what || '').trim());
+    const items = dedupedForSubmit((_fsState['fs_q6_items'] || []).filter((i) => (i.what || '').trim()), (i) => i.what);
     if (!items.length) return '(none given)';
     const formatted = items
       .map((i) => `${i.what}${i.howWell != null ? ` (worked ${i.howWell}/5)` : ''}${(i.why || '').trim() ? ` — why: ${i.why}` : ''}`);
@@ -2768,7 +2721,7 @@ function _fmtFitAnswer(id) {
   let out;
   if (Array.isArray(v)) {
     let arr = v.slice();
-    const otherItems = (_fsState['fs_' + id + '_other_items'] || []).filter((i) => i && i.trim());
+    const otherItems = distinctNonBlank(_fsState['fs_' + id + '_other_items']);
     if (otherItems.length && arr.includes('Other')) arr = arr.map((o) => (o === 'Other' ? 'Other: ' + otherItems.join('; ') : o));
     out = arr.length > 1 ? arr : (arr.length ? arr[0] : '(none selected)');
   } else if (typeof v === 'number') {
@@ -2776,7 +2729,10 @@ function _fmtFitAnswer(id) {
   } else if (v === 'yes') out = 'Yes';
   else if (v === 'no') out = 'No';
   else out = v == null || v === '' ? '(not answered)' : String(v);
-  if (id === 'q2' && v === "No, I'm exhausted" && _fsState['fs_q2_needs']) out += ' — needs: ' + _fsState['fs_q2_needs'];
+  if (id === 'q2' && v === "No, I'm exhausted" && _fsState['fs_q2_needs']) {
+    const needs = distinctNonBlank(_fsState['fs_q2_needs']);
+    if (needs.length) out += ' — needs: ' + needs.join('; ');
+  }
   return out;
 }
 // Read the deeper-step questions + answers straight from the rendered page, so the
@@ -2800,12 +2756,12 @@ function captureDeeperFromDom() {
       const attMatch = sp.id.match(/^deeper-sub-(.+)-control-attitude$/);
       if (attMatch) {
         const areaKey = attMatch[1];
-        const items = (_deeperState['deeper_' + areaKey + '_control_items'] || []).filter((i) => i && i.trim());
+        const items = distinctNonBlank(_deeperState['deeper_' + areaKey + '_control_items']);
         const feelings = _deeperState['deeper_' + areaKey + '_control_feeling'] || {};
         const feelingYn = _deeperState['deeper_' + areaKey + '_control_feeling_yn'] || {};
         items.forEach((item) => {
           const feelingList = Array.isArray(feelings[item]) ? feelings[item] : (feelings[item] ? [feelings[item]] : []);
-          const feeling = feelingList.filter((f) => f && f.trim()).join(', ');
+          const feeling = distinctNonBlank(feelingList).join(', ');
           if (!feeling) return;
           const wantsToFeel = feelingYn[item] === 'yes' ? 'Yes' : feelingYn[item] === 'no' ? 'No' : '';
           const a = wantsToFeel ? `Feels: ${feeling}. Wants to feel this way: ${wantsToFeel}.` : `Feels: ${feeling}.`;
@@ -2814,35 +2770,18 @@ function captureDeeperFromDom() {
         return;
       }
 
-      // Reasons: one row per action/inaction, listing that action's own typed
-      // reasons — instead of one flat, unlabelled list of every reason on the
-      // page with no way to tell which action each one is justifying.
+      // Hidden values: one row per (action, thread) — the full "why" chain down
+      // to the terminal value, plus whether they want to keep living by it.
+      // Bypasses the generic scan below on purpose — that scan would otherwise
+      // pick up the first "keep this value?" button on the page and treat it
+      // as if it were the whole question's one answer.
       const reasonsMatch = sp.id.match(/^deeper-sub-(.+)-acts-reasons$/);
       if (reasonsMatch) {
         const areaKey = reasonsMatch[1];
-        const items = distinctActionsForArea(areaKey);
-        const reasonsByItem = _deeperState['deeper_' + areaKey + '_acts_reasons_by_item'] || {};
-        items.forEach((item) => {
-          const reasons = (reasonsByItem[item] || []).map((r) => (r || '').trim()).filter(Boolean);
-          if (!reasons.length) return;
-          rows.push([area ? `${area} — ${item}` : item, reasons.join('; ')]);
-        });
-        return;
-      }
-
-      // Hidden values: one row per named value, saying whether they want to keep
-      // living by it. Bypasses the generic scan below on purpose — that scan
-      // would otherwise pick up the first "keep this value?" button on the page
-      // and treat it as if it were the whole question's one answer.
-      const valuesMatch = sp.id.match(/^deeper-sub-(.+)-acts-values$/);
-      if (valuesMatch) {
-        const areaKey = valuesMatch[1];
-        const items = distinctActionsForArea(areaKey);
-        const valuesByItem = _deeperState['deeper_' + areaKey + '_acts_values_by_item'] || {};
         const decisions = _deeperState['deeper_' + areaKey + '_acts_values_continue'] || {};
-        distinctFreeTextValues(items, valuesByItem).forEach((value) => {
+        terminalWhyThreads(areaKey).forEach(({ action, layers, value }) => {
           const ans = decisions[valueKey(value)] === 'yes' ? 'Yes' : decisions[valueKey(value)] === 'no' ? 'No' : '(no answer given)';
-          rows.push([area ? `${area} — "${value}"` : `"${value}"`, `Continue living by this: ${ans}`]);
+          rows.push([area ? `${area} — ${action}` : action, `${layers.join(' → ')} (continue living by this: ${ans})`]);
         });
         return;
       }
@@ -2860,8 +2799,8 @@ function captureDeeperFromDom() {
         const sel = [...field.querySelectorAll('.yn-btn.selected')].find(mine);
         if (sel) a = sel.textContent.trim();
         if (!a) {
-          const texts = [...field.querySelectorAll('input:not([type=checkbox]):not([type=radio]):not([type=hidden]), textarea')]
-            .filter(mine).map((i) => i.value.trim()).filter(Boolean);
+          const texts = distinctNonBlank([...field.querySelectorAll('input:not([type=checkbox]):not([type=radio]):not([type=hidden]), textarea')]
+            .filter(mine).map((i) => i.value.trim()));
           const checks = [...field.querySelectorAll('input[type=checkbox]')]
             .filter((c) => mine(c) && c.checked)
             .map((c) => (c.closest('label')?.textContent || 'Yes').replace(/\s+/g, ' ').trim());
@@ -2878,12 +2817,12 @@ function captureDeeperFromDom() {
 // Flatten any stored answer (string / number / array / {what,howWell,why}) to text.
 function _fmtStateVal(v) {
   if (Array.isArray(v)) {
-    return v
+    const parts = v
       .map((x) => (x && typeof x === 'object'
         ? Object.values(x).filter((y) => String(y ?? '').trim()).join(' — ')
         : String(x ?? '')))
-      .filter((s) => s.trim())
-      .join('; ');
+      .filter((s) => s.trim());
+    return distinctNonBlank(parts).join('; ');
   }
   if (v && typeof v === 'object') return Object.values(v).filter((y) => String(y ?? '').trim()).join(' — ');
   return v == null ? '' : String(v);
@@ -2984,7 +2923,7 @@ function buildQaSummary(answers) {
     // the same when present, and neither is real content worth showing.
     '_confirm', '_confirm_shown',
     '_vision_item_achievable', '_vision_achievable_check', '_vision_items',
-    '_acts_values_by_item', '_acts_reasons_by_item', '_acts_values_continue', '_omits_groups',
+    '_why_threads', '_acts_values_continue', '_omits_groups',
     '_control_feeling',
   ];
   const extra = [];
@@ -3073,7 +3012,7 @@ window.submitAssessment = async function submitAssessment(form, submitButton) {
   const q2 = _fsState['fs_q2'] || '';
   const q5 = typeof _fsState['fs_q5'] === 'number' ? _fsState['fs_q5'] : 3;
   const q7 = _fsState['fs_q7'] || '';
-  const q6items = (_fsState['fs_q6_items'] || []).filter(i => i.what?.trim());
+  const q6items = dedupedForSubmit((_fsState['fs_q6_items'] || []).filter(i => i.what?.trim()), (i) => i.what);
 
   const r6 = { 'Yes, whatever it takes': 6, 'Yes, but I need to go easy on myself': 4, "No, I'm exhausted": 2 };
   const s6 = { "Unacceptable — it cannot happen": 6, "Like I'd wasted something important": 5, "Disappointing, but I'd manage": 3, "I'd be fine with it": 1 };

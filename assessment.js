@@ -487,44 +487,75 @@ function distinctActionsForArea(key) {
   return (_deeperState['deeper_' + key + '_acts_items'] || []).filter(it => it && it.trim());
 }
 
-// Every "why" thread recorded for a given action — an array of ladders, each
-// ladder a chain of layers going deeper ("why do you do this?" -> "why does
-// THAT matter?" -> ...) until the person marks one terminal. Initializes a
-// single blank thread the first time an action is seen.
+// One node in a "why" tree: a single reason at a single depth. `children`
+// holds what it deepens into — empty until the person digs deeper or splits
+// it into more than one distinct reason, at which point every child ladders
+// down independently. A childless node is a leaf: still being typed, or
+// (once `terminal`) a stated hidden value. `id` is unique per node so the
+// "keep living by this?" answer is tied to THIS specific reason, even if its
+// wording happens to match a value stated elsewhere — the same word can be
+// worth keeping in one context and not another.
+let _whyNodeSeq = 0;
+function makeWhyNode(text) {
+  return { id: 'wn' + (++_whyNodeSeq), text: text || '', terminal: false, children: [] };
+}
+
+// Every "why" tree recorded for a given action — an array of root nodes
+// (one per independent starting reason), each of which can itself branch at
+// any depth. Initializes a single blank root the first time an action is seen.
 function whyThreadsForAction(key, action) {
   const stateKey = 'deeper_' + key + '_why_threads';
   if (typeof _deeperState[stateKey] !== 'object' || !_deeperState[stateKey]) _deeperState[stateKey] = {};
   const byAction = _deeperState[stateKey];
   if (!Array.isArray(byAction[action]) || !byAction[action].length) {
-    byAction[action] = [{ layers: [''], terminal: false }];
+    byAction[action] = [makeWhyNode('')];
   }
   return byAction[action];
 }
 
-// Every thread across every action for a given area that's been carried all
-// the way to a stated terminal value — i.e. every real answer this page has
-// produced so far, in order. Blank/abandoned threads are skipped.
+function collectTerminalWhyLeaves(action, node, path, out) {
+  const fullPath = path.concat(node.text);
+  if (!node.children.length) {
+    if (node.terminal) {
+      const layers = dedupedForSubmit(fullPath);
+      if (layers.length) out.push({ action, layers, value: layers[layers.length - 1], id: node.id });
+    }
+    return;
+  }
+  node.children.forEach((child) => collectTerminalWhyLeaves(action, child, fullPath, out));
+}
+
+// Every terminal leaf across every "why" tree for a given area — i.e. every
+// real hidden value this page has produced so far, in order. Blank/abandoned
+// branches are skipped.
 function terminalWhyThreads(key) {
   const stateKey = 'deeper_' + key + '_why_threads';
   const byAction = _deeperState[stateKey] || {};
   const out = [];
   distinctActionsForArea(key).forEach((action) => {
-    (byAction[action] || []).forEach((thread) => {
-      const layers = dedupedForSubmit(thread.layers);
-      if (thread.terminal && layers.length) out.push({ action, layers, value: layers[layers.length - 1] });
-    });
+    (byAction[action] || []).forEach((root) => collectTerminalWhyLeaves(action, root, [], out));
   });
   return out;
 }
 
+// True if some leaf in this tree has been typed into but never resolved
+// (not marked as the final value, and not dug/split any further) — i.e. an
+// abandoned reason blocking progress.
+function whyTreeHasUnresolvedLeaf(node) {
+  if (!node.children.length) return !node.terminal && !!(node.text && node.text.trim());
+  return node.children.some(whyTreeHasUnresolvedLeaf);
+}
+
 
 // ---- Merged Reasons + Hidden Values page ----
-// For each action/inaction, one or more independent "why" threads. Each
-// thread lets the person keep adding layers ("why does THAT matter to you?")
-// until they say a layer is the real, terminal reason — at that point it's
-// treated as the hidden value being served, and they're asked whether they
-// want to keep living by it. An action can run more than one thread (it can
-// serve more than one motive), and each threads its way down independently.
+// For each action/inaction, one or more independent "why" trees (see
+// makeWhyNode). Each node lets the person dig one layer deeper ("why does
+// THAT matter to you?"), split into more than one distinct reason if a
+// single answer actually bundles several motives, or mark itself the real,
+// terminal reason — at which point it's treated as the hidden value being
+// served, and they're asked whether they want to keep living by it. An
+// action can run more than one root reason, and any reason at any depth can
+// itself branch the same way.
 function renderActsWhyLadders(key) {
   const container = document.getElementById('acts-why-groups-' + key);
   if (!container) return;
@@ -535,13 +566,16 @@ function renderActsWhyLadders(key) {
   const threadsHidden = document.createElement('input');
   threadsHidden.type = 'hidden';
   threadsHidden.name = 'deeper_' + key + '_why_threads';
+  function serializeWhyNode(node) {
+    return { text: node.text, terminal: node.terminal, children: node.children.map(serializeWhyNode) };
+  }
   function syncThreadsHidden() {
     const byAction = _deeperState['deeper_' + key + '_why_threads'] || {};
-    const deduped = {};
+    const out = {};
     Object.keys(byAction).forEach((action) => {
-      deduped[action] = byAction[action].map((t) => ({ layers: dedupedForSubmit(t.layers), terminal: t.terminal }));
+      out[action] = byAction[action].map(serializeWhyNode);
     });
-    threadsHidden.value = JSON.stringify(deduped);
+    threadsHidden.value = JSON.stringify(out);
   }
 
   const continueKey = 'deeper_' + key + '_acts_values_continue';
@@ -566,44 +600,123 @@ function renderActsWhyLadders(key) {
     const threadsWrap = document.createElement('div');
     block.appendChild(threadsWrap);
 
-    function buildThread(thread, threadIdx) {
-      const threadEl = document.createElement('div');
-      threadEl.className = 'why-thread';
-      threadEl.style.marginBottom = '1rem';
+    // Renders one node (a single reason at a single depth) plus, recursively,
+    // whatever it deepens or splits into. `isRoot` is the very first reason
+    // for the action; `siblings`/`idx` let a non-root leaf remove itself;
+    // `depth` drives the border shade so nesting stays readable once a tree
+    // gets tall. A resolved leaf (final value + answered) collapses to a
+    // one-line summary — most of a big tree's bulk is decisions already made.
+    function buildNode(node, isRoot, siblings, idx, depth) {
+      const nodeEl = document.createElement('div');
+
+      if (node.collapsed) {
+        const sumRow = document.createElement('div');
+        sumRow.className = 'cause-item';
+        const sumBullet = document.createElement('span');
+        sumBullet.className = 'cause-bullet';
+        sumBullet.textContent = '✓';
+        const sumBtn = document.createElement('button');
+        sumBtn.type = 'button';
+        sumBtn.className = 'why-collapsed-summary';
+        const ans = decisions[node.id] === 'yes' ? 'Yes' : decisions[node.id] === 'no' ? 'No' : '';
+        sumBtn.textContent = node.text + (ans ? ' — keep living by it: ' + ans : '');
+        sumBtn.addEventListener('click', () => {
+          node.collapsed = false;
+          build();
+        });
+        sumRow.appendChild(sumBullet); sumRow.appendChild(sumBtn);
+        nodeEl.appendChild(sumRow);
+        return nodeEl;
+      }
+
+      const row = document.createElement('div');
+      row.className = 'cause-item';
+      const bullet = document.createElement('span');
+      bullet.className = 'cause-bullet';
+      bullet.textContent = '•';
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.className = 'cause-input';
+      inp.value = node.text;
+      inp.placeholder = isRoot ? 'Why do you do this?' : 'Why does that matter to you?';
+      inp.addEventListener('input', () => {
+        node.text = inp.value;
+        if (!node.children.length) node.terminal = false;
+        syncThreadsHidden();
+        refreshTail();
+      });
+      row.appendChild(bullet); row.appendChild(inp);
+
+      if (!isRoot && !node.children.length) {
+        const rm = document.createElement('button');
+        rm.type = 'button';
+        rm.className = 'cause-remove';
+        rm.textContent = '×';
+        rm.addEventListener('click', () => {
+          siblings.splice(idx, 1);
+          syncThreadsHidden();
+          build();
+        });
+        row.appendChild(rm);
+      }
+      nodeEl.appendChild(row);
+
       const tailWrap = document.createElement('div');
+      let tailSignature = null;
 
       function refreshTail() {
+        if (node.children.length) {
+          if (tailSignature !== 'children') { tailSignature = 'children'; tailWrap.innerHTML = ''; }
+          return;
+        }
+        const hasVal = !!(node.text && node.text.trim());
+        const signature = !hasVal ? 'empty' : (!node.terminal ? 'prompt' : 'keep:' + valueKey(node.text));
+        if (signature === tailSignature) return;
+        tailSignature = signature;
         tailWrap.innerHTML = '';
-        const lastVal = thread.layers[thread.layers.length - 1];
-        if (!lastVal || !lastVal.trim()) return;
-        if (!thread.terminal) {
+        if (!hasVal) return;
+        if (!node.terminal) {
           const prompt = document.createElement('p');
           prompt.className = 'list-hint';
-          prompt.textContent = 'Is this the real reason, or is there something even deeper?';
+          prompt.textContent = 'Have you hit the bottom of this, or does this reason go deeper?';
           const btnsWrap = document.createElement('div');
           btnsWrap.className = 'yn-btns';
           btnsWrap.style.justifyContent = 'flex-start';
           const doneBtn = document.createElement('button');
           doneBtn.type = 'button'; doneBtn.className = 'yn-btn';
-          doneBtn.textContent = 'This is it';
+          doneBtn.textContent = 'This is the final value';
           doneBtn.addEventListener('click', () => {
-            thread.terminal = true;
+            node.terminal = true;
             syncThreadsHidden();
             refreshTail();
           });
           const deeperBtn = document.createElement('button');
           deeperBtn.type = 'button'; deeperBtn.className = 'yn-btn';
-          deeperBtn.textContent = "There's something deeper";
+          deeperBtn.textContent = 'Dig deeper on this reason';
           deeperBtn.addEventListener('click', () => {
-            thread.layers.push('');
+            node.children.push(makeWhyNode(''));
             syncThreadsHidden();
-            build();
-            const inputs = threadEl.querySelectorAll('.cause-input');
+            rebuildChildren();
+            const inputs = childrenWrap.querySelectorAll('.cause-input');
             if (inputs.length) inputs[inputs.length - 1].focus();
           });
-          btnsWrap.appendChild(doneBtn); btnsWrap.appendChild(deeperBtn);
+          btnsWrap.appendChild(deeperBtn); btnsWrap.appendChild(doneBtn);
           tailWrap.appendChild(indentPastBullet(prompt, 'indent-row-center'));
           tailWrap.appendChild(indentPastBullet(btnsWrap, 'indent-row-center'));
+
+          const splitBtn = document.createElement('button');
+          splitBtn.type = 'button';
+          splitBtn.className = 'list-add-btn';
+          splitBtn.style.marginTop = '.5rem';
+          splitBtn.textContent = '+ Split this into separate reasons';
+          splitBtn.addEventListener('click', () => {
+            node.children.push(makeWhyNode(''), makeWhyNode(''));
+            syncThreadsHidden();
+            rebuildChildren();
+            const inputs = childrenWrap.querySelectorAll('.cause-input');
+            if (inputs.length) inputs[0].focus();
+          });
+          tailWrap.appendChild(indentPastBullet(splitBtn, 'indent-row-center'));
         } else {
           const keepWrap = document.createElement('div');
           const keepQ = document.createElement('p');
@@ -611,7 +724,7 @@ function renderActsWhyLadders(key) {
           keepQ.textContent = 'Is this a value you want to continue living by in this context?';
           const btnsWrap = document.createElement('div');
           btnsWrap.className = 'yn-btns';
-          const k = valueKey(lastVal);
+          const k = node.id;
           [{ v: 'yes', label: 'Yes' }, { v: 'no', label: 'No' }].forEach(({ v, label: btnLabel }) => {
             const b = document.createElement('button');
             b.type = 'button';
@@ -620,9 +733,9 @@ function renderActsWhyLadders(key) {
             b.addEventListener('click', () => {
               decisions[k] = v;
               syncContinueHidden();
-              btnsWrap.querySelectorAll('.yn-btn').forEach((bb) => bb.classList.remove('selected'));
-              b.classList.add('selected');
               if (window.clearFormError) window.clearFormError();
+              node.collapsed = true;
+              build();
             });
             btnsWrap.appendChild(b);
           });
@@ -632,73 +745,70 @@ function renderActsWhyLadders(key) {
         }
       }
 
-      thread.layers.forEach((val, layerIdx) => {
-        const isLast = layerIdx === thread.layers.length - 1;
-        const row = document.createElement('div');
-        row.className = 'cause-item';
-        const bullet = document.createElement('span');
-        bullet.className = 'cause-bullet';
-        bullet.textContent = '•';
-        const inp = document.createElement('input');
-        inp.type = 'text';
-        inp.className = 'cause-input';
-        inp.value = val;
-        inp.placeholder = layerIdx === 0 ? 'Why do you do this?' : 'Why does that matter to you?';
-        inp.addEventListener('input', () => {
-          thread.layers[layerIdx] = inp.value;
-          if (isLast && !inp.value.trim()) thread.terminal = false;
-          syncThreadsHidden();
-          refreshTail();
-        });
-        row.appendChild(bullet); row.appendChild(inp);
-        if (isLast && thread.layers.length > 1) {
-          const rm = document.createElement('button');
-          rm.type = 'button';
-          rm.className = 'cause-remove';
-          rm.textContent = '×';
-          rm.addEventListener('click', () => {
-            thread.layers.pop();
-            thread.terminal = false;
-            syncThreadsHidden();
-            build();
-          });
-          row.appendChild(rm);
-        }
-        threadEl.appendChild(row);
-      });
-      threadEl.appendChild(tailWrap);
+      nodeEl.appendChild(tailWrap);
       refreshTail();
 
-      if (threads.length > 1) {
-        const rmThread = document.createElement('button');
-        rmThread.type = 'button';
-        rmThread.className = 'list-add-btn';
-        rmThread.style.marginTop = '.4rem';
-        rmThread.textContent = '− Remove this reason';
-        rmThread.addEventListener('click', () => {
-          threads.splice(threadIdx, 1);
-          if (!threads.length) threads.push({ layers: [''], terminal: false });
-          syncThreadsHidden();
-          build();
-        });
-        threadEl.appendChild(indentPastBullet(rmThread, 'indent-row-center'));
+      const childrenWrap = document.createElement('div');
+      function rebuildChildren() {
+        childrenWrap.innerHTML = '';
+        childrenWrap.className = node.children.length ? ('why-children why-depth-' + (depth % 4)) : '';
+        node.children.forEach((child, i) => childrenWrap.appendChild(buildNode(child, false, node.children, i, depth + 1)));
+        if (node.children.length >= 1) {
+          const addBranchBtn = document.createElement('button');
+          addBranchBtn.type = 'button';
+          addBranchBtn.className = 'list-add-btn';
+          addBranchBtn.textContent = '+ Add another branch here';
+          addBranchBtn.addEventListener('click', () => {
+            node.children.push(makeWhyNode(''));
+            syncThreadsHidden();
+            rebuildChildren();
+            const inputs = childrenWrap.querySelectorAll('.cause-input');
+            if (inputs.length) inputs[inputs.length - 1].focus();
+          });
+          childrenWrap.appendChild(wrapListAddBtn(addBranchBtn));
+        }
+        refreshTail();
       }
+      rebuildChildren();
+      nodeEl.appendChild(childrenWrap);
 
-      return threadEl;
+      return nodeEl;
     }
 
     function build() {
       threadsWrap.innerHTML = '';
-      threads.forEach((thread, i) => threadsWrap.appendChild(buildThread(thread, i)));
+      threads.forEach((root, i) => {
+        const threadEl = document.createElement('div');
+        threadEl.className = 'why-thread';
+        threadEl.style.marginBottom = '1rem';
+        threadEl.appendChild(buildNode(root, true, null, null, 0));
+
+        if (threads.length > 1) {
+          const rmThread = document.createElement('button');
+          rmThread.type = 'button';
+          rmThread.className = 'list-add-btn';
+          rmThread.style.marginTop = '.4rem';
+          rmThread.textContent = '− Remove this reason';
+          rmThread.addEventListener('click', () => {
+            threads.splice(i, 1);
+            if (!threads.length) threads.push(makeWhyNode(''));
+            syncThreadsHidden();
+            build();
+          });
+          threadEl.appendChild(indentPastBullet(rmThread, 'indent-row-center'));
+        }
+
+        threadsWrap.appendChild(threadEl);
+      });
     }
     build();
 
     const addBtn = document.createElement('button');
     addBtn.type = 'button';
-    addBtn.className = 'list-add-btn';
-    addBtn.textContent = '+ Add another reason';
+    addBtn.className = 'list-add-btn acts-add-reason-btn';
+    addBtn.textContent = '+ Add a further reason';
     addBtn.addEventListener('click', () => {
-      threads.push({ layers: [''], terminal: false });
+      threads.push(makeWhyNode(''));
       syncThreadsHidden();
       build();
     });
@@ -2211,24 +2321,22 @@ function initDeeperStep() {
       const container = document.getElementById('acts-why-groups-' + key);
 
       const hasUnresolvedThread = actions.some((action) =>
-        (byAction[action] || []).some((t) => !t.terminal && dedupedForSubmit(t.layers).length)
+        (byAction[action] || []).some((root) => whyTreeHasUnresolvedLeaf(root))
       );
       if (hasUnresolvedThread) {
-        setFormErr('Please say "This is it" once you\'ve reached the real reason, for each one you\'ve started.', container);
+        setFormErr('Please say "This is the final value" once you\'ve reached the real reason, for each one you\'ve started.', container);
         return false;
       }
 
-      const allCovered = actions.every((action) =>
-        (byAction[action] || []).some((t) => t.terminal && dedupedForSubmit(t.layers).length)
-      );
+      const terminals = terminalWhyThreads(key);
+      const allCovered = actions.every((action) => terminals.some((t) => t.action === action));
       if (!allCovered) {
         setFormErr('Every action needs at least one reason before continuing.', container);
         return false;
       }
 
       const decisions = _deeperState['deeper_' + key + '_acts_values_continue'] || {};
-      const terminals = terminalWhyThreads(key);
-      if (terminals.some((t) => !decisions[valueKey(t.value)])) {
+      if (terminals.some((t) => !decisions[t.id])) {
         setFormErr('Please say whether you want to continue living by each value before continuing.', container);
         return false;
       }
@@ -2779,8 +2887,8 @@ function captureDeeperFromDom() {
       if (reasonsMatch) {
         const areaKey = reasonsMatch[1];
         const decisions = _deeperState['deeper_' + areaKey + '_acts_values_continue'] || {};
-        terminalWhyThreads(areaKey).forEach(({ action, layers, value }) => {
-          const ans = decisions[valueKey(value)] === 'yes' ? 'Yes' : decisions[valueKey(value)] === 'no' ? 'No' : '(no answer given)';
+        terminalWhyThreads(areaKey).forEach(({ action, layers, value, id }) => {
+          const ans = decisions[id] === 'yes' ? 'Yes' : decisions[id] === 'no' ? 'No' : '(no answer given)';
           rows.push([area ? `${area} — ${action}` : action, `${layers.join(' → ')} (continue living by this: ${ans})`]);
         });
         return;

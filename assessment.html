@@ -222,6 +222,24 @@
   .cause-remove:hover{color:var(--ink)}
   .list-add-btn{background:none;border:none;font-family:var(--sc);font-size:.68rem;letter-spacing:.15em;color:var(--muted);cursor:pointer;padding:.1rem 0;transition:color .2s;display:block;text-align:left;align-self:flex-start}
   .list-add-btn:hover{color:var(--ink)}
+  /* a separate reason for the same action carries real weight — this button needs to
+     compete visually with the yn-btn choices above it, not read as a minor list action */
+  .acts-add-reason-btn{border:1px solid var(--hair);border-radius:2px;color:var(--ink);padding:.5rem 1.2rem;margin-top:.7rem;transition:border-color .15s,color .15s}
+  .acts-add-reason-btn:hover{border-color:var(--accent);color:var(--ink)}
+  /* a why-node's children — indented under their parent so depth stays
+     visible whether it's one plain "dig deeper" step or a real split into
+     more than one reason */
+  .why-children{margin-top:.6rem;padding-left:1.1rem;border-left:2px solid var(--hair);display:flex;flex-direction:column;gap:.9rem}
+  /* darkens with each nesting level so how deep you are reads at a glance,
+     without needing to count indents — cycles every 4 levels */
+  .why-depth-0{border-left-color:#d6cfc0}
+  .why-depth-1{border-left-color:#b9ab90}
+  .why-depth-2{border-left-color:#8f8368}
+  .why-depth-3{border-left-color:#5c5344}
+  /* a resolved reason (final value + answered) collapses to this one-liner —
+     click to re-expand and edit */
+  .why-collapsed-summary{background:none;border:none;font-family:var(--body);font-size:.92rem;font-weight:300;color:var(--muted);cursor:pointer;padding:0;text-align:left;flex:1;transition:color .15s}
+  .why-collapsed-summary:hover{color:var(--ink)}
   .list-hint{font-family:var(--sc);font-size:.66rem;letter-spacing:.12em;color:var(--muted);margin-bottom:.5rem}
   .list-hint-row{display:flex;align-items:center;gap:.6rem;margin-bottom:0}
   .list-hint-row .list-hint{margin-bottom:0}

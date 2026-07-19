@@ -236,10 +236,20 @@
   .why-depth-1{border-left-color:#b9ab90}
   .why-depth-2{border-left-color:#8f8368}
   .why-depth-3{border-left-color:#5c5344}
-  /* a resolved reason (final value + answered) collapses to this one-liner —
-     click to re-expand and edit */
-  .why-collapsed-summary{background:none;border:none;font-family:var(--body);font-size:.92rem;font-weight:300;color:var(--muted);cursor:pointer;padding:0;text-align:left;flex:1;transition:color .15s}
-  .why-collapsed-summary:hover{color:var(--ink)}
+  /* a locked value's one-line summary — the whole chain of reasoning that
+     produced it stays hidden until Edit is clicked */
+  .cause-locked-text{flex:1;font-family:var(--body);font-size:.92rem;font-weight:300;color:var(--muted)}
+  /* keep/not-keep marker on a locked value — deliberately not red/green, this
+     isn't a pass/fail grade */
+  .cause-keep-badge{font-family:var(--body);font-size:.95rem;color:var(--muted);flex-shrink:0}
+  .cause-edit-btn{background:none;border:none;font-family:var(--sc);font-size:.62rem;letter-spacing:.12em;color:var(--hair);cursor:pointer;padding:.1rem .2rem;flex-shrink:0;transition:color .15s}
+  .cause-edit-btn:hover{color:var(--ink)}
+  /* the numbered step-picker shown when editing a locked line — pick which
+     layer of reasoning to change instead of hunting through a nested tree */
+  .why-stepper{display:flex;flex-direction:column;gap:.4rem;margin:.3rem 0 .6rem;padding:.7rem .9rem;background:var(--bg2);border-radius:2px}
+  .why-step-btn{display:flex;align-items:baseline;gap:.6rem;background:none;border:none;font-family:var(--body);font-size:.9rem;font-weight:300;color:var(--ink);cursor:pointer;padding:.25rem 0;text-align:left;transition:color .15s}
+  .why-step-btn:hover{color:var(--accent)}
+  .why-step-num{font-family:var(--sc);font-size:.68rem;color:var(--muted);flex-shrink:0}
   .list-hint{font-family:var(--sc);font-size:.66rem;letter-spacing:.12em;color:var(--muted);margin-bottom:.5rem}
   .list-hint-row{display:flex;align-items:center;gap:.6rem;margin-bottom:0}
   .list-hint-row .list-hint{margin-bottom:0}

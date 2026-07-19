@@ -600,32 +600,145 @@ function renderActsWhyLadders(key) {
     const threadsWrap = document.createElement('div');
     block.appendChild(threadsWrap);
 
+    // A node is "locked" once itself (if a leaf) or everything beneath it
+    // (if an ancestor) has reached a final, answered value. A locked
+    // subtree, no matter how many why-layers it took, renders as ONE line
+    // per resolved value — the intermediate reasoning is hidden, not just
+    // greyed, so a finished chain reads as settled at a glance instead of
+    // as a wall of fields. `stepperOpen` (leaf ids) tracks which locked
+    // lines currently show their numbered edit-picker instead of the
+    // one-liner; picking a step invalidates (un-terminals, un-answers)
+    // everything from that step down, so upstream wording can't change
+    // without downstream having to be re-walked and re-locked.
+    function nodeLocked(node) {
+      if (!node.text || !node.text.trim()) return false;
+      if (!node.children.length) return node.terminal && (decisions[node.id] === 'yes' || decisions[node.id] === 'no');
+      return node.children.every(nodeLocked);
+    }
+    function invalidateDescendants(node) {
+      node.children.forEach((child) => {
+        child.terminal = false;
+        delete decisions[child.id];
+        invalidateDescendants(child);
+      });
+    }
+    function collectLeafPaths(node, path, out) {
+      const fullPath = path.concat(node);
+      if (!node.children.length) { out.push(fullPath); return; }
+      node.children.forEach((child) => collectLeafPaths(child, fullPath, out));
+    }
+    const stepperOpen = new Set();
+
+    function jumpToStep(stepNode) {
+      const inputs = threadsWrap.querySelectorAll('.cause-input[data-node-id="' + stepNode.id + '"]');
+      const target = inputs[0];
+      if (target) { target.focus(); target.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+    }
+
+    function buildLockedLine(path) {
+      const leaf = path[path.length - 1];
+      const row = document.createElement('div');
+      row.className = 'cause-item';
+      const bullet = document.createElement('span');
+      bullet.className = 'cause-bullet';
+      bullet.textContent = '→';
+      const txt = document.createElement('span');
+      txt.className = 'cause-locked-text';
+      txt.textContent = leaf.text + ' ';
+      const badge = document.createElement('span');
+      badge.className = 'cause-keep-badge';
+      badge.textContent = '(' + (decisions[leaf.id] === 'yes' ? '✓' : '!') + ')';
+      txt.appendChild(badge);
+      const editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.className = 'cause-edit-btn';
+      editBtn.textContent = 'Edit';
+      editBtn.addEventListener('click', () => { stepperOpen.add(leaf.id); build(); });
+      row.appendChild(bullet); row.appendChild(txt); row.appendChild(editBtn);
+      return row;
+    }
+
+    function buildStepper(path) {
+      const leaf = path[path.length - 1];
+      const wrap = document.createElement('div');
+      wrap.className = 'why-stepper';
+      const hint = document.createElement('p');
+      hint.className = 'list-hint';
+      hint.textContent = 'Pick the step you want to change. Everything after it will need redoing.';
+      wrap.appendChild(hint);
+      path.forEach((stepNode, i) => {
+        const isFinal = i === path.length - 1;
+        const stepBtn = document.createElement('button');
+        stepBtn.type = 'button';
+        stepBtn.className = 'why-step-btn';
+        const num = document.createElement('span');
+        num.className = 'why-step-num';
+        num.textContent = (i + 1) + '.';
+        const txt = document.createElement('span');
+        txt.textContent = stepNode.text + (isFinal ? '  (final value)' : '');
+        stepBtn.appendChild(num); stepBtn.appendChild(txt);
+        stepBtn.addEventListener('click', () => {
+          stepperOpen.delete(leaf.id);
+          if (!stepNode.children.length) { stepNode.terminal = false; delete decisions[stepNode.id]; }
+          invalidateDescendants(stepNode);
+          syncThreadsHidden();
+          syncContinueHidden();
+          build();
+          jumpToStep(stepNode);
+        });
+        wrap.appendChild(stepBtn);
+      });
+      const cancelBtn = document.createElement('button');
+      cancelBtn.type = 'button';
+      cancelBtn.className = 'list-add-btn';
+      cancelBtn.textContent = 'Cancel';
+      cancelBtn.addEventListener('click', () => { stepperOpen.delete(leaf.id); build(); });
+      wrap.appendChild(cancelBtn);
+      return wrap;
+    }
+
     // Renders one node (a single reason at a single depth) plus, recursively,
     // whatever it deepens or splits into. `isRoot` is the very first reason
     // for the action; `siblings`/`idx` let a non-root leaf remove itself;
-    // `depth` drives the border shade so nesting stays readable once a tree
-    // gets tall. A resolved leaf (final value + answered) collapses to a
-    // one-line summary — most of a big tree's bulk is decisions already made.
+    // `depth` drives the border shade so nesting stays readable while a
+    // thread is still being built. Once a node's whole subtree locks, the
+    // reasoning underneath it stops rendering step by step — instead this
+    // node's own text stays visible as a heading (it's the reason that
+    // started the chain), with every value it produced listed as one
+    // indented line each (see buildLockedLine/buildStepper above). If the
+    // node itself has no children, it IS the value, so there's no separate
+    // heading to show — just the one locked line.
     function buildNode(node, isRoot, siblings, idx, depth) {
       const nodeEl = document.createElement('div');
 
-      if (node.collapsed) {
-        const sumRow = document.createElement('div');
-        sumRow.className = 'cause-item';
-        const sumBullet = document.createElement('span');
-        sumBullet.className = 'cause-bullet';
-        sumBullet.textContent = '✓';
-        const sumBtn = document.createElement('button');
-        sumBtn.type = 'button';
-        sumBtn.className = 'why-collapsed-summary';
-        const ans = decisions[node.id] === 'yes' ? 'Yes' : decisions[node.id] === 'no' ? 'No' : '';
-        sumBtn.textContent = node.text + (ans ? ' — keep living by it: ' + ans : '');
-        sumBtn.addEventListener('click', () => {
-          node.collapsed = false;
-          build();
+      if (nodeLocked(node)) {
+        const leafPaths = [];
+        collectLeafPaths(node, [], leafPaths);
+
+        if (!node.children.length) {
+          const leaf = leafPaths[0];
+          nodeEl.appendChild(stepperOpen.has(node.id) ? buildStepper(leaf) : buildLockedLine(leaf));
+          return nodeEl;
+        }
+
+        const headingRow = document.createElement('div');
+        headingRow.className = 'cause-item';
+        const headingBullet = document.createElement('span');
+        headingBullet.className = 'cause-bullet';
+        headingBullet.textContent = '•';
+        const headingTxt = document.createElement('span');
+        headingTxt.className = 'cause-locked-text';
+        headingTxt.textContent = node.text;
+        headingRow.appendChild(headingBullet); headingRow.appendChild(headingTxt);
+        nodeEl.appendChild(headingRow);
+
+        const valuesWrap = document.createElement('div');
+        valuesWrap.className = 'why-children why-depth-' + (depth % 4);
+        leafPaths.forEach((path) => {
+          const leaf = path[path.length - 1];
+          valuesWrap.appendChild(stepperOpen.has(leaf.id) ? buildStepper(path) : buildLockedLine(path));
         });
-        sumRow.appendChild(sumBullet); sumRow.appendChild(sumBtn);
-        nodeEl.appendChild(sumRow);
+        nodeEl.appendChild(valuesWrap);
         return nodeEl;
       }
 
@@ -637,6 +750,7 @@ function renderActsWhyLadders(key) {
       const inp = document.createElement('input');
       inp.type = 'text';
       inp.className = 'cause-input';
+      inp.dataset.nodeId = node.id;
       inp.value = node.text;
       inp.placeholder = isRoot ? 'Why do you do this?' : 'Why does that matter to you?';
       inp.addEventListener('input', () => {
@@ -734,7 +848,6 @@ function renderActsWhyLadders(key) {
               decisions[k] = v;
               syncContinueHidden();
               if (window.clearFormError) window.clearFormError();
-              node.collapsed = true;
               build();
             });
             btnsWrap.appendChild(b);

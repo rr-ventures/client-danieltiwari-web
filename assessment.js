@@ -1516,17 +1516,13 @@ function renderControlAttitude(key) {
     block.style.marginTop = '1.4rem';
 
     const itemHead = document.createElement('p');
-    itemHead.style.cssText = 'font-family:var(--display);font-size:1rem;font-weight:400;margin-bottom:1rem';
+    itemHead.style.cssText = 'font-family:var(--display);font-size:1rem;font-weight:400;margin-bottom:1rem;text-align:center';
     itemHead.textContent = item;
     block.appendChild(itemHead);
 
     const feelingWrap = document.createElement('div');
     feelingWrap.className = 'deeper-field';
     feelingWrap.style.marginBottom = '1rem';
-    const feelingLbl = document.createElement('span');
-    feelingLbl.style.cssText = 'font-family:var(--body);font-weight:300;font-size:var(--q-size);line-height:1.8;color:var(--muted);display:block;margin-bottom:.5rem;text-align:center;background:var(--bg2);border-radius:3px;padding:1.1rem 1.6rem';
-    feelingLbl.textContent = 'How do you feel about this?';
-    feelingWrap.appendChild(feelingLbl);
 
     // Plain (non-flex) wrapper for hint+list+add-button, so their spacing is
     // governed by normal margins instead of the .deeper-field flex gap —
@@ -1542,14 +1538,31 @@ function renderControlAttitude(key) {
 
     if (!Array.isArray(feelings[item]) || !feelings[item].length) feelings[item] = [''];
     const feelingList = feelings[item];
+    if (!Array.isArray(feelingYn[item])) feelingYn[item] = [];
+    if (!Array.isArray(feelingConfirm[item])) feelingConfirm[item] = [];
+    const feelingYnList      = feelingYn[item];
+    const feelingConfirmList = feelingConfirm[item];
 
     const feelingListEl = document.createElement('div');
     feelingListEl.className = 'cause-list';
     feelingListWrap.appendChild(feelingListEl);
 
+    // Each typed feeling gets its own "is this how you want to feel about it?"
+    // right underneath it, instead of one shared question below the whole list —
+    // so a mixed list (e.g. "at peace with it" + "still bitter") gets a separate
+    // answer per feeling rather than one answer forced to cover all of them.
     function buildFeelingRows() {
       feelingListEl.innerHTML = '';
+      while (feelingYnList.length < feelingList.length) feelingYnList.push('');
+      while (feelingConfirmList.length < feelingList.length) feelingConfirmList.push('');
+      feelingYnList.length = feelingList.length;
+      feelingConfirmList.length = feelingList.length;
+
       feelingList.forEach((val, i) => {
+        const entryWrap = document.createElement('div');
+        entryWrap.className = 'feeling-entry';
+        if (i > 0) entryWrap.style.cssText = 'padding-top:.9rem;margin-top:.4rem;border-top:1px solid var(--hair)';
+
         const row = document.createElement('div');
         row.className = 'cause-item';
         const bullet = document.createElement('span');
@@ -1560,25 +1573,7 @@ function renderControlAttitude(key) {
         inp.className = 'cause-input';
         inp.value = val;
         inp.placeholder = 'e.g. Resigned, angry, at peace with it, bitter, numb, frustrated…';
-        inp.addEventListener('input', () => {
-          feelingList[i] = inp.value;
-          feelings[item] = feelingList;
-          _deeperState[feelingKey] = feelings;
-          syncHidden(feelingKey, feelings);
-          if (window.clearFormError) window.clearFormError();
-          feelingListEl.querySelectorAll('.cause-remove').forEach(b => { b.hidden = feelingList.length === 1; });
-        });
-        inp.addEventListener('blur', () => { refreshAllFeelingSuggestions(); });
-        inp.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            e.stopPropagation();
-            feelingList.push('');
-            buildFeelingRows();
-            const inputs = feelingListEl.querySelectorAll('.cause-input');
-            if (inputs.length) inputs[inputs.length - 1].focus();
-          }
-        });
+
         const rm = document.createElement('button');
         rm.type = 'button';
         rm.className = 'cause-remove';
@@ -1586,14 +1581,127 @@ function renderControlAttitude(key) {
         rm.hidden = feelingList.length === 1;
         rm.addEventListener('click', () => {
           feelingList.splice(i, 1);
-          if (!feelingList.length) feelingList.push('');
+          feelingYnList.splice(i, 1);
+          feelingConfirmList.splice(i, 1);
+          if (!feelingList.length) { feelingList.push(''); feelingYnList.push(''); feelingConfirmList.push(''); }
           feelings[item] = feelingList;
+          feelingYn[item] = feelingYnList;
+          feelingConfirm[item] = feelingConfirmList;
           _deeperState[feelingKey] = feelings;
           buildFeelingRows();
           syncHidden(feelingKey, feelings);
+          syncHidden(feelingYnKey, feelingYn);
+          syncHidden(feelingConfirmKey, feelingConfirm);
         });
+
+        // --- per-feeling "is this how you want to feel about it?" — styled to
+        // match the "Is this a value you want to continue living by in this
+        // context?" question on Hidden Values, so the two pages read as one system.
+        const ynWrap = document.createElement('div');
+        ynWrap.className = 'feeling-yn-wrap';
+        const ynLbl = document.createElement('p');
+        ynLbl.className = 'list-hint';
+        ynLbl.textContent = 'Is this how you want to feel about it?';
+        const btns = document.createElement('div');
+        btns.className = 'yn-btns';
+
+        const confirmWrap = document.createElement('div');
+        confirmWrap.className = 'deeper-field confirm-check-field';
+        confirmWrap.style.marginTop = '1.2rem';
+        confirmWrap.hidden = feelingYnList[i] !== 'yes';
+        const confirmLbl = document.createElement('label');
+        confirmLbl.className = 'confirm-note';
+        confirmLbl.innerHTML = 'Before you move on: are you sure you\'re not just settling for less, or playing down how you really feel? <strong>Now is the opportunity to be honest and stand up for yourself and what you actually want in life.</strong>';
+        const confirmCheckWrap = document.createElement('label');
+        confirmCheckWrap.className = 'confirm-check-wrap';
+        const confirmInput = document.createElement('input');
+        confirmInput.type = 'checkbox';
+        confirmInput.className = 'confirm-check';
+        confirmInput.checked = feelingConfirmList[i] === 'yes';
+        const confirmBox = document.createElement('span');
+        confirmBox.className = 'confirm-check-box';
+        const confirmText = document.createElement('span');
+        confirmText.className = 'confirm-check-text';
+        confirmText.textContent = "This is genuinely how I want to feel about it";
+        confirmInput.addEventListener('change', () => {
+          feelingConfirmList[i] = confirmInput.checked ? 'yes' : '';
+          feelingConfirm[item] = feelingConfirmList;
+          _deeperState[feelingConfirmKey] = feelingConfirm;
+          syncHidden(feelingConfirmKey, feelingConfirm);
+          if (window.clearFormError) window.clearFormError();
+        });
+        confirmCheckWrap.appendChild(confirmInput);
+        confirmCheckWrap.appendChild(confirmBox);
+        confirmCheckWrap.appendChild(confirmText);
+        confirmCheckWrap.style.marginTop = '0';
+        const confirmErr = document.createElement('p');
+        confirmErr.className = 'yn-error';
+        confirmErr.textContent = 'Please confirm before continuing.';
+        const confirmCheckRow = indentPastBullet(confirmCheckWrap, 'indent-row-center');
+        confirmCheckRow.style.marginTop = '.5rem';
+        confirmWrap.appendChild(indentPastBullet(confirmLbl, 'indent-row-center'));
+        confirmWrap.appendChild(confirmCheckRow);
+        confirmWrap.appendChild(confirmErr);
+
+        ['yes', 'no'].forEach(val2 => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'yn-btn' + (feelingYnList[i] === val2 ? ' selected' : '');
+          btn.textContent = val2 === 'yes' ? 'Yes' : 'No';
+          btn.addEventListener('click', () => {
+            btns.querySelectorAll('.yn-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            feelingYnList[i] = val2;
+            feelingYn[item] = feelingYnList;
+            _deeperState[feelingYnKey] = feelingYn;
+            syncHidden(feelingYnKey, feelingYn);
+            confirmWrap.hidden = val2 !== 'yes';
+            if (val2 !== 'yes' && feelingConfirmList[i]) {
+              feelingConfirmList[i] = '';
+              feelingConfirm[item] = feelingConfirmList;
+              _deeperState[feelingConfirmKey] = feelingConfirm;
+              syncHidden(feelingConfirmKey, feelingConfirm);
+              confirmInput.checked = false;
+            }
+            if (window.clearFormError) window.clearFormError();
+          });
+          btns.appendChild(btn);
+        });
+        ynWrap.appendChild(ynLbl);
+        ynWrap.appendChild(btns);
+        const ynRow = indentPastBullet(ynWrap, 'indent-row-center');
+        ynRow.style.marginTop = '.7rem';
+        ynRow.hidden = !val.trim();
+
+        inp.addEventListener('input', () => {
+          feelingList[i] = inp.value;
+          feelings[item] = feelingList;
+          _deeperState[feelingKey] = feelings;
+          syncHidden(feelingKey, feelings);
+          if (window.clearFormError) window.clearFormError();
+          feelingListEl.querySelectorAll('.cause-remove').forEach(b => { b.hidden = feelingList.length === 1; });
+          ynRow.hidden = !inp.value.trim();
+          if (!inp.value.trim()) confirmWrap.hidden = true;
+        });
+        inp.addEventListener('blur', () => { refreshAllFeelingSuggestions(); });
+        inp.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            e.stopPropagation();
+            feelingList.push('');
+            feelingYnList.push('');
+            feelingConfirmList.push('');
+            buildFeelingRows();
+            const inputs = feelingListEl.querySelectorAll('.cause-input');
+            if (inputs.length) inputs[inputs.length - 1].focus();
+          }
+        });
+
         row.appendChild(bullet); row.appendChild(inp); row.appendChild(rm);
-        feelingListEl.appendChild(row);
+        entryWrap.appendChild(row);
+        entryWrap.appendChild(ynRow);
+        entryWrap.appendChild(confirmWrap);
+        feelingListEl.appendChild(entryWrap);
       });
     }
     buildFeelingRows();
@@ -1647,77 +1755,6 @@ function renderControlAttitude(key) {
     refreshFeelingSuggestionsFns.push(refreshFeelingSuggestions);
 
     block.appendChild(feelingWrap);
-
-    const ynWrap = document.createElement('div');
-    ynWrap.className = 'deeper-field';
-    const ynLbl = document.createElement('label');
-    ynLbl.style.cssText = 'font-family:var(--body);font-weight:300;font-size:var(--q-size);line-height:1.8;color:var(--muted);display:block;margin-bottom:.5rem;text-align:center';
-    ynLbl.textContent = 'Is this how you want to feel about it?';
-    const btns = document.createElement('div');
-    btns.className = 'yn-btns';
-
-    const confirmWrap = document.createElement('div');
-    confirmWrap.className = 'deeper-field confirm-check-field';
-    confirmWrap.hidden = feelingYn[item] !== 'yes';
-    const confirmLbl = document.createElement('label');
-    confirmLbl.className = 'confirm-note';
-    confirmLbl.innerHTML = 'Before you move on: are you sure you\'re not just settling for less, or playing down how you really feel? <strong>Now is the opportunity to be honest and stand up for yourself and what you actually want in life.</strong>';
-    const confirmCheckWrap = document.createElement('label');
-    confirmCheckWrap.className = 'confirm-check-wrap';
-    const confirmInput = document.createElement('input');
-    confirmInput.type = 'checkbox';
-    confirmInput.className = 'confirm-check';
-    confirmInput.checked = feelingConfirm[item] === 'yes';
-    const confirmBox = document.createElement('span');
-    confirmBox.className = 'confirm-check-box';
-    const confirmText = document.createElement('span');
-    confirmText.className = 'confirm-check-text';
-    confirmText.textContent = "This is genuinely how I want to feel about it";
-    confirmInput.addEventListener('change', () => {
-      feelingConfirm[item] = confirmInput.checked ? 'yes' : '';
-      _deeperState[feelingConfirmKey] = feelingConfirm;
-      syncHidden(feelingConfirmKey, feelingConfirm);
-      if (window.clearFormError) window.clearFormError();
-    });
-    confirmCheckWrap.appendChild(confirmInput);
-    confirmCheckWrap.appendChild(confirmBox);
-    confirmCheckWrap.appendChild(confirmText);
-    confirmCheckWrap.style.marginTop = '0';
-    const confirmErr = document.createElement('p');
-    confirmErr.className = 'yn-error';
-    confirmErr.textContent = 'Please confirm before continuing.';
-    const confirmCheckRow = indentPastBullet(confirmCheckWrap, 'indent-row-center');
-    confirmCheckRow.style.marginTop = '.5rem';
-    confirmWrap.appendChild(indentPastBullet(confirmLbl, 'indent-row-center'));
-    confirmWrap.appendChild(confirmCheckRow);
-    confirmWrap.appendChild(confirmErr);
-
-    ['yes', 'no'].forEach(val => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'yn-btn' + (feelingYn[item] === val ? ' selected' : '');
-      btn.textContent = val === 'yes' ? 'Yes' : 'No';
-      btn.addEventListener('click', () => {
-        btns.querySelectorAll('.yn-btn').forEach(b => b.classList.remove('selected'));
-        btn.classList.add('selected');
-        feelingYn[item] = val;
-        _deeperState[feelingYnKey] = feelingYn;
-        syncHidden(feelingYnKey, feelingYn);
-        confirmWrap.hidden = val !== 'yes';
-        if (val !== 'yes' && feelingConfirm[item]) {
-          feelingConfirm[item] = '';
-          _deeperState[feelingConfirmKey] = feelingConfirm;
-          syncHidden(feelingConfirmKey, feelingConfirm);
-          confirmInput.checked = false;
-        }
-        if (window.clearFormError) window.clearFormError();
-      });
-      btns.appendChild(btn);
-    });
-    ynWrap.appendChild(ynLbl);
-    ynWrap.appendChild(btns);
-    block.appendChild(ynWrap);
-    block.appendChild(confirmWrap);
 
     container.appendChild(block);
   });
@@ -2139,6 +2176,7 @@ function initDeeperStep() {
       </div>`,
       `<div class="deeper-subpage" id="deeper-sub-${key}-control-attitude" data-area="${label}" hidden>
         <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Acceptance</h3>
+        <div class="deeper-field" style="margin-bottom:1.4rem"><label>How do you feel about the following?</label></div>
         <div id="control-attitude-${key}"></div>
       </div>`,
     ];
@@ -2399,17 +2437,24 @@ function initDeeperStep() {
       const attEl = document.getElementById('control-attitude-' + key);
       const itemBlock = (it) => [...(attEl?.querySelectorAll('.deeper-block') || [])].find(b => b.dataset.item === it) || attEl;
       for (const item of filledItems) {
-        if (!(Array.isArray(feelings[item]) && feelings[item].some(f => f && f.trim()))) {
+        const feelingList = Array.isArray(feelings[item]) ? feelings[item] : [];
+        const nonBlankIdx = [];
+        feelingList.forEach((f, i) => { if (f && f.trim()) nonBlankIdx.push(i); });
+        if (!nonBlankIdx.length) {
           setFormErr('Please describe how you feel about each circumstance before continuing.', itemBlock(item));
           return false;
         }
-        if (!feelingYn[item]) {
-          setFormErr('Please answer whether this is how you want to feel before continuing.', itemBlock(item));
-          return false;
-        }
-        if (feelingYn[item] === 'yes' && feelingConfirm[item] !== 'yes') {
-          setFormErr('Please confirm before continuing.', itemBlock(item));
-          return false;
+        const ynList      = Array.isArray(feelingYn[item]) ? feelingYn[item] : [];
+        const confirmList = Array.isArray(feelingConfirm[item]) ? feelingConfirm[item] : [];
+        for (const i of nonBlankIdx) {
+          if (!ynList[i]) {
+            setFormErr('Please answer whether this is how you want to feel about each one before continuing.', itemBlock(item));
+            return false;
+          }
+          if (ynList[i] === 'yes' && confirmList[i] !== 'yes') {
+            setFormErr('Please confirm before continuing.', itemBlock(item));
+            return false;
+          }
         }
       }
     }
@@ -2528,7 +2573,7 @@ function initFitSignalsStep() {
       followup: { triggerValue: "No, I'm exhausted", label: 'What do you think you need right now?', stateKey: 'fs_q2_needs' } },
     { id: 'q3', type: 'multiselect', headline: 'Inner state', title: 'Symptoms',
       label: 'Do you struggle with any of these on a regular basis?',
-      options: ['Anxiety', 'Depression', 'PTSD', 'Apathy', 'Anger or resentment', 'Frustration or pressure', 'Meaninglessness', 'Panic attacks', 'Hypochondria', 'Insomnia', 'Other', 'None'],
+      options: ['General Anxiety', 'Social Anxiety', 'Depression', 'PTSD', 'Apathy', 'Anger or resentment', 'Frustration or pressure', 'Meaninglessness', 'Panic attacks', 'Hypochondria', 'Insomnia', 'Other', 'None'],
       other: 'Other', none: 'None' },
     { id: 'q4', type: 'multiselect', headline: 'Compulsive patterns', title: 'Coping',
       label: 'Do you struggle with any addictions or compulsive habits?',
@@ -2545,7 +2590,7 @@ function initFitSignalsStep() {
       label: 'What have you tried in the past to deal with your situation(s)?' },
     { id: 'q7', type: 'singleselect', headline: 'The stakes', title: 'Commitment',
       label: 'If your life looks exactly the same in 3 years from now, how would you feel?',
-      options: ["I'd be fine with it", "Disappointing, but I'd manage", "Like I'd wasted something important", "Unacceptable — it cannot happen"] },
+      options: ["I wouldn't mind", "Disappointing, but I'd manage", "Like I'd wasted something important", "Unacceptable — it cannot happen"] },
     { id: 'q9', type: 'singleselect', headline: 'Coaching Ambitions', title: 'Coaching Ambitions',
       label: 'Are you or do you have any ambitions of working as a coach yourself?',
       options: ['Yes', 'Maybe', 'No'] },
@@ -2982,11 +3027,14 @@ function captureDeeperFromDom() {
         const feelingYn = _deeperState['deeper_' + areaKey + '_control_feeling_yn'] || {};
         items.forEach((item) => {
           const feelingList = Array.isArray(feelings[item]) ? feelings[item] : (feelings[item] ? [feelings[item]] : []);
-          const feeling = distinctNonBlank(feelingList).join(', ');
-          if (!feeling) return;
-          const wantsToFeel = feelingYn[item] === 'yes' ? 'Yes' : feelingYn[item] === 'no' ? 'No' : '';
-          const a = wantsToFeel ? `Feels: ${feeling}. Wants to feel this way: ${wantsToFeel}.` : `Feels: ${feeling}.`;
-          rows.push([area ? `${area} — ${item}` : item, a]);
+          const ynList = Array.isArray(feelingYn[item]) ? feelingYn[item] : [];
+          feelingList.forEach((f, i) => {
+            const feeling = (f || '').trim();
+            if (!feeling) return;
+            const wantsToFeel = ynList[i] === 'yes' ? 'Yes' : ynList[i] === 'no' ? 'No' : '';
+            const a = wantsToFeel ? `Feels: ${feeling}. Wants to feel this way: ${wantsToFeel}.` : `Feels: ${feeling}.`;
+            rows.push([area ? `${area} — ${item}` : item, a]);
+          });
         });
         return;
       }
@@ -3236,9 +3284,9 @@ window.submitAssessment = async function submitAssessment(form, submitButton) {
   const q6items = dedupedForSubmit((_fsState['fs_q6_items'] || []).filter(i => i.what?.trim()), (i) => i.what);
 
   const r6 = { 'Yes, whatever it takes': 6, 'Yes, but I need to go easy on myself': 4, "No, I'm exhausted": 2 };
-  const s6 = { "Unacceptable — it cannot happen": 6, "Like I'd wasted something important": 5, "Disappointing, but I'd manage": 3, "I'd be fine with it": 1 };
+  const s6 = { "Unacceptable — it cannot happen": 6, "Like I'd wasted something important": 5, "Disappointing, but I'd manage": 3, "I wouldn't mind": 1 };
   const r5 = { 'Yes, whatever it takes': 5, 'Yes, but I need to go easy on myself': 3, "No, I'm exhausted": 1 };
-  const s5 = { "Unacceptable — it cannot happen": 5, "Like I'd wasted something important": 4, "Disappointing, but I'd manage": 2, "I'd be fine with it": 1 };
+  const s5 = { "Unacceptable — it cannot happen": 5, "Like I'd wasted something important": 4, "Disappointing, but I'd manage": 2, "I wouldn't mind": 1 };
 
   answers.path_signal          = r6[q2] ?? 3;
   answers.decision_signal      = s6[q7] ?? 3;

@@ -389,6 +389,19 @@ as the assessment doc, not as finished voice example.
 - **No self-referential modesty/branding lines**, e.g. "I'm just a good coach." Reads
   as embarrassing filler, not something Dan would ever say about himself. (Confirmed
   correction, 2026-07-03.)
+- **No em dashes**, anywhere in copy, testimonials, or rewrites. Dan calls them an
+  obvious AI writing tell. Use a period, comma, or restructured sentence instead.
+- **No monogamy-default framing** in relationship/intimacy content — avoid "your
+  partner," "the one person," or other singular-partner phrasing baked into questions
+  or copy. Dan is explicitly open to clients having multiple partners. Prefer
+  structure-agnostic phrasing ("partners," "the people you're intimate with") where
+  it's not awkward, but don't over-correct into clunky plurals everywhere.
+- **No invented stances.** When drafting from Dan's raw brainstorm material, don't add
+  an editorial conclusion that sounds plausible in his voice but asserts a view he
+  didn't actually give — especially on relationship structure, lifestyle, or identity,
+  where he may hold a non-default position. If the source is thin on a topic,
+  paraphrase tightly to his literal words or flag the gap, don't fill it with a
+  "sounds like something he'd say" inference.
 
 ## Open question — not yet resolved
 

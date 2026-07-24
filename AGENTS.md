@@ -126,6 +126,13 @@ Netlify Blobs is used as lightweight key/value storage:
   "Approve & publish" link AFTER the build. No approval email almost always means
   the commit never reached GitHub `main`, so no build ever ran — check that before
   suspecting Netlify or email.
+- Approval-email recipients are a Netlify env var setting, not code:
+  `DAN_NOTIFY_EMAIL` (falls back to a default in code if unset), with `NOTIFY_TO`
+  able to override it specifically for form notifications, and `TEST_MODE`
+  redirecting everything to a test inbox. Whoever clicks the link first wins the
+  approval. If mail is landing with the wrong person, check these three in the
+  Netlify dashboard before suspecting the code — this happened once (2026-07-01,
+  Reece had the wrong email on file for Dan), since fixed.
 
 ## Telegram Bot
 

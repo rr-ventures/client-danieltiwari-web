@@ -1,5 +1,5 @@
 // Telegram webhook for @dant_agent_bot — "Claude Code over Telegram".
-// Dan (or Reece) messages the bot in plain English; this returns 200 immediately
+// Daniel (or Reece) messages the bot in plain English; this returns 200 immediately
 // and fires the background agent (telegram-agent-background.js), which proposes a
 // repo change and asks for approval. This file ALSO handles approval — both the
 // inline button taps (callback_query) and the email Approve/Discard links — and
@@ -93,7 +93,7 @@ exports.handler = async (event) => {
   const gate = allowed(from.id);
   if (!gate.ok) {
     await send(chatId, gate.locked
-      ? "Sorry, you're not authorised to edit Dan's site."
+      ? "Sorry, you're not authorised to edit Daniel's site."
       : `Not yet authorised. Your Telegram id is <b>${escapeHtml(from.id)}</b> — send it to Reece to switch this on.`);
     return { statusCode: 200, body: "ok" };
   }
@@ -105,7 +105,7 @@ exports.handler = async (event) => {
 
   // Acknowledge instantly, then run the agent in the background (can take ~30-60s).
   await send(chatId, "On it 👀 having a look now…");
-  const requestedBy = from.first_name || (String(from.id) === "1956924282" ? "Reece" : "Dan");
+  const requestedBy = from.first_name || (String(from.id) === "1956924282" ? "Reece" : "Daniel");
   try {
     await fetch(`${SITE}/.netlify/functions/telegram-agent-background`, {
       method: "POST", headers: { "Content-Type": "application/json" },

@@ -1,6 +1,6 @@
-# Claude working rules — Dan's website (`client-danieltiwari-web`)
+# Claude working rules — Daniel's website (`client-danieltiwari-web`)
 
-You are Dan's Claude working inside his live coaching **website** repo. Dan is not
+You are Daniel's Claude working inside his live coaching **website** repo. Daniel is not
 technical: explain outcomes in plain English, never git/Netlify/deploy jargon he
 didn't use first. Say what it means for him and what you need from him.
 
@@ -20,7 +20,7 @@ A change is NOT live just because you edited a file, and NOT live just because y
 1. The change is committed and **pushed to GitHub `main`**.
 2. GitHub landing a new commit on `main` makes **Netlify build** the site.
 3. When the build finishes, a safety gate (`netlify/lib/change-gate.js`) holds it
-   back and **emails Dan and Reece an "Approve & publish" link** — the site does
+   back and **emails Daniel and Reece an "Approve & publish" link** — the site does
    NOT auto-go-live.
 4. Someone clicks **Approve**; the site updates ~1 minute later.
 
@@ -32,7 +32,7 @@ almost always at step 1 — the commit never reached GitHub — not Netlify or e
 
 Committing locally is not the same as the commit reaching GitHub. A push can fail
 or do nothing without an obvious error. So after any push, **prove the commit is on
-GitHub before you tell Dan it's sent:**
+GitHub before you tell Daniel it's sent:**
 
 - Run `git ls-remote origin main` (or `git log origin/main -1` after a fetch) and
   confirm your new commit's ID is the one on `origin/main`.
@@ -57,7 +57,7 @@ catches this almost every time.
 
 - **A direct edit + push (what you do here):** triggers a build, then the gate
   emails an "Approve & publish" link. Approval comes AFTER the build.
-- **A Telegram-bot edit (Dan messaging the site's own bot):** the bot stages the
+- **A Telegram-bot edit (Daniel messaging the site's own bot):** the bot stages the
   change and emails an approve/discard link BEFORE any commit; on approve it
   commits "via Telegram" and the gate auto-publishes it. This is a separate system.
 
@@ -66,7 +66,7 @@ Telegram staging flow.
 
 ## Git
 
-Reece's fleet auto-saves your work; you don't manage branches or ask Dan about git
+Reece's fleet auto-saves your work; you don't manage branches or ask Daniel about git
 plumbing. But you MUST still verify the push landed (above) before claiming a
 website change is sent — that verification is not optional.
 
@@ -80,7 +80,7 @@ even though the pull succeeded. This already caused a false "the sync didn't wor
 report once — don't repeat it.
 
 **Whenever you pull updates in this repo, immediately resync `dist/` from the
-current source files before telling Dan anything is up to date or checking it in a
+current source files before telling Daniel anything is up to date or checking it in a
 browser.** Don't wait for an unrelated edit to trigger it as a side effect. If you
 don't know the exact resync mechanism in the current session, at minimum copy the
 changed source files over their `dist/` counterparts yourself before reporting the

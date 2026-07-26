@@ -24,7 +24,7 @@ function token() {
   return t;
 }
 function headers() {
-  return { Authorization: `Bearer ${token()}`, Accept: "application/vnd.github+json", "User-Agent": "dan-funnel-bot" };
+  return { Authorization: `Bearer ${token()}`, Accept: "application/vnd.github+json", "User-Agent": "daniel-funnel-bot" };
 }
 async function gh(method, path, body) {
   const res = await fetch(`${API}${path}`, {

@@ -1,7 +1,7 @@
 // Newsletter signup ("Words Worth Writing" homepage form).
 // Replaces the old Netlify Forms POST (which 404'd on submit). Stores a pending
 // subscriber in Blobs, sends a confirmation email, then marks them confirmed and
-// notifies Dan when they click the confirmation link.
+// notifies Daniel when they click the confirmation link.
 const crypto = require("node:crypto");
 const { subscribersStore } = require("../lib/blobs");
 const { sendResendEmail, mailConfig, leadActionEmail } = require("../lib/send");

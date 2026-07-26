@@ -1,4 +1,4 @@
-# Dan's nurture emails — how to edit them
+# Daniel's nurture emails — how to edit them
 
 These Markdown files **are** the live email funnel. Edit a file here, save/commit it, and the
 change goes out to the funnel automatically. You never touch code.

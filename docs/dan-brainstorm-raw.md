@@ -1,6 +1,6 @@
-# Dan's Raw Brainstorm — Assessment PDF Content
+# Daniel's Raw Brainstorm — Assessment PDF Content
 
-Everything below is Dan's words, unedited. Do not rewrite or paraphrase this document.
+Everything below is Daniel's words, unedited. Do not rewrite or paraphrase this document.
 
 ---
 
@@ -108,7 +108,7 @@ For the first assessment results we receive, if it's a text field where we don't
 
 I don't like putting a lot of effort into speaking to these questions and creating a huge text around them, because without actually having a dialogue with the individual, it's hard for me to identify what's going on. Second, these are just symptoms, similar to how our Western medical system prescribes medication to treat symptoms instead of addressing the root cause. I don't treat depression, anxiety, or meaninglessness. What I do is get the individual back on track to live his life in alignment with himself, and then all of these symptoms go away by themselves. They're symptoms, not issues in and of themselves.
 
-This is why several fit-signal questions (Compulsive Patterns, Lifestyle, and some Inner State items) are intentionally left thin or deferred rather than getting a per-item deep-dive — writing a big speculative text block per symptom would work against how Dan actually coaches.
+This is why several fit-signal questions (Compulsive Patterns, Lifestyle, and some Inner State items) are intentionally left thin or deferred rather than getting a per-item deep-dive — writing a big speculative text block per symptom would work against how Daniel actually coaches.
 
 ### Readiness
 
@@ -126,7 +126,7 @@ Options: Anxiety, Depression, PTSD, Apathy, Anger or resentment, Frustration or 
 
 #### Anxiety
 
-(Content pulled out via a Socratic client-roleplay exercise — Dan playing coach, Claude playing a client who checked "anxiety." Dan's questions to draw it out: "Why are you so anxious?" / "What do you mean with 'something bad'? How bad can it get?" / "How bad can existence really get?" / "What happens if you fuck it up?" / "Why is that such a big deal?" / "What is there to count in the midst of infinity?" / "What else would you want to do for eternity if you were god?")
+(Content pulled out via a Socratic client-roleplay exercise — Daniel playing coach, Claude playing a client who checked "anxiety." Daniel's questions to draw it out: "Why are you so anxious?" / "What do you mean with 'something bad'? How bad can it get?" / "How bad can existence really get?" / "What happens if you fuck it up?" / "Why is that such a big deal?" / "What is there to count in the midst of infinity?" / "What else would you want to do for eternity if you were god?")
 
 You have to come to grips with the fact that ultimately, what's going to happen is going to happen. You're not fully in control of what happens so you need to let go a bit and find some acceptance for whatever happens. Some faith. Letting go of the desire to control everything.
 
@@ -162,7 +162,7 @@ I have no clue about PTSD, I don't feel qualified to speak on it, except that I 
 
 #### Apathy
 
-(Content pulled out via Socratic client-roleplay. Dan's key move: pressing on whether "feeling nothing" is really true — if it bothered the client that they feel numb, that itself proves something still cares, so it isn't true numbness.)
+(Content pulled out via Socratic client-roleplay. Daniel's key move: pressing on whether "feeling nothing" is really true — if it bothered the client that they feel numb, that itself proves something still cares, so it isn't true numbness.)
 
 You're not numb. You're just finding yourself not caring about most things in your life right now, you're disengaged with it.
 
@@ -180,7 +180,7 @@ Those external things just TRIGGER and bring into CONSCIOUS AWARENESS the things
 
 #### Frustration or pressure, Meaninglessness, Panic attacks, Hypochondria
 
-Deferred — these feel like coaching-conversation territory more than PDF-text territory, and Dan doesn't want generic AI-sounding text written for them regardless. One point that applies across all of them: having a healthy lifestyle, including social life, is very important. Actual text for these waits until Claude has been trained on Dan's voice (see to-do list) — not to be drafted before then.
+Deferred — these feel like coaching-conversation territory more than PDF-text territory, and Daniel doesn't want generic AI-sounding text written for them regardless. One point that applies across all of them: having a healthy lifestyle, including social life, is very important. Actual text for these waits until Claude has been trained on Daniel's voice (see to-do list) — not to be drafted before then.
 
 #### Other / None of the above
 
@@ -208,7 +208,7 @@ I actually just asked this question to get a feel for their personality and whet
 
 ### Track record
 
-Dan mainly asked this to get a feel for where they're at in the journey and how willing they might be to invest into coaching with him.
+Daniel mainly asked this to get a feel for where they're at in the journey and how willing they might be to invest into coaching with him.
 
 Note: skipped for now — not yet ready to write PDF content for this question.
 

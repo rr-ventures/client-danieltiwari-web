@@ -2,7 +2,7 @@
 
 Working notes for the Wheel of Life self-assessment lead magnet (`assessment.html` /
 `assessment.js` / `assessment-core.js`). This is the durable companion to
-`dan-brainstorm-raw.md` (Dan's raw content) — this file is Claude's own working
+`dan-brainstorm-raw.md` (Daniel's raw content) — this file is Claude's own working
 knowledge of the flow structure, resolved decisions, and code conventions, kept here
 so it travels with the repo instead of living only in local session memory.
 
@@ -40,7 +40,7 @@ importance ranking as its own step, that's stale — verify against the code.
 9. **acts-reasons ("Hidden Values")** *(skipped if No/empty)* — uses **laddering**
    (Means-End Chain Theory, Reynolds & Gutman: keep asking why until a terminal value).
    Per action/inaction: type a reason → "the real reason, or something deeper?" →
-   deeper adds a layer; "this is it" locks the terminal value and asks whether Dan
+   deeper adds a layer; "this is it" locks the terminal value and asks whether Daniel
    wants to keep living by it. "+ Add another reason" starts an independent ladder for
    the same action. Implementation: `renderActsWhyLadders` in `assessment.js`, state
    key `deeper_<area>_why_threads` (array of `{layers[], terminal}`), decisions in
@@ -54,28 +54,28 @@ importance ranking as its own step, that's stale — verify against the code.
 
 When continuing a brainstorm session on this flow, check the step order above and
 name the specific next step (e.g. after acts-list comes acts-values, not a jump to a
-new topic) rather than asking an open "what's next?". Dan is relying on Claude to
+new topic) rather than asking an open "what's next?". Daniel is relying on Claude to
 hold the sequence, not re-derive it each time — this was a direct, frustrated
 correction ("I NEED TO BE ABLE TO RELY ON YOU").
 
-When transcribing Dan's brainstorm into `dan-brainstorm-raw.md`, only capture
+When transcribing Daniel's brainstorm into `dan-brainstorm-raw.md`, only capture
 substantive PDF-bound content — strip out conversational meta-feedback he's giving
 directly to Claude about process.
 
 ## Governing coaching philosophy — fit signals (Step 4, "Section B")
 
-Dan explicitly does not want deep per-symptom PDF content here: "these are just
+Daniel explicitly does not want deep per-symptom PDF content here: "these are just
 symptoms, similar to how our Western medical system prescribes medication to treat
 symptoms instead of addressing the root cause... get the individual back on track to
 live in alignment with himself, and then the symptoms go away by themselves."
 Don't push for more per-item brainstorming on Inner State sub-items, Compulsive
 Patterns, or Lifestyle — that's resolved, not outstanding, and pushing on it goes
-against how Dan actually coaches.
+against how Daniel actually coaches.
 
 Status per fit-signal question:
 - **Readiness** — full PDF-ready content.
 - **Inner state** — Anxiety, Depression, Apathy, Anger/resentment: full content
-  (built via Socratic client-roleplay, see method below). PTSD scoped (Dan doesn't
+  (built via Socratic client-roleplay, see method below). PTSD scoped (Daniel doesn't
   feel qualified beyond the general metaphysical-foundation point). Frustration/
   pressure, Meaninglessness, Panic attacks, Hypochondria deliberately thin — living
   answer library territory, not further brainstorming.
@@ -89,16 +89,16 @@ Status per fit-signal question:
 
 ## Content-generation workflow: the living answer library
 
-For open-text/bullet answers with no matching brainstorm-doc guidance yet, Dan
+For open-text/bullet answers with no matching brainstorm-doc guidance yet, Daniel
 writes the first PDF response manually. Treat these as a growing reference library —
-for later users with semantically similar open-text answers, reuse/adapt Dan's prior
+for later users with semantically similar open-text answers, reuse/adapt Daniel's prior
 manual response rather than inventing new copy. Applies especially to fit-signal
 follow-ups and the control-attitude "how do you feel" field. Agreed process, not yet
 implemented in code.
 
 ## Content-elicitation methods
 
-**For assessment page copy generally:** Dan finds it hard to generate copy from
+**For assessment page copy generally:** Daniel finds it hard to generate copy from
 scratch. Don't ask him to write or brainstorm freely — ask 2-4 sharp, concrete
 questions per page whose answers map straight into the draft text, then draft and
 show it back for approval. Work one page at a time, in live-flow order. Show the
@@ -106,24 +106,52 @@ current copy first, broken into its distinct blocks (headline, lede, bullets, bo
 CTA). Good question angles: the one true reason this exists, what makes a claim on
 the page actually earned, what objection the reader is carrying right before the
 next action. Check `dan-voice-reference.md` before finalizing wording. Skip
-re-litigating sections already content-complete unless Dan asks to revisit.
+re-litigating sections already content-complete unless Daniel asks to revisit.
 
-**For Socratic client-roleplay** (Dan plays coach, Claude plays client, to dig out
+**Correction (2026-07-26) — don't lead with calibration questions once he's mid-flow.**
+The "ask 2-4 sharp questions first" method above is for the cold-start case (a page
+with nothing to work from yet). Once Daniel is actively moving through the assessment
+task-by-task, he wants to just dump the raw wording himself and have it drafted
+immediately — he explicitly shut down a round of calibration questions ("don't ask me
+these questions, just let me generate some text for now and dump a brainstorm into
+you. We can figure out the exact text after"). The actual working loop that worked
+well this session:
+
+1. He gives the raw content for a task/step, live in chat (not necessarily full
+   brainstorm-doc-quality prose — can be one paragraph).
+2. Draft immediately, sticking close to his literal wording (see the wording-
+   preservation rule near the top of `dan-voice-reference.md`). Don't ask calibration
+   questions (length, placement, tone) unless something is genuinely ambiguous.
+3. On his OK ("put it in", "go ahead"), write the change straight into the live file
+   (`assessment.html` / `assessment.js`), rebuild `dist/`, and get the local preview
+   back up so he can look at it in the browser himself — he wants to see it live, not
+   just read the draft in chat.
+4. He then reviews in-browser and sends short, direct follow-up edits ("change X to
+   Y", "make X bolder", "cut this sentence") — apply each literally and immediately,
+   rebuild, confirm it's live on the preview. Don't re-open settled wording or ask why.
+5. Work strictly one step of the live flow at a time, in flow order — don't jump
+   ahead to the next step until he says so.
+
+This loop (dump → draft tight to his words → land it in the real file → rebuild →
+he looks → short edits → repeat) is now the default for this task, not the 2-4
+question intake — reserve that for genuinely cold pages with nothing dictated yet.
+
+**For Socratic client-roleplay** (Daniel plays coach, Claude plays client, to dig out
 his coaching philosophy for a fit-signal or similar): keep the "client" answers
 simple, uncertain, and a little inarticulate ("I don't know... tired, maybe?" /
 "Yeah, that's it"). Never have the client produce the reframe, metaphor, or
-diagnosis — that's Dan's line to deliver. If the client pre-solves the insight, the
-exercise stops working: the value is Dan doing the actual work of arriving at and
+diagnosis — that's Daniel's line to deliver. If the client pre-solves the insight, the
+exercise stops working: the value is Daniel doing the actual work of arriving at and
 stating the insight himself. Keep any needed factual detail (symptoms, situation)
 concrete and surface-level, not analytical.
 
 ## Content conventions
 
 - **Per-page guidance bullets stay terse.** These "what I want to explain to the
-  user" points Dan dictates (which double as his per-question explainer-video
+  user" points Daniel dictates (which double as his per-question explainer-video
   talking points) are bullet points, not paragraphs. Render roughly what he says in
   one tight line, keeping his emphasis (e.g. CAPS words) — don't add reasoning,
-  caveats, or extra sentences he didn't ask for. Example — Dan: "5 should be their
+  caveats, or extra sentences he didn't ask for. Example — Daniel: "5 should be their
   DREAM LIFE VISION, realistic or not" → bullet: "Let a 5 be your DREAM LIFE VISION
   for that area, realistic or not."
 
@@ -148,6 +176,6 @@ concrete and surface-level, not analytical.
 - `assessment.html` — CSS, step HTML, inline JS
 - `assessment.js` — step init functions, `_deeperState`
 - `assessment-core.js` — `AREAS` array, `rankAllAreas`
-- `docs/dan-brainstorm-raw.md` — master brainstorm doc, Dan's raw words verbatim, do
+- `docs/dan-brainstorm-raw.md` — master brainstorm doc, Daniel's raw words verbatim, do
   not paraphrase
 - `docs/dan-voice-reference.md` — voice/copy rules

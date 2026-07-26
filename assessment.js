@@ -236,13 +236,10 @@ function initUrgencyFlagStep() {
   const urgent = new Set(
     [...document.querySelectorAll('#urgent-hidden-inputs input[name^="urgency_"]')]
       .map(i => i.name.replace(/^urgency_/, ''))
-      .filter(k => k !== 'none')
   );
-  let noneFlag = !!document.querySelector('#urgent-hidden-inputs input[name="urgency_none"]');
 
   function updateUrgentInputs() {
     const inputs = [...urgent].map(key => `<input type="hidden" name="urgency_${key}" value="1">`);
-    if (noneFlag) inputs.push('<input type="hidden" name="urgency_none" value="1">');
     document.getElementById('urgent-hidden-inputs').innerHTML = inputs.join('');
     if (window.clearFormError) window.clearFormError();
   }
@@ -262,29 +259,15 @@ function initUrgencyFlagStep() {
         <span class="rec-check">${isUrgent ? "✓" : ""}</span>
       </div>`;
     }).join("");
-    const noneRow = `
-      <div class="rec-item${noneFlag ? " selected" : ""}" data-key="__none__" style="border-top:1px solid var(--hair);margin-top:.4rem;padding-top:1.3rem">
-        <span class="rec-num">—</span>
-        <div class="rec-info">
-          <strong class="rec-label">Nothing's pressing right now</strong>
-        </div>
-        <span class="rec-check">${noneFlag ? "✓" : ""}</span>
-      </div>`;
-    container.innerHTML = areaRows + noneRow;
+    container.innerHTML = areaRows;
 
     container.querySelectorAll(".rec-item").forEach(item => {
       item.addEventListener("click", () => {
         const key = item.dataset.key;
-        if (key === '__none__') {
-          noneFlag = !noneFlag;
-          if (noneFlag) urgent.clear();
-        } else {
-          if (urgent.has(key)) {
-            urgent.delete(key);
-          } else if (urgent.size < MAX_URGENT) {
-            urgent.add(key);
-            noneFlag = false;
-          }
+        if (urgent.has(key)) {
+          urgent.delete(key);
+        } else if (urgent.size < MAX_URGENT) {
+          urgent.add(key);
         }
         updateUrgentInputs();
         renderUrgent();
@@ -2066,7 +2049,7 @@ function initDeeperStep() {
     const visionActualYn  = _deeperState[`deeper_${key}_vision_actual_yn`] || '';
     return [
       `<div class="deeper-subpage" id="deeper-sub-${key}-cause" data-area="${label}" hidden>
-        <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">What's the Matter?</h3>
+        <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Getting Specific</h3>
         <div class="deeper-field">
           <label>Why does ${labelHtml} only feel like a ${data.fulfillment}/5 right now?</label>
           <div id="cause-list-${key}"></div>
@@ -3212,7 +3195,7 @@ function buildQaSummary(answers) {
 }
 
 // Shown in place of the full Authenticity Map while the assessment is still
-// being tested — Dan reviews answers via the notification email himself and
+// being tested — Daniel reviews answers via the notification email himself and
 // follows up directly, rather than the page revealing results on the spot.
 function renderTestingThankYou() {
   const el = document.getElementById("assessment-result");
@@ -3300,7 +3283,7 @@ window.submitAssessment = async function submitAssessment(form, submitButton) {
   answers.potential_signal     = s5[q7] ?? 3;
 
   // How long they spent on the whole assessment, start to finish — shown to
-  // Dan in the notification email, not to the person taking it.
+  // Daniel in the notification email, not to the person taking it.
   try {
     const secs = window.getAssessmentDurationSeconds ? window.getAssessmentDurationSeconds() : null;
     if (secs != null) {

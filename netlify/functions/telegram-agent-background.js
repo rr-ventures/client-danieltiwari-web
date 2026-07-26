@@ -1,7 +1,7 @@
-// Background worker (up to 15 min): runs the Claude repo agent for one Dan/Reece
+// Background worker (up to 15 min): runs the Claude repo agent for one Daniel/Reece
 // message, stages the proposed changeset, and sends an approval request — Telegram
 // inline buttons to the requester + an email with Approve/Discard links to BOTH
-// Dan and Reece. Either of them approving commits it. The webhook
+// Daniel and Reece. Either of them approving commits it. The webhook
 // (telegram-bot.js) returns 200 fast and fires this so Telegram doesn't time out.
 const crypto = require("node:crypto");
 const { runAgent, MODEL } = require("../lib/repo-agent");
@@ -15,7 +15,7 @@ const SELF = `${SITE}/.netlify/functions/telegram-bot`;
 const HISTORY_TURNS = 8;
 
 
-// True when Dan's message is a done/publish signal (end of session).
+// True when Daniel's message is a done/publish signal (end of session).
 function isDone(text) {
   const t = String(text || '').toLowerCase();
   return /(done|publish|ship it?|push it?|send it?|that'?s (it|all)|all done|finished|i'?m done|go live|looks good|send for (review|approval)|submit|that'll do)/.test(t);
@@ -93,7 +93,7 @@ function approvalEmail({ summary, changes, approve, discard, requestedBy }) {
       <a href="${approve}" style="background:#137333;color:#fff;padding:13px 26px;text-decoration:none;border-radius:6px;font-weight:600;font-size:15px">✓ Approve &amp; publish</a>
       &nbsp;&nbsp;&nbsp;<a href="${discard}" style="color:#888;font-size:14px">Discard</a>
     </p>
-    <p style="color:#999;font-size:13px;margin-top:18px">Green = added, red = removed. Either Dan or Reece can approve. Website changes go live ~2 minutes after approval.</p>
+    <p style="color:#999;font-size:13px;margin-top:18px">Green = added, red = removed. Either Daniel or Reece can approve. Website changes go live ~2 minutes after approval.</p>
   </div>`;
 }
 
@@ -132,7 +132,7 @@ exports.handler = async (event) => {
     return { statusCode: 200, body: "answered" };
   }
 
-  // Accumulate changes into the session; only send for approval when Dan says done.
+  // Accumulate changes into the session; only send for approval when Daniel says done.
   const session = await loadSession(userId);
   const prevChanges = session ? session.changes : [];
   const prevSummaries = session ? session.summaries : [];
@@ -157,7 +157,7 @@ exports.handler = async (event) => {
     return { statusCode: 200, body: "queued" };
   }
 
-  // Dan said done -- send one approval email for everything accumulated this session.
+  // Daniel said done -- send one approval email for everything accumulated this session.
   await clearSession(userId);
 
   const token = crypto.randomBytes(18).toString("base64url");

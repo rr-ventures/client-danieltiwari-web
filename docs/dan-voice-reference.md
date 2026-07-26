@@ -1,35 +1,41 @@
-# Dan's Voice Reference
+# Daniel's Voice Reference
 
-A working model of how Dan writes and thinks, built by close-reading his own unedited
+A working model of how Daniel writes and thinks, built by close-reading his own unedited
 words in `dan-brainstorm-raw.md` and `dan-brainstorm-masculinity-raw.md` (coaching-db
 project), plus his live speaking voice from real coaching-call transcripts (client side
-excluded — analyzed for Dan's speech mechanics only, no call content or client details
+excluded — analyzed for Daniel's speech mechanics only, no call content or client details
 retained here). Updated as he contributes more raw material or corrects a draft.
 
 **Rule for using this doc:** don't write generic "wise coach" copy and sprinkle in a
 phrase from the vocabulary bank below. Build the paragraph using the *structural
 template* and *rhetorical devices* sections — the phrases are seasoning, not the
 recipe. A first attempt at drafting PDF copy from this material (Anxiety, 2026-07-02,
-before this doc existed) was message-accurate but voice-inauthentic per Dan. The gap
+before this doc existed) was message-accurate but voice-inauthentic per Daniel. The gap
 was structural, not vocabulary — it read like advice *about* his ideas instead of
-Dan actually saying them.
+Daniel actually saying them.
+
+**When Daniel gives raw wording to draft from (live in chat, or in a brainstorm doc),
+preserve as much of his literal wording as possible.** Trim, reorder, and connect
+his sentences for flow, but don't replace his phrasing with your own paraphrase that
+merely carries the same message. He wants the text to be recognizably his words, not
+a rewrite that happens to agree with him. (Direct correction, 2026-07-26.)
 
 ---
 
 ## Two different voices in the source material — don't blend them
 
-Dan's raw brainstorm docs contain two registers. Only one of them is what PDF copy
+Daniel's raw brainstorm docs contain two registers. Only one of them is what PDF copy
 should sound like.
 
-1. **Planning voice** — Dan talking *to Claude, about the user*, in third person:
+1. **Planning voice** — Daniel talking *to Claude, about the user*, in third person:
    "I want them to know that...", "If they answer X, I want to acknowledge...". This
    is process notes and instructions. Never copy this register into client-facing text.
-2. **PDF voice** — Dan talking *to the reader*, in second person, direct address:
+2. **PDF voice** — Daniel talking *to the reader*, in second person, direct address:
    "You're not numb. You're just finding yourself not caring about most things."
    This is the register to extract and write in.
 
 When drafting, read past the planning-voice scaffolding ("if they say X, tell them Y")
-and pull out only the Y — then write it as if Dan is looking the reader in the eye.
+and pull out only the Y — then write it as if Daniel is looking the reader in the eye.
 
 There's a third register, live spoken voice from real calls (see below) — it does NOT
 map directly onto PDF copy, which is written, but it's the register to reach for when
@@ -41,7 +47,7 @@ rather than an essay.
 
 ## Third register — live call voice (synthesized from 64 real coaching-call transcripts)
 
-Built from Dan's speaking turns only across 64 separate 1:1 coaching calls (client
+Built from Daniel's speaking turns only across 64 separate 1:1 coaching calls (client
 side and all content/topic details excluded — this is his speech mechanics, not what
 was discussed). Because these patterns were checked across dozens of calls, they're
 ordered below by how consistently they appeared: **near-universal** signatures first
@@ -140,7 +146,7 @@ text.
 Do not import "right?" tagging, doubled affirmations, backchannel fragments, or
 self-interruption into PDF copy — that's what makes drafts read as spoken-transcribed
 rather than written. Use this register only when the deliverable is meant to sound
-like Dan talking directly to one person in the moment.
+like Daniel talking directly to one person in the moment.
 
 ---
 
@@ -164,7 +170,7 @@ missing.
    Nietzsche / Krishnamurti / the serenity prayer), or a compact bumper-sticker line.
 
 A frequent variant on beat 2: **name the cultural lie first.** Before landing his own
-point, Dan often names what society/mainstream culture wrongly teaches about the
+point, Daniel often names what society/mainstream culture wrongly teaches about the
 topic, then contrasts his view against it. ("In our society, we've been taught that
 these feelings are bad and should be avoided..." / "For our entire lives society has
 always been telling us what to do...") This isn't throat-clearing — it's doing real
@@ -263,7 +269,7 @@ just the ones he's already written.
   things straight. (Confirmed correction, 2026-07-03, after a draft carried a
   coddling vibe in places.) This sits alongside device #6 below (permission +
   directness together) — the difference is coddling *softens the truth itself*;
-  Dan never does that. He gives respect and directness, not comfort instead of
+  Daniel never does that. He gives respect and directness, not comfort instead of
   truth.
 
 ---
@@ -363,13 +369,13 @@ as the assessment doc, not as finished voice example.
 - Filler affirmations ("great question", "absolutely")
 - Academic or clinical language
 - Over-tightening his accumulating, spoken-style sentences into short punchy ad-copy
-  fragments — that reads as generic AI coach voice, not Dan
+  fragments — that reads as generic AI coach voice, not Daniel
 - Leading with a quote instead of landing his own point first
 - Insight with no reframe or tool attached — half-finished by his standard
 - Writing deep, specific advice for individual symptoms (specific addictions, specific
   fears) instead of naming the underlying pattern — goes against his root-cause
   coaching philosophy, see governing philosophy note in `dan-brainstorm-raw.md`
-- **NEVER praise the reader by comparing them favourably to other people.** Dan does
+- **NEVER praise the reader by comparing them favourably to other people.** Daniel does
   not want anyone made to feel good by being told they are superior to "most people,"
   "almost everyone," or anyone else. Ban all comparative-flattery constructions:
   "more X than most people have," "the part almost nobody does," "unlike most,"
@@ -379,24 +385,24 @@ as the assessment doc, not as finished voice example.
   Right: "I respect that you were honest about this." Wrong: "that takes more honesty
   than most people have." The respect is real; the comparison is what he rejects.
 - **No imperatives, no "I'm the authority" framing.** Don't issue commands ("You must…",
-  "Do this…") and don't write as if Dan possesses the one correct truth. He states
+  "Do this…") and don't write as if Daniel possesses the one correct truth. He states
   what occurs to him / the facts as he reads them, reader to reader. (Confirmed
   correction, 2026-07-03 — a PDF draft read as preachy/authoritative.)
 - **No coddling.** Don't soften a hard truth to protect the reader's feelings, and
-  don't write in a hand-holding, fragile-treating register. Dan is rational and
+  don't write in a hand-holding, fragile-treating register. Daniel is rational and
   emotionally blunt — he respects the reader as capable of hearing it straight, not
   as someone who needs to be managed. (Confirmed correction, 2026-07-03.)
 - **No self-referential modesty/branding lines**, e.g. "I'm just a good coach." Reads
-  as embarrassing filler, not something Dan would ever say about himself. (Confirmed
+  as embarrassing filler, not something Daniel would ever say about himself. (Confirmed
   correction, 2026-07-03.)
-- **No em dashes**, anywhere in copy, testimonials, or rewrites. Dan calls them an
+- **No em dashes**, anywhere in copy, testimonials, or rewrites. Daniel calls them an
   obvious AI writing tell. Use a period, comma, or restructured sentence instead.
 - **No monogamy-default framing** in relationship/intimacy content — avoid "your
   partner," "the one person," or other singular-partner phrasing baked into questions
-  or copy. Dan is explicitly open to clients having multiple partners. Prefer
+  or copy. Daniel is explicitly open to clients having multiple partners. Prefer
   structure-agnostic phrasing ("partners," "the people you're intimate with") where
   it's not awkward, but don't over-correct into clunky plurals everywhere.
-- **No invented stances.** When drafting from Dan's raw brainstorm material, don't add
+- **No invented stances.** When drafting from Daniel's raw brainstorm material, don't add
   an editorial conclusion that sounds plausible in his voice but asserts a view he
   didn't actually give — especially on relationship structure, lifestyle, or identity,
   where he may hold a non-default position. If the source is thin on a topic,
@@ -408,4 +414,4 @@ as the assessment doc, not as finished voice example.
 Raw brainstorm material contains occasional profanity ("this dumb and boring ass
 society," "get shit off your mind"). Default assumption used for drafts going forward:
 keep the directness/intensity, drop the cursing for client-facing PDF text. Confirm
-with Dan — he may want it context-dependent instead.
+with Daniel — he may want it context-dependent instead.

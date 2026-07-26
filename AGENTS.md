@@ -1,6 +1,6 @@
 # Daniel Tiwari Website Agent Context
 
-This repo is Dan's public coaching website plus its Netlify Functions. Changes to
+This repo is Daniel's public coaching website plus its Netlify Functions. Changes to
 `main` build on Netlify and deploy to `danieltiwari.com`.
 
 ## Context Loading
@@ -113,16 +113,16 @@ Netlify Blobs is used as lightweight key/value storage:
   paths: `web/...` for this repo and `db/...` for `product-dancoaching-db`.
 - `netlify/lib/repo-agent.js` stages changes in memory only; it does not commit.
 - `telegram-agent-background.js` writes a pending changeset to the
-  `agent-changesets` Blob store and emails Dan/Reece an approve/discard link.
+  `agent-changesets` Blob store and emails Daniel/Reece an approve/discard link.
 - `telegram-bot.js` handles the approve/discard link. Approve calls
   `netlify/lib/repo-commit.js`, which commits the staged files to GitHub `main`.
 - A web repo commit to `main` triggers Netlify to build and deploy the site.
-- A db repo commit versions Dan's private coaching database only; it does not
+- A db repo commit versions Daniel's private coaching database only; it does not
   deploy the website.
 - Two distinct publish paths, do not blend them: (a) a **Telegram-bot edit** is
   staged in Blobs and emailed for approve/discard BEFORE any commit, then commits
   "via Telegram" and auto-publishes; (b) a **direct git push to `main`** (e.g. from
-  Reece's or Dan's Cowork Claude) builds first, then the change gate emails an
+  Reece's or Daniel's Cowork Claude) builds first, then the change gate emails an
   "Approve & publish" link AFTER the build. No approval email almost always means
   the commit never reached GitHub `main`, so no build ever ran — check that before
   suspecting Netlify or email.
@@ -132,7 +132,7 @@ Netlify Blobs is used as lightweight key/value storage:
   redirecting everything to a test inbox. Whoever clicks the link first wins the
   approval. If mail is landing with the wrong person, check these three in the
   Netlify dashboard before suspecting the code — this happened once (2026-07-01,
-  Reece had the wrong email on file for Dan), since fixed.
+  Reece had the wrong email on file for Daniel), since fixed.
 
 ## Telegram Bot
 

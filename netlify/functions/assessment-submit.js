@@ -228,7 +228,7 @@ exports.handler = async (event) => {
   const TEST_MODE = /^(1|true|yes)$/i.test(String(process.env.TEST_MODE || ""));
   // NURTURE_PAUSED: set true in Netlify env to stop the day-0 email + drip
   // enrollment while the sequence copy is being rewritten. The assessment
-  // result itself (result page + Dan's internal notification) still fires.
+  // result itself (result page + Daniel's internal notification) still fires.
   const NURTURE_PAUSED = /^(1|true|yes)$/i.test(String(process.env.NURTURE_PAUSED || ""));
   const TEST_EMAIL = process.env.TEST_EMAIL || "reece.j.rainer@gmail.com";
   const { from, replyTo, bookUrl } = mailConfig();

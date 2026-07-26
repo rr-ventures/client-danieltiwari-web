@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#f2ede4">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Spectral+SC:wght@300;400;500;600&family=Spectral:ital,wght@0,300;0,400;1,300;1,400&family=Alegreya+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Spectral+SC:wght@300;400;500;600&family=Spectral:ital,wght@0,300;0,400;0,700;1,300;1,400&family=Alegreya+SC:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/site.css">
 <style>
   :root{
@@ -286,6 +286,7 @@
   .focus-reveal-eyebrow{font-size:.72rem;letter-spacing:.3em;color:var(--accent);margin-bottom:1.2rem}
   .focus-reveal-title{font-family:var(--display);font-size:clamp(1.3rem,2.4vw,1.7rem);font-weight:400;line-height:1.1;letter-spacing:.01em;margin-bottom:1.2rem}
   .focus-reveal-sub{color:var(--muted);font-size:var(--q-size);line-height:1.8;background:var(--bg2);border-radius:3px;padding:1.1rem 1.6rem}
+  .focus-reveal-sub strong{font-weight:700;color:var(--ink)}
 
   /* focus recommendation */
   .rec-list{display:flex;flex-direction:column}
@@ -382,7 +383,7 @@
           <div class="assessment-section-head">
             <div>
               <h2>An Honest Look</h2>
-              <p>Rate your fulfillment level in the mentioned area of life. Don't overthink it, but be as honest as possible with yourself. No intellectual rationalizations etc.</p>
+              <p>We so rarely take the time to actually assess and feel into where we're at in our life. And if you don't have a clear picture of your fulfillment level in each area of life, your ability to live and create intentionally diminishes. So one of the first tasks here is to assess each area of your life and determine where you're at in terms of fulfillment, and how that compares to your vision for that area. Don't overthink it. No intellectual rationalizations. Just answer as honestly as you can.</p>
             </div>
           </div>
           <div id="fulfillment-inputs"></div>
@@ -393,8 +394,8 @@
       <!-- 02 · urgency check -->
       <section class="assessment-section">
         <div class="focus-reveal-head">
-          <h2 class="focus-reveal-title">Urgency</h2>
-          <p class="focus-reveal-sub">You can pick up to three areas that you regard as urgent and need to be taken care of most right now. You can also consider which areas, if improved, would have the greatest positive spill-over effect on other areas. If nothing is more urgent or important than anything else, just choose "Nothing's pressing right now".</p>
+          <h2 class="focus-reveal-title">Urgency & Importance</h2>
+          <p class="focus-reveal-sub">You can pick up to three areas that you regard as urgent/important and need to be taken care of most <strong>right now</strong>. You can also consider which areas, if improved, would have the greatest positive spill-over effect on other areas.</p>
         </div>
         <div id="urgent-rows" class="rec-list"></div>
         <div id="urgent-hidden-inputs"></div>
@@ -404,7 +405,7 @@
       <section class="assessment-section">
         <div class="focus-reveal-head">
           <h2 class="focus-reveal-title">Focus</h2>
-          <p class="focus-reveal-sub">Choose the area you would like to focus on for the rest of the assessment. They're ranked below based on your previous answers, most pressing first, but the choice is entirely yours.</p>
+          <p class="focus-reveal-sub">We all have limited time and resources. Therefore, it makes sense to focus on the things that are most important for us in life at any given point in time, and that includes this assessment. Pick the area you would like to focus on for the rest of the assessment. I've ranked them for you based on your previous answers, with the most important being first, but you're your own authority. It's your final call.</p>
         </div>
         <div id="rec-list" class="rec-list"></div>
         <div id="focus-hidden-inputs"></div>
@@ -599,7 +600,7 @@
     function validateStep(n){
       clearFormError();
       if(n===1){
-        if(!sections[n].querySelectorAll('input[name^="urgency_"]').length){showFormError("Please flag what's pressing, or confirm nothing is.",document.getElementById('urgent-rows'));return false;}
+        if(!sections[n].querySelectorAll('input[name^="urgency_"]').length){showFormError("Please choose at least one area.",document.getElementById('urgent-rows'));return false;}
         return true;
       }
       if(n===2){

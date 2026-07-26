@@ -22,7 +22,7 @@ vault: `.../dan-coach/delivery/dan-website-quiz-nurture-plan-2026-06-05.md`).
 
 Branching: `result.route` = `diagnostic` (any 2 of 3 high signals) → Branch A
 (6 emails / 12 days); else `nurture` → Branch B (7 emails / 21 days). Copy source:
-vault `.../dan-resend-nurture-build/dan-nurture-sequence-copy.md` (pending Dan's
+vault `.../dan-resend-nurture-build/dan-nurture-sequence-copy.md` (pending Daniel's
 voice pass). Email bodies live in `netlify/lib/sequence.js`.
 
 ## Environment variables (Netlify → Site settings → Environment)
@@ -54,16 +54,16 @@ voice pass). Email bodies live in `netlify/lib/sequence.js`.
 3. Expect: email 1 instantly + the remaining 12 emails (both branches) to
    `TEST_EMAIL`, one every ~95s across ~20 min. The on-page result renders inline
    and reveals the shareable `/r/<id>` link; `/r/<id>` shows the full map.
-4. Review copy/links/spacing. Then Dan does his voice pass on
-   `dan-nurture-sequence-copy.md` → mirror edits into `netlify/lib/sequence.js`.
+4. Review copy/links/spacing. Then Daniel does his voice pass on
+   `daniel-nurture-sequence-copy.md` → mirror edits into `netlify/lib/sequence.js`.
 
 ## Go-live gates (before flipping TEST_MODE off)
 
 - [ ] **`send.danieltiwari.com` verified in Resend — SPF + DKIM + DMARC all green.**
       (decision #6; must be confirmed in the Resend account — not checkable from the build sandbox.)
 - [ ] `RESEND_FROM_EMAIL` set to a `send.danieltiwari.com` address.
-- [ ] `BOOK_URL` swapped from the Calendly placeholder to Dan's Cal.com link (decision #5).
-- [ ] Dan's voice pass applied to the sequence copy.
+- [ ] `BOOK_URL` swapped from the Calendly placeholder to Daniel's Cal.com link (decision #5).
+- [ ] Daniel's voice pass applied to the sequence copy.
 - [ ] Set `TEST_MODE=false` (or unset). Confirm `NOTIFY_TO=email@danieltiwari.com`.
 - [ ] (optional) `BCC_TO=reece...` for a few real leads while bedding in.
 

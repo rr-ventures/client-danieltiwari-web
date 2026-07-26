@@ -1,6 +1,6 @@
 // Netlify event-triggered function: fires when a build finishes. Because the
 // site's production deploy is LOCKED (auto-publishing stopped), the finished
-// build is NOT live yet — this stages it and emails Dan + Reece an
+// build is NOT live yet — this stages it and emails Daniel + Reece an
 // Approve/Reject link (or auto-publishes if the Telegram bot already approved it).
 // All logic in ../lib/change-gate.js. See that file for the full design.
 const { onDeploySucceeded } = require("../lib/change-gate");

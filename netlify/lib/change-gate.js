@@ -94,13 +94,13 @@ function friendlyName(raw) {
   const s = String(raw || "").toLowerCase();
   if (!s) return "";
   if (/(reece|rainer)/.test(s)) return "Reece";
-  if (/(dan|tiwari)/.test(s)) return "Dan";
+  if (/(daniel|tiwari)/.test(s)) return "Daniel";
   if (/(claude|agent|\bbot\b|github-?actions|noreply)/.test(s)) return "an agent on Reece's behalf";
   return raw; // unknown — show as-is rather than guess
 }
 
 // Best "who made this change" label: prefer an explicit "Requested by <name>" in
-// the commit message (the Telegram-style trailer), else the git committer. Dan's
+// the commit message (the Telegram-style trailer), else the git committer. Daniel's
 // edits arrive via Telegram and auto-publish, so an email-gated change is almost
 // always Reece's side — we say that plainly instead of a vague "automated update".
 function whoMadeChange(message, committer) {
@@ -149,7 +149,7 @@ function approvalEmail({ subject, who, sha, diff, approve, reject }) {
     </p>
     <h3 style="font-size:13px;color:#444;margin:26px 0 8px;text-transform:uppercase;letter-spacing:.05em">Exactly what changed (${escapeHtml((sha || "").slice(0, 7))})</h3>
     ${diffTable(diff)}
-    <p style="color:#999;font-size:13px;margin-top:18px">Green = added, red = removed. Either Dan or Reece can approve — whoever clicks first publishes it. If the other person already approved (or rejected) it, you'll see exactly that when you click, so there's no harm in being second. Nothing is live until someone clicks Approve; the site updates ~1 minute after.</p>
+    <p style="color:#999;font-size:13px;margin-top:18px">Green = added, red = removed. Either Daniel or Reece can approve — whoever clicks first publishes it. If the other person already approved (or rejected) it, you'll see exactly that when you click, so there's no harm in being second. Nothing is live until someone clicks Approve; the site updates ~1 minute after.</p>
   </div>`;
 }
 
@@ -157,7 +157,7 @@ function approvalEmail({ subject, who, sha, diff, approve, reject }) {
 // so a later click can report "Reece already approved this" by name.
 function recipients() {
   return [
-    { email: process.env.DAN_NOTIFY_EMAIL || "email@danieltiwari.com", who: "Dan" },
+    { email: process.env.DAN_NOTIFY_EMAIL || "email@danieltiwari.com", who: "Daniel" },
     { email: process.env.REECE_NOTIFY_EMAIL || "reece.j.rainer@gmail.com", who: "Reece" },
   ].filter((r) => r.email);
 }
@@ -203,7 +203,7 @@ async function onDeploySucceeded(deploy) {
   await store.setJSON(`seen:${sha}`, { token, createdAt: new Date().toISOString() });
 
   // One personalised email per recipient so the approve link carries who they
-  // are (?by=Dan / ?by=Reece). Whoever clicks first publishes; the other sees
+  // are (?by=Daniel / ?by=Reece). Whoever clicks first publishes; the other sees
   // "<name> already approved this" instead of a confusing "already published".
   const { from } = mailConfig();
   let lastErr;

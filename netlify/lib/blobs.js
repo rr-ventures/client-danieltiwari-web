@@ -35,7 +35,7 @@ function subscribersStore() {
 }
 
 // Staged-but-not-yet-approved Telegram edits, keyed by an unguessable token.
-// The bot writes a pending edit + emails Dan an approve link; the approve
+// The bot writes a pending edit + emails Daniel an approve link; the approve
 // handler reads it back, commits it, and deletes the blob.
 function pendingEditsStore() {
   const siteID = process.env.BLOBS_SITE_ID;
@@ -82,7 +82,7 @@ function changeGateStore() {
 
 
 // Per-user session accumulator: staged changes queued across multiple Telegram
-// messages, held until Dan signals done/publish. One blob per user id:
+// messages, held until Daniel signals done/publish. One blob per user id:
 // { changes: [{path, before, after}], summaries: [string], createdAt, lastUpdated }
 function sessionStore() {
   const siteID = process.env.BLOBS_SITE_ID;

@@ -1,6 +1,6 @@
 /* ============================================================
-   Dan, post-quiz nurture sequence (content + render)
-   Source copy (Dan's voice, v1 draft, pending Dan's voice pass):
+   Daniel, post-quiz nurture sequence (content + render)
+   Source copy (Daniel's voice, v1 draft, pending Daniel's voice pass):
    vault .../dan-resend-nurture-build/dan-nurture-sequence-copy.md
      Branch A, diagnostic / high-fit · 6 emails / 12 days
      Branch B, nurture / everyone else · 7 emails / 21 days

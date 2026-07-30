@@ -97,7 +97,32 @@ function approvalEmail({ summary, changes, approve, discard, requestedBy }) {
   </div>`;
 }
 
+// Only telegram-bot.js may start an agent run.
+//
+// Found 30 Jul 2026 by accidentally proving it: a plain POST to this function's
+// URL, with no credentials of any kind, ran a full agent turn. That mattered for
+// three reasons — it spent the clients OpenRouter key, it emailed Daniel an
+// approval request he never asked for, and it went AROUND the DAN_TELEGRAM_USER_ID
+// allowlist in telegram-bot.js, which that file's own comments call "the security
+// boundary". A boundary you can walk past by calling the next function directly is
+// not a boundary.
+//
+// Fails CLOSED: no secret configured means nothing can start a run, rather than
+// everything being allowed while someone gets around to setting it.
+function invokedByOurOwnWebhook(event) {
+  const want = process.env.AGENT_INVOKE_SECRET || "";
+  if (!want) return false;
+  const got = (event.headers || {})["x-agent-invoke-secret"] || "";
+  const a = Buffer.from(String(got));
+  const b = Buffer.from(want);
+  // Compare in constant time, and only when the lengths already match — the
+  // length check leaks nothing an attacker cannot measure anyway.
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
 exports.handler = async (event) => {
+  if (!invokedByOurOwnWebhook(event)) return { statusCode: 401, body: "not authorised" };
+
   let job;
   try { job = JSON.parse(event.body || "{}"); } catch { return { statusCode: 400, body: "bad job" }; }
   const { chatId, userId, text, requestedBy } = job;

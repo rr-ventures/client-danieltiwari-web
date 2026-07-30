@@ -11,7 +11,8 @@
 //
 // Env: TELEGRAM_BOT_TOKEN, TELEGRAM_WEBHOOK_SECRET, DAN_TELEGRAM_USER_ID,
 //      OPENROUTER_CLIENTS_API_KEY, GITHUB_RW_PAT, RESEND_API_KEY, RESEND_FROM_EMAIL,
-//      DAN_NOTIFY_EMAIL, REECE_NOTIFY_EMAIL, BLOBS_SITE_ID, BLOBS_TOKEN.
+//      DAN_NOTIFY_EMAIL, REECE_NOTIFY_EMAIL, BLOBS_SITE_ID, BLOBS_TOKEN,
+//      AGENT_INVOKE_SECRET (proves an agent run came from this webhook).
 const { commitChangeset } = require("../lib/repo-commit");
 const { changesetStore } = require("../lib/blobs");
 const { send, escapeHtml } = require("../lib/telegram");
@@ -107,8 +108,15 @@ exports.handler = async (event) => {
   await send(chatId, "On it 👀 having a look now…");
   const requestedBy = from.first_name || (String(from.id) === "1956924282" ? "Reece" : "Daniel");
   try {
+    // The shared secret proves the run was started by THIS webhook, after the
+    // allowlist check above. Without it the background function refuses — see the
+    // comment on its handler for why (it was callable by anyone until 30 Jul).
     await fetch(`${SITE}/.netlify/functions/telegram-agent-background`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-agent-invoke-secret": process.env.AGENT_INVOKE_SECRET || "",
+      },
       body: JSON.stringify({ chatId, userId: from.id, text, requestedBy }),
     });
   } catch (err) {

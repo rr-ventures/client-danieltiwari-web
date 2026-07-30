@@ -10,7 +10,7 @@
 // so this allowlist IS the security boundary.
 //
 // Env: TELEGRAM_BOT_TOKEN, TELEGRAM_WEBHOOK_SECRET, DAN_TELEGRAM_USER_ID,
-//      OPENROUTER_API_KEY, GITHUB_RW_PAT, RESEND_API_KEY, RESEND_FROM_EMAIL,
+//      OPENROUTER_CLIENTS_API_KEY, GITHUB_RW_PAT, RESEND_API_KEY, RESEND_FROM_EMAIL,
 //      DAN_NOTIFY_EMAIL, REECE_NOTIFY_EMAIL, BLOBS_SITE_ID, BLOBS_TOKEN.
 const { commitChangeset } = require("../lib/repo-commit");
 const { changesetStore } = require("../lib/blobs");

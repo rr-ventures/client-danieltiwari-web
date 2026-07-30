@@ -4,11 +4,11 @@
 // STAGES every change in memory; nothing is committed during the loop, so a human
 // approves the full changeset before it lands (see telegram-agent-background.js).
 //
-// Model is pinned (AGENT_MODEL, default anthropic/claude-sonnet-4.6) so all spend
+// Model is pinned (AGENT_MODEL, default anthropic/claude-sonnet-5) so all spend
 // on that model is cleanly attributable to this bot and billable to the client.
 const { gh, REPOS, splitRepoPath } = require("./github-edit");
 
-const MODEL = process.env.AGENT_MODEL || "anthropic/claude-sonnet-4.6";
+const MODEL = process.env.AGENT_MODEL || "anthropic/claude-sonnet-5";
 const MAX_STEPS = Number(process.env.AGENT_MAX_STEPS || 30);
 const MAX_FILE_BYTES = 600 * 1024;
 const TOOL_RESULT_MAX = 700 * 1024; // must exceed MAX_FILE_BYTES so a full read isn't truncated
@@ -92,8 +92,12 @@ async function readFromMain(path) {
 }
 
 async function chat(messages) {
-  const key = process.env.OPENROUTER_API_KEY;
-  if (!key) throw new Error("OPENROUTER_API_KEY not set");
+  // The CLIENTS OpenRouter key, not Reece's personal one (Reece, 30 Jul: every
+  // client-facing bot moves onto a separate key so client spend is separable from
+  // his own). No fallback to the personal key on purpose — a silent degrade back
+  // onto Reece's own spend is exactly what this change removes.
+  const key = process.env.OPENROUTER_CLIENTS_API_KEY;
+  if (!key) throw new Error("OPENROUTER_CLIENTS_API_KEY not set");
   const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
     headers: {

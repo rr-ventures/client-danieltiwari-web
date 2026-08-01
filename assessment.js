@@ -2095,6 +2095,7 @@ function initDeeperStep() {
       </div>`,
       `<div class="deeper-subpage" id="deeper-sub-${key}-vision-item-achievable" data-area="${label}" hidden>
         <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Achievable</h3>
+        <p class="focus-reveal-sub">There's no point focusing on goals that are literally not achievable. It's wasted energy, because we will not only never be able to achieve the goal, but we won't even pursue it because we know it's not possible. So if there's something you want that might not be possible, I feel for you, but we'll cover accepting what you cannot change later. For now, tag each point in your vision as achievable or not. And when I say literally impossible, I mean literally impossible, not limiting-belief impossible.</p>
         <div class="deeper-field vision-achievable-field">
           <label>For each point in your vision, is it theoretically achievable?</label>
           <div id="vision-item-achievable-${key}" style="margin-top:.9rem"></div>

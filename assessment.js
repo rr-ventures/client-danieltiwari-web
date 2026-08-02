@@ -2051,7 +2051,7 @@ function initDeeperStep() {
       `<div class="deeper-subpage" id="deeper-sub-${key}-cause" data-area="${label}" hidden>
         <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Getting Specific</h3>
         <div class="deeper-field">
-          <label>Why does ${labelHtml} only feel like a ${data.fulfillment}/5 right now?</label>
+          <label>A solid understanding and clarity about ourselves and our situation is essential to actually putting ourselves in a position from which we can consciously change our lives with intention. Too often, when we're not forced to explain things to someone or something external, we just don't think things through. We prematurely jump to negative conclusions (that are often false) without questioning them, and we also never receive the insights and the gifts that our sufferings hold, that would enable us to move forward.<br><br>Therefore, get specific about the situation you're finding yourself in right now, and what exactly it is you're dissatisfied with.<br><br>Why does ${labelHtml} only feel like a ${data.fulfillment}/5 right now?</label>
           <div id="cause-list-${key}"></div>
         </div>
       </div>`,

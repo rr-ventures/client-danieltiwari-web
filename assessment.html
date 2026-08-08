@@ -242,7 +242,7 @@
   /* keep/not-keep marker on a locked value — deliberately not red/green, this
      isn't a pass/fail grade */
   .cause-keep-badge{font-family:var(--body);font-size:.95rem;color:var(--muted);flex-shrink:0}
-  .cause-edit-btn{background:none;border:none;font-family:var(--sc);font-size:.62rem;letter-spacing:.12em;color:var(--hair);cursor:pointer;padding:.1rem .2rem;flex-shrink:0;transition:color .15s}
+  .cause-edit-btn{background:none;border:none;font-family:var(--sc);font-size:.68rem;letter-spacing:.12em;color:var(--accent);text-decoration:underline;text-underline-offset:.15em;cursor:pointer;padding:.1rem .2rem;flex-shrink:0;transition:color .15s}
   .cause-edit-btn:hover{color:var(--ink)}
   /* the numbered step-picker shown when editing a locked line — pick which
      layer of reasoning to change instead of hunting through a nested tree */
@@ -645,22 +645,28 @@
     current=isNaN(_s)?0:_s;
     showStep(current);
     history.replaceState({step:current,sub:-1},'');
-    window.addEventListener('popstate',function(e){
-      const st=e.state;
+    // Applies a {step, sub} nav target — shared by browser back/forward (popstate)
+    // and by window.gotoStep (used to jump straight to a saved spot on reload,
+    // e.g. after restoring autosaved progress). For steps 3/4, if this is the
+    // first time this page load reaches that step, build it first — otherwise
+    // _showDeeperSubPage/_showFitSubPage don't exist yet to jump with.
+    function applyNavState(st){
       if(!st)return;
       window._historyNav=true;
-      if(st.step===3&&st.sub>=0&&window._showDeeperSubPage){
+      if(st.step===3&&st.sub>=0){
         current=3;
+        if(!window._showDeeperSubPage&&window.initDeeperStep) window.initDeeperStep();
         sections.forEach((s,i)=>s.classList.toggle('active',i===3));
         formNav.hidden=false;
         btnBack.hidden=false;
-        window._showDeeperSubPage(st.sub);
-      } else if(st.step===4&&st.sub>=0&&window._showFitSubPage){
+        window._showDeeperSubPage&&window._showDeeperSubPage(st.sub);
+      } else if(st.step===4&&st.sub>=0){
         current=4;
+        if(!window._showFitSubPage&&window.initFitSignalsStep) window.initFitSignalsStep();
         sections.forEach((s,i)=>s.classList.toggle('active',i===4));
         formNav.hidden=false;
         btnBack.hidden=false;
-        window._showFitSubPage(st.sub);
+        window._showFitSubPage&&window._showFitSubPage(st.sub);
       } else if(st.step===0&&st.sub>=0){
         current=0;
         showStep(0);
@@ -672,7 +678,20 @@
         showStep(st.step);
       }
       window._historyNav=false;
-    });
+    }
+    window.addEventListener('popstate',function(e){ applyNavState(e.state); });
+    window.gotoStep=function(step,sub){
+      const st={step,sub:(sub==null?-1:sub)};
+      applyNavState(st);
+      history.pushState(st,'');
+    };
+    // Render-only — no history.pushState of its own (applyNavState already
+    // guards that internally via window._historyNav). Exposed so a restore
+    // can build its own chain of history entries first (see restoreAssessmentProgress
+    // in assessment.js), then render the final one, instead of getting a single
+    // jump-entry that leaves Back with nowhere sensible to retrace to.
+    window._applyNavState=applyNavState;
+    window.getCurrentStep=function(){return current;};
   })();
 </script>
 <script src="/assessment-core.js" defer></script>

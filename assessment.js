@@ -561,14 +561,6 @@ function renderActsWhyLadders(key) {
     threadsHidden.value = JSON.stringify(out);
   }
 
-  const continueKey = 'deeper_' + key + '_acts_values_continue';
-  if (typeof _deeperState[continueKey] !== 'object' || !_deeperState[continueKey]) _deeperState[continueKey] = {};
-  const decisions = _deeperState[continueKey];
-  const continueHidden = document.createElement('input');
-  continueHidden.type = 'hidden';
-  continueHidden.name = continueKey;
-  function syncContinueHidden() { continueHidden.value = JSON.stringify(decisions); }
-
   items.forEach((action) => {
     const threads = whyThreadsForAction(key, action);
 
@@ -595,13 +587,12 @@ function renderActsWhyLadders(key) {
     // without downstream having to be re-walked and re-locked.
     function nodeLocked(node) {
       if (!node.text || !node.text.trim()) return false;
-      if (!node.children.length) return node.terminal && (decisions[node.id] === 'yes' || decisions[node.id] === 'no');
+      if (!node.children.length) return node.terminal;
       return node.children.every(nodeLocked);
     }
     function invalidateDescendants(node) {
       node.children.forEach((child) => {
         child.terminal = false;
-        delete decisions[child.id];
         invalidateDescendants(child);
       });
     }
@@ -627,11 +618,7 @@ function renderActsWhyLadders(key) {
       bullet.textContent = '→';
       const txt = document.createElement('span');
       txt.className = 'cause-locked-text';
-      txt.textContent = leaf.text + ' ';
-      const badge = document.createElement('span');
-      badge.className = 'cause-keep-badge';
-      badge.textContent = '(' + (decisions[leaf.id] === 'yes' ? '✓' : '!') + ')';
-      txt.appendChild(badge);
+      txt.textContent = leaf.text;
       const editBtn = document.createElement('button');
       editBtn.type = 'button';
       editBtn.className = 'cause-edit-btn';
@@ -662,10 +649,9 @@ function renderActsWhyLadders(key) {
         stepBtn.appendChild(num); stepBtn.appendChild(txt);
         stepBtn.addEventListener('click', () => {
           stepperOpen.delete(leaf.id);
-          if (!stepNode.children.length) { stepNode.terminal = false; delete decisions[stepNode.id]; }
+          if (!stepNode.children.length) stepNode.terminal = false;
           invalidateDescendants(stepNode);
           syncThreadsHidden();
-          syncContinueHidden();
           build();
           jumpToStep(stepNode);
         });
@@ -785,7 +771,7 @@ function renderActsWhyLadders(key) {
           doneBtn.addEventListener('click', () => {
             node.terminal = true;
             syncThreadsHidden();
-            refreshTail();
+            build();
           });
           const deeperBtn = document.createElement('button');
           deeperBtn.type = 'button'; deeperBtn.className = 'yn-btn';
@@ -814,30 +800,6 @@ function renderActsWhyLadders(key) {
             if (inputs.length) inputs[0].focus();
           });
           tailWrap.appendChild(indentPastBullet(splitBtn, 'indent-row-center'));
-        } else {
-          const keepWrap = document.createElement('div');
-          const keepQ = document.createElement('p');
-          keepQ.className = 'list-hint';
-          keepQ.textContent = 'Is this a value you want to continue living by in this context?';
-          const btnsWrap = document.createElement('div');
-          btnsWrap.className = 'yn-btns';
-          const k = node.id;
-          [{ v: 'yes', label: 'Yes' }, { v: 'no', label: 'No' }].forEach(({ v, label: btnLabel }) => {
-            const b = document.createElement('button');
-            b.type = 'button';
-            b.className = 'yn-btn' + (decisions[k] === v ? ' selected' : '');
-            b.textContent = btnLabel;
-            b.addEventListener('click', () => {
-              decisions[k] = v;
-              syncContinueHidden();
-              if (window.clearFormError) window.clearFormError();
-              build();
-            });
-            btnsWrap.appendChild(b);
-          });
-          keepWrap.appendChild(keepQ);
-          keepWrap.appendChild(btnsWrap);
-          tailWrap.appendChild(indentPastBullet(keepWrap, 'indent-row-center'));
         }
       }
 
@@ -915,8 +877,73 @@ function renderActsWhyLadders(key) {
 
   syncThreadsHidden();
   container.appendChild(threadsHidden);
-  syncContinueHidden();
-  container.appendChild(continueHidden);
+}
+
+// Shared between the review page (renderActsValuesReview) and the notify-email
+// summary (buildQaSummary) so the two never drift out of sync with each other.
+const ACTS_VALUE_DECISION_OPTIONS = [
+  { v: 'approve', label: 'I approve of both.' },
+  { v: 'approve-context', label: "I approve of the value but not of the action/inaction of how I was pursuing it." },
+  { v: 'disapprove', label: "I don't approve of the value." },
+];
+
+// One page, after all of an area's why-ladders are built: every hidden value
+// they landed on (across every action/inaction), asked once each whether
+// it's still worth living by — separate from the digging-for-it work above.
+function renderActsValuesReview(key) {
+  const container = document.getElementById('acts-values-' + key);
+  if (!container) return;
+  const continueKey = 'deeper_' + key + '_acts_values_continue';
+  if (typeof _deeperState[continueKey] !== 'object' || !_deeperState[continueKey]) _deeperState[continueKey] = {};
+  const decisions = _deeperState[continueKey];
+  const terminals = terminalWhyThreads(key);
+
+  function syncHidden() {
+    const h = container.querySelector('input[name="' + continueKey + '"]');
+    if (h) h.value = JSON.stringify(decisions);
+  }
+
+  container.innerHTML = '';
+  terminals.forEach((t) => {
+    const block = document.createElement('div');
+    block.className = 'deeper-block';
+    block.style.marginTop = '1.2rem';
+    block.style.textAlign = 'center';
+
+    const itemHead = document.createElement('p');
+    itemHead.style.cssText = 'font-family:var(--display);font-size:1rem;font-weight:400;margin-bottom:.8rem';
+    itemHead.textContent = t.value + ' (' + t.action + ')';
+    block.appendChild(itemHead);
+
+    const btns = document.createElement('div');
+    btns.className = 'yn-btns';
+    btns.style.flexWrap = 'wrap';
+    ACTS_VALUE_DECISION_OPTIONS.forEach(({ v, label: btnLabel }) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'yn-btn' + (decisions[t.id] === v ? ' selected' : '');
+      btn.textContent = btnLabel;
+      btn.addEventListener('click', () => {
+        btns.querySelectorAll('.yn-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        decisions[t.id] = v;
+        syncHidden();
+        if (window.clearFormError) window.clearFormError();
+      });
+      btns.appendChild(btn);
+    });
+    block.appendChild(btns);
+    container.appendChild(block);
+  });
+
+  const hidden = document.createElement('input');
+  hidden.type = 'hidden';
+  hidden.name = continueKey;
+  hidden.value = JSON.stringify(decisions);
+  container.appendChild(hidden);
+
+  const allBlocks = container.querySelectorAll('.deeper-block');
+  if (allBlocks.length) { const last = allBlocks[allBlocks.length - 1]; last.style.borderBottom = 'none'; last.style.paddingBottom = '0'; }
 }
 
 function renderSimpleBulletList(containerId, stateKey, placeholder, nothingStateKey, stateObj, hintText) {
@@ -1877,7 +1904,7 @@ function renderVisionAchievableCheck(key) {
   const qLbl = document.createElement('label');
   qLbl.textContent = allNotAchievable
     ? 'None of your vision points are achievable as stated — what would you like to do?'
-    : 'Is this still a vision worth working towards?';
+    : 'Given the fact that you have deemed part of your vision as unachievable, I wanted to check in with you and make sure that what has remained is still the vision worth achieving for you, or whether you would like to add to or revise it?';
   qWrap.appendChild(qLbl);
 
   const btns = document.createElement('div');
@@ -1939,7 +1966,7 @@ function renderVisionCommitment(key) {
   el.innerHTML = '';
   const lbl = document.createElement('p');
   lbl.className = 'recap-label';
-  lbl.textContent = 'Your vision:';
+  lbl.textContent = 'This is your vision:';
   el.appendChild(lbl);
   const ul = document.createElement('ul');
   ul.className = 'recap-list';
@@ -2032,14 +2059,14 @@ function initDeeperStep() {
   const wheelMap = Object.fromEntries(wheel.map(a => [a.key, a]));
 
   // Sub-pages per area — the flow skips whichever ones don't apply to that person.
-  const qtypes = ['cause', 'vision', 'vision-describe', 'vision-item-achievable', 'vision-achievable-check', 'vision-revised', 'vision-commitment', 'acts-list', 'acts-reasons', 'control', 'control-attitude'];
+  const qtypes = ['cause', 'vision', 'vision-describe', 'vision-item-achievable', 'vision-achievable-check', 'vision-revised', 'vision-commitment', 'acts-list', 'acts-reasons', 'acts-values', 'control', 'control-attitude'];
   const allSubPages = selectedKeys.flatMap(key => qtypes.map(qtype => ({ key, qtype })));
 
   container.innerHTML = selectedKeys.flatMap(key => {
     const { label, desc } = areaMap[key] || { label: key, desc: '' };
     const labelHtml = ampSafe(label);
     const data = wheelMap[key] || {};
-    const q3Toggle = `Are you consciously aware of what your 5/5 in ${labelHtml} would look like?`;
+    const q3Toggle = `If you don't know what you want, you can't steer towards it with intention.<br><br>After having identified the aspects of your situation you're not happy with, it's time to consider what you would rather want instead.<br><br>Are you consciously aware of what your 5/5 in ${labelHtml} would look like?`;
     const q3Expand = `Describe the version of this area that would feel fully alive…`;
     const controlYn      = _deeperState[`deeper_${key}_control_yn`] || '';
     const controlItems   = _deeperState[`deeper_${key}_control_items`] || [];
@@ -2097,7 +2124,6 @@ function initDeeperStep() {
         <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Achievable</h3>
         <p class="focus-reveal-sub">There's no point focusing on goals that are literally not achievable. It's wasted energy, because we will not only never be able to achieve the goal, but we won't even pursue it because we know it's not possible. So if there's something you want that might not be possible, I feel for you, but we'll cover accepting what you cannot change later. For now, tag each point in your vision as achievable or not. And when I say literally impossible, I mean literally impossible, not limiting-belief impossible.</p>
         <div class="deeper-field vision-achievable-field">
-          <label>For each point in your vision, is it theoretically achievable?</label>
           <div id="vision-item-achievable-${key}" style="margin-top:.9rem"></div>
         </div>
       </div>`,
@@ -2108,7 +2134,7 @@ function initDeeperStep() {
       `<div class="deeper-subpage" id="deeper-sub-${key}-vision-revised" data-area="${label}" hidden>
         <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Vision</h3>
         <div class="deeper-field">
-          <label>Create your revised vision — only things that are theoretically achievable.</label>
+          <label>Create your revised vision. Remember to only bring up points this time that you deem as at least theoretically achievable.</label>
           <div id="vision-revised-${key}" style="margin-top:.9rem"></div>
         </div>
         <div id="vision-revised-completeness-${key}" style="margin-top:1.4rem"></div>
@@ -2117,7 +2143,7 @@ function initDeeperStep() {
         <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Conviction</h3>
         <div id="vision-commitment-recap-${key}" class="recap-block" style="margin-bottom:1.6rem" hidden></div>
         <div class="deeper-field yn-field" data-key="${key}" data-role="commitment">
-          <label><strong>WILL</strong> you achieve this? If it's not a clear yes, it's a no.</label>
+          <label><strong>WILL</strong> you achieve this?<br><br>Be honest with yourself here. This isn't a test you need to pass, and there are no right or wrong answers. The best answer you can give is the honest one. If your reaction to this question is not a clear yes, it's a no.</label>
           <div class="yn-btns">
             <button type="button" class="yn-btn${commitmentYn === 'certain'  ? ' selected' : ''}" data-val="certain">There is no other way</button>
             <button type="button" class="yn-btn${commitmentYn === 'doubtful' ? ' selected' : ''}" data-val="doubtful">I have doubts</button>
@@ -2127,9 +2153,9 @@ function initDeeperStep() {
       </div>`,
       `<div class="deeper-subpage" id="deeper-sub-${key}-acts-list" data-area="${label}" hidden>
         <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Your Contribution</h3>
-        <div id="recap-causes-${key}-acts-list" data-label="Why ${label} feels like a ${data.fulfillment}/5" class="recap-block" hidden></div>
+        <div id="recap-causes-${key}-acts-list" data-label="Why ${label} only feels like a ${data.fulfillment}/5:" class="recap-block" hidden></div>
         <div class="deeper-field">
-          <label>How are you contributing to this?</label>
+          <label>We are the common denominator of all areas of our lives, and we also have the biggest impact on our life circumstances. Therefore, we want to make sure that we are playing our part in achieving the life circumstances and life experiences that we want and not getting in our own way.<br><br>One of the most important things we can look at when we find ourselves dissatisfied with something are the ways in which we are contributing to the circumstances we say we don't want. It doesn't matter whether that contribution consists of taking a certain action (activity) or NOT taking a certain action (passivity).<br><br>So, how are you actively or passively contributing to the above? What are the things that you are actively doing that are playing into the above? What are the things you are NOT doing but COULD be doing to change or improve the above?</label>
           <div id="acts-items-${key}" style="margin-top:.5rem"></div>
         </div>
         <div id="acts-confirm-${key}" style="margin-top:1.2rem" hidden></div>
@@ -2138,8 +2164,15 @@ function initDeeperStep() {
         <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Hidden Values</h3>
         <div id="recap-acts-${key}-acts-reasons" data-label="How you are contributing to this" class="recap-block" hidden></div>
         <div class="deeper-field">
-          <label>For each one, why do you do it, or not do it? Keep asking yourself why until you land on the real, possibly uncomfortable value underneath it.</label>
+          <label>Now we're getting deeper to the core of what might be the cause of you feeling stuck or limited. As Carl Jung said, "Until you make the unconscious conscious, it will direct your life and you will call it fate." What we're doing now is making the unconscious conscious. We are shining a light on the drivers of the actions/inactions that have in a certain sense been "self-sabotaging" (secretly-serving?) you.<br><br>For each action above, why do you do it? Or in the case of an inaction, why do you not do it? Keep asking yourself why?...why?...why?...until you eventually land on the real, possibly uncomfortable value of yours that this action or inaction is serving!</label>
           <div id="acts-why-groups-${key}" style="margin-top:.9rem"></div>
+        </div>
+      </div>`,
+      `<div class="deeper-subpage" id="deeper-sub-${key}-acts-values" data-area="${label}" hidden>
+        <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Your Hidden Values</h3>
+        <div class="deeper-field">
+          <label>How would you like to proceed with both the value and the action/inaction with which you were pursuing it in the given context?</label>
+          <div id="acts-values-${key}" style="margin-top:.9rem"></div>
         </div>
       </div>`,
       `<div class="deeper-subpage" id="deeper-sub-${key}-control" data-area="${label}" hidden>
@@ -2200,6 +2233,14 @@ function initDeeperStep() {
       _deeperState['deeper_' + sp.key + '_acts_items'] = items;
       renderActsWhyLadders(sp.key);
     }
+    if (sp.qtype === 'acts-values') {
+      const terminals = terminalWhyThreads(sp.key);
+      if (!terminals.length) {
+        showDeeperSubPage(idx + direction, direction);
+        return;
+      }
+      renderActsValuesReview(sp.key);
+    }
     if (sp.qtype === 'vision-describe') {
       const vYn = _deeperState['deeper_' + sp.key + '_vision_yn'];
       if (vYn !== 'yes' && vYn !== 'partially') {
@@ -2210,8 +2251,8 @@ function initDeeperStep() {
       const vDescribeLbl = vDescribeEl?.querySelector('.deeper-field > label');
       const vDescribeArea = (areaMap[sp.key] || {}).label || sp.key;
       if (vDescribeLbl) vDescribeLbl.textContent = vYn === 'yes'
-        ? 'Describe what your 5/5 in ' + vDescribeArea + ' would look like.'
-        : 'Describe what you know about your 5/5 in ' + vDescribeArea + ' so far.';
+        ? 'Awesome. Describe what your 5/5 in ' + vDescribeArea + ' would look like.'
+        : 'Awesome. Describe what you know about your 5/5 in ' + vDescribeArea + ' so far.';
     }
     if (sp.qtype === 'vision-item-achievable') {
       const vYn = _deeperState['deeper_' + sp.key + '_vision_yn'];
@@ -2340,6 +2381,7 @@ function initDeeperStep() {
     }
   }
   window._deeperSubPageCount = allSubPages.length;
+  window._deeperSubPages = allSubPages;
   window._deeperSubPageIdx = 0;
   window._showDeeperSubPage = showDeeperSubPage;
   showDeeperSubPage(0);
@@ -2476,10 +2518,13 @@ function initDeeperStep() {
         setFormErr('Every action needs at least one reason before continuing.', container);
         return false;
       }
+    }
 
+    if (qtype === 'acts-values') {
+      const terminals = terminalWhyThreads(key);
       const decisions = _deeperState['deeper_' + key + '_acts_values_continue'] || {};
       if (terminals.some((t) => !decisions[t.id])) {
-        setFormErr('Please say whether you want to continue living by each value before continuing.', container);
+        setFormErr('Please say whether you want to continue living by each value before continuing.', document.getElementById('acts-values-' + key));
         return false;
       }
     }
@@ -2832,6 +2877,7 @@ function initFitSignalsStep() {
   });
 
   window._fitSubPageCount = questions.length;
+  window._fitQuestions = questions;
   window._fitSubPageIdx = 0;
 
   const fsSections = [
@@ -2936,8 +2982,124 @@ window.onStepChange = function(step) {
   if (btnNext) btnNext.textContent = step === 5 ? 'Get my results →' : 'Next →';
 };
 
+/* ---- Autosave / resume (local dev + protects visitors from an accidental
+   refresh mid-assessment) ---- */
+const ASSESSMENT_SAVE_KEY = 'assessmentProgress';
+// Bump this if the shape of a saved snapshot ever changes in a way older saves
+// can't fill in (rare) — restoreAssessmentProgress discards anything older.
+const ASSESSMENT_SAVE_SCHEMA = 2;
+
+function collectSaveSnapshot() {
+  const urgencyKeys = [...document.querySelectorAll('#urgent-hidden-inputs input[name^="urgency_"]')]
+    .map(i => i.name.replace(/^urgency_/, ''));
+  const focusKeys = [...document.querySelectorAll('#focus-hidden-inputs input')].map(i => i.value);
+  const step = window.getCurrentStep ? window.getCurrentStep() : 0;
+  let sub = -1, subKey = null, subQtype = null, subQid = null;
+  if (step === 0) {
+    sub = window._fulfillmentCardIndex || 0;
+  } else if (step === 3) {
+    // Identify the current sub-page by (area, question type), not raw position —
+    // the position shifts whenever a page gets added/removed/reordered, which
+    // would otherwise silently strand an old save on the wrong page after a
+    // content change (position stays "valid" as a number, just wrong).
+    sub = window._deeperSubPageIdx || 0;
+    const sp = (window._deeperSubPages || [])[sub];
+    if (sp) { subKey = sp.key; subQtype = sp.qtype; }
+  } else if (step === 4) {
+    sub = window._fitSubPageIdx || 0;
+    const q = (window._fitQuestions || [])[sub];
+    if (q) subQid = q.id;
+  }
+  return {
+    schema: ASSESSMENT_SAVE_SCHEMA,
+    step, sub, subKey, subQtype, subQid,
+    fulfillment: { ..._fulfillmentState },
+    urgencyKeys, focusKeys,
+    deeper: { ..._deeperState },
+    fs: { ..._fsState },
+  };
+}
+
+let _saveTimer = null;
+function saveAssessmentProgress() {
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(() => {
+    try {
+      const snap = collectSaveSnapshot();
+      if (snap.step === 0 && !Object.keys(snap.fulfillment).length) {
+        localStorage.removeItem(ASSESSMENT_SAVE_KEY);
+        return;
+      }
+      localStorage.setItem(ASSESSMENT_SAVE_KEY, JSON.stringify(snap));
+    } catch (_e) { /* storage unavailable — not fatal, just no resume */ }
+  }, 300);
+}
+
+// Any interaction anywhere in the form is a good reason to snapshot — cheaper
+// than instrumenting every single input individually.
+document.addEventListener('input', saveAssessmentProgress, true);
+document.addEventListener('click', saveAssessmentProgress, true);
+window.addEventListener('beforeunload', () => { clearTimeout(_saveTimer); saveAssessmentProgress(); });
+
+function restoreAssessmentProgress() {
+  let saved;
+  try { saved = JSON.parse(localStorage.getItem(ASSESSMENT_SAVE_KEY) || 'null'); } catch (_e) { saved = null; }
+  if (!saved || saved.schema !== ASSESSMENT_SAVE_SCHEMA) {
+    try { localStorage.removeItem(ASSESSMENT_SAVE_KEY); } catch (_e) { /* not fatal */ }
+    return false;
+  }
+
+  Object.assign(_fulfillmentState, saved.fulfillment || {});
+  Object.assign(_deeperState, saved.deeper || {});
+  Object.assign(_fsState, saved.fs || {});
+
+  const fulfillmentInputs = document.getElementById('fulfillment-inputs');
+  if (fulfillmentInputs) {
+    fulfillmentInputs.innerHTML = Object.entries(saved.fulfillment || {})
+      .map(([k, v]) => `<input type="hidden" name="fulfillment_${k}" value="${v}">`).join('');
+  }
+  const urgentHidden = document.getElementById('urgent-hidden-inputs');
+  if (urgentHidden) {
+    urgentHidden.innerHTML = (saved.urgencyKeys || []).map(k => `<input type="hidden" name="urgency_${k}" value="1">`).join('');
+  }
+  const focusHidden = document.getElementById('focus-hidden-inputs');
+  if (focusHidden) {
+    focusHidden.innerHTML = (saved.focusKeys || []).map(k => `<input type="hidden" name="focus_area" value="${k}">`).join('');
+  }
+
+  let resolvedSub = saved.sub;
+  if (saved.step === 3 && saved.subKey != null) {
+    if (window.initDeeperStep) window.initDeeperStep(); // builds window._deeperSubPages fresh
+    const list = window._deeperSubPages || [];
+    const foundIdx = list.findIndex((sp) => sp.key === saved.subKey && sp.qtype === saved.subQtype);
+    if (foundIdx >= 0) resolvedSub = foundIdx;
+  } else if (saved.step === 4 && saved.subQid != null) {
+    if (window.initFitSignalsStep) window.initFitSignalsStep(); // builds window._fitQuestions fresh
+    const list = window._fitQuestions || [];
+    const foundIdx = list.findIndex((q) => q.id === saved.subQid);
+    if (foundIdx >= 0) resolvedSub = foundIdx;
+  }
+
+  const step = saved.step || 0;
+  const hasSubFlow = (step === 0 || step === 3 || step === 4) && resolvedSub >= 0;
+  if (hasSubFlow) {
+    // A refresh collapses the whole in-session browser history down to
+    // whatever single entry we restore into — Back would then jump straight
+    // past every sub-page in this step to wherever the page was before the
+    // assessment started, instead of one page back. Rebuild an entry per
+    // sub-page up to this one (cheap — pure history-stack bookkeeping, no
+    // rendering) so Back can retrace them one at a time like normal.
+    for (let i = 0; i <= resolvedSub; i++) history.pushState({ step, sub: i }, '');
+    if (window._applyNavState) window._applyNavState({ step, sub: resolvedSub });
+    else if (window.gotoStep) window.gotoStep(step, resolvedSub);
+  } else if (window.gotoStep) {
+    window.gotoStep(step, resolvedSub);
+  }
+  return true;
+}
+
 // Initialize step 0 — showStep(0) ran before this script loaded
-initFulfillmentStep();
+if (!restoreAssessmentProgress()) initFulfillmentStep();
 
 /* ---- Submission ---- */
 // ---- Human-readable capture of every question + answer, for the notify email.
@@ -3033,11 +3195,18 @@ function captureDeeperFromDom() {
         const areaKey = reasonsMatch[1];
         const decisions = _deeperState['deeper_' + areaKey + '_acts_values_continue'] || {};
         terminalWhyThreads(areaKey).forEach(({ action, layers, value, id }) => {
-          const ans = decisions[id] === 'yes' ? 'Yes' : decisions[id] === 'no' ? 'No' : '(no answer given)';
-          rows.push([area ? `${area} — ${action}` : action, `${layers.join(' → ')} (continue living by this: ${ans})`]);
+          const opt = ACTS_VALUE_DECISION_OPTIONS.find((o) => o.v === decisions[id]);
+          const ans = opt ? opt.label : '(no answer given)';
+          rows.push([area ? `${area} — ${action}` : action, `${layers.join(' → ')} (${ans})`]);
         });
         return;
       }
+
+      // The "continue living by this?" decisions themselves are already folded
+      // into the acts-reasons rows above (by value id) — this page just collects
+      // them, so it has nothing new to add and would otherwise hit the same
+      // one-button-per-field problem the comment above describes.
+      if (/^deeper-sub-(.+)-acts-values$/.test(sp.id)) return;
 
       sp.querySelectorAll('.deeper-field').forEach((field) => {
         if (field.classList.contains('vision-actual-field')) return; // mandatory confirm checkbox — answer is always the same, not worth showing
@@ -3296,6 +3465,7 @@ window.submitAssessment = async function submitAssessment(form, submitButton) {
   // Readable question-by-question capture for the notify email (never fatal).
   try { answers.qa_summary = buildQaSummary(answers); } catch (_e) { /* summary is best-effort */ }
 
+  try { localStorage.removeItem(ASSESSMENT_SAVE_KEY); } catch (_e) { /* not fatal */ }
   if (window.stopStopwatch) window.stopStopwatch();
   renderTestingThankYou();
   document.getElementById("assessment-result")?.scrollIntoView({ behavior: "smooth", block: "start" });

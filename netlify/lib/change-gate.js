@@ -42,7 +42,7 @@ async function publishCommit(sha) {
 
 // ---- GitHub API (read the commit message + diff for the email) ------------
 async function github(path) {
-  const token = process.env.GITHUB_RW_PAT;
+  const token = process.env.DAN_GITHUB_TOKEN_WEBSITE_REPO;
   const res = await fetch(`https://api.github.com${path}`, {
     headers: {
       Accept: "application/vnd.github+json",

@@ -19,8 +19,11 @@ function splitRepoPath(p) {
 }
 
 function token() {
-  const t = process.env.GITHUB_RW_PAT || process.env.GITHUB_TOKEN;
-  if (!t) throw new Error("GITHUB_RW_PAT not set");
+  // Narrow key: it can reach THIS site's repos and nothing else. Deliberately no
+  // fallback to the old estate-wide key — a fallback is how a broad credential
+  // creeps back in silently.
+  const t = process.env.DAN_GITHUB_TOKEN_WEBSITE_REPO;
+  if (!t) throw new Error("DAN_GITHUB_TOKEN_WEBSITE_REPO not set");
   return t;
 }
 function headers() {

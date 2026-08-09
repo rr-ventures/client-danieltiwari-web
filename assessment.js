@@ -883,7 +883,7 @@ function renderActsWhyLadders(key) {
 // summary (buildQaSummary) so the two never drift out of sync with each other.
 const ACTS_VALUE_DECISION_OPTIONS = [
   { v: 'approve', label: 'I approve of both.' },
-  { v: 'approve-context', label: "I approve of the value but not of the action/inaction of how I was pursuing it." },
+  { v: 'approve-context', label: "I approve of the value but not of the action/inaction through which I was pursuing it." },
   { v: 'disapprove', label: "I don't approve of the value." },
 ];
 

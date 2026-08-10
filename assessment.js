@@ -918,6 +918,51 @@ function renderActsValuesReview(key) {
     const btns = document.createElement('div');
     btns.className = 'yn-btns';
     btns.style.flexWrap = 'wrap';
+
+    const followUp = document.createElement('div');
+    followUp.style.marginTop = '1rem';
+    followUp.style.textAlign = 'left';
+
+    const altKey     = 'deeper_' + key + '_acts_values_altvalues_' + t.id;
+    const reframeKey = 'deeper_' + key + '_acts_values_reframe_' + t.id;
+
+    function renderFollowUp() {
+      followUp.innerHTML = '';
+      const decision = decisions[t.id];
+      if (decision === 'disapprove') {
+        const wrap = document.createElement('div');
+        wrap.className = 'deeper-field';
+        const lbl = document.createElement('p');
+        lbl.className = 'list-hint';
+        lbl.textContent = "What would you rather prioritize instead of " + t.value + '?';
+        wrap.appendChild(lbl);
+        const listDiv = document.createElement('div');
+        listDiv.id = 'acts-values-alt-' + t.id;
+        listDiv.style.marginTop = '.5rem';
+        wrap.appendChild(listDiv);
+        followUp.appendChild(wrap);
+        renderSimpleBulletList(listDiv.id, altKey, "A value you'd rather prioritize…", null, _deeperState, 'One value per line — press "+ Add another" for the next.');
+      } else if (decision === 'approve-context') {
+        const wrap = document.createElement('div');
+        wrap.className = 'deeper-field';
+        const lbl = document.createElement('p');
+        lbl.className = 'list-hint';
+        lbl.textContent = 'How could you change this action/inaction without neglecting or suppressing ' + t.value + '?';
+        wrap.appendChild(lbl);
+        const ta = document.createElement('textarea');
+        ta.className = 'cause-input';
+        ta.name = reframeKey;
+        ta.style.cssText = 'width:100%;min-height:3.5rem;resize:vertical;box-sizing:border-box;margin-top:.5rem';
+        ta.value = _deeperState[reframeKey] || '';
+        ta.addEventListener('input', () => {
+          _deeperState[reframeKey] = ta.value;
+          if (window.clearFormError) window.clearFormError();
+        });
+        wrap.appendChild(ta);
+        followUp.appendChild(wrap);
+      }
+    }
+
     ACTS_VALUE_DECISION_OPTIONS.forEach(({ v, label: btnLabel }) => {
       const btn = document.createElement('button');
       btn.type = 'button';
@@ -929,11 +974,20 @@ function renderActsValuesReview(key) {
         decisions[t.id] = v;
         syncHidden();
         if (window.clearFormError) window.clearFormError();
+        renderFollowUp();
       });
       btns.appendChild(btn);
     });
     block.appendChild(btns);
+    block.appendChild(followUp);
     container.appendChild(block);
+    // Must run after the block above is attached to the live page — the
+    // "disapprove" branch looks up its list box by id (renderSimpleBulletList),
+    // which silently finds nothing and renders empty if that box isn't part of
+    // the real document yet. Rendering while still selected but the box
+    // undiscoverable was this exact bug for anyone landing back on an already-
+    // answered value (refresh, autosave restore, Back/Next).
+    renderFollowUp();
   });
 
   const hidden = document.createElement('input');
@@ -2527,6 +2581,22 @@ function initDeeperStep() {
         setFormErr('Please say whether you want to continue living by each value before continuing.', document.getElementById('acts-values-' + key));
         return false;
       }
+      const container = document.getElementById('acts-values-' + key);
+      for (const t of terminals) {
+        if (decisions[t.id] === 'disapprove') {
+          const alts = distinctNonBlank(_deeperState['deeper_' + key + '_acts_values_altvalues_' + t.id]);
+          if (!alts.length) {
+            setFormErr('Please add at least one value you\'d rather prioritize.', container);
+            return false;
+          }
+        } else if (decisions[t.id] === 'approve-context') {
+          const reframe = (_deeperState['deeper_' + key + '_acts_values_reframe_' + t.id] || '').trim();
+          if (!reframe) {
+            setFormErr('Please describe how you could change the action/inaction.', container);
+            return false;
+          }
+        }
+      }
     }
 
     if (qtype === 'vision-describe') {
@@ -3089,11 +3159,26 @@ function restoreAssessmentProgress() {
     // assessment started, instead of one page back. Rebuild an entry per
     // sub-page up to this one (cheap — pure history-stack bookkeeping, no
     // rendering) so Back can retrace them one at a time like normal.
-    for (let i = 0; i <= resolvedSub; i++) history.pushState({ step, sub: i }, '');
+    // The very first one REPLACES the current history entry rather than
+    // pushing on top of it — the inline bootstrap script at the top of this
+    // page already stamped the current entry as step 0 (Fulfillment) before
+    // it knew a restore was coming. Pushing on top of that stamp instead of
+    // overwriting it leaves a phantom "Fulfillment" entry one step behind
+    // wherever we actually land, so a single Back skips straight into it.
+    for (let i = 0; i <= resolvedSub; i++) {
+      if (i === 0) history.replaceState({ step, sub: i }, '');
+      else history.pushState({ step, sub: i }, '');
+    }
     if (window._applyNavState) window._applyNavState({ step, sub: resolvedSub });
     else if (window.gotoStep) window.gotoStep(step, resolvedSub);
-  } else if (window.gotoStep) {
-    window.gotoStep(step, resolvedSub);
+  } else {
+    // Same phantom-entry problem as above, one level simpler (no sub-page
+    // chain to rebuild) — overwrite the bootstrap's step-0 stamp instead of
+    // pushing past it.
+    const st = { step, sub: resolvedSub == null ? -1 : resolvedSub };
+    history.replaceState(st, '');
+    if (window._applyNavState) window._applyNavState(st);
+    else if (window.gotoStep) window.gotoStep(step, resolvedSub);
   }
   return true;
 }
@@ -3197,7 +3282,15 @@ function captureDeeperFromDom() {
         terminalWhyThreads(areaKey).forEach(({ action, layers, value, id }) => {
           const opt = ACTS_VALUE_DECISION_OPTIONS.find((o) => o.v === decisions[id]);
           const ans = opt ? opt.label : '(no answer given)';
-          rows.push([area ? `${area} — ${action}` : action, `${layers.join(' → ')} (${ans})`]);
+          let extra = '';
+          if (decisions[id] === 'disapprove') {
+            const alts = distinctNonBlank(_deeperState['deeper_' + areaKey + '_acts_values_altvalues_' + id]);
+            if (alts.length) extra = ` Would rather prioritize: ${alts.join(', ')}.`;
+          } else if (decisions[id] === 'approve-context') {
+            const reframe = (_deeperState['deeper_' + areaKey + '_acts_values_reframe_' + id] || '').trim();
+            if (reframe) extra = ` How they'd change the action/inaction: ${reframe}`;
+          }
+          rows.push([area ? `${area} — ${action}` : action, `${layers.join(' → ')} (${ans})${extra}`]);
         });
         return;
       }
@@ -3352,6 +3445,10 @@ function buildQaSummary(answers) {
   const scan = (state) => {
     Object.keys(state || {}).sort().forEach((k) => {
       if (SUPPRESSED_KEY_SUFFIXES.some((suffix) => k.endsWith(suffix))) return;
+      // Per-value follow-ups (id-suffixed, so endsWith above can't match them) —
+      // already folded into the Hidden Values rows above via buildQaSummary's
+      // acts-reasons handling, so a raw dump here would just duplicate them.
+      if (k.includes('_acts_values_altvalues_') || k.includes('_acts_values_reframe_')) return;
       const s = _fmtStateVal(state[k]);
       if (!s.trim() || shownNorm.has(norm(s))) return;
       extra.push([_prettyKey(k), s]);

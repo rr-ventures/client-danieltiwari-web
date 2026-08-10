@@ -659,7 +659,10 @@
         sections.forEach((s,i)=>s.classList.toggle('active',i===3));
         formNav.hidden=false;
         btnBack.hidden=false;
-        window._showDeeperSubPage&&window._showDeeperSubPage(st.sub);
+        if(window._showDeeperSubPage){
+          const dir=st.sub<(window._deeperSubPageIdx||0)?-1:1;
+          window._showDeeperSubPage(st.sub,dir);
+        }
       } else if(st.step===4&&st.sub>=0){
         current=4;
         if(!window._showFitSubPage&&window.initFitSignalsStep) window.initFitSignalsStep();

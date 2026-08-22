@@ -16,6 +16,30 @@
 const { commitChangeset } = require("../lib/repo-commit");
 const { changesetStore } = require("../lib/blobs");
 const { send, escapeHtml } = require("../lib/telegram");
+const { knockStore } = require("../lib/blobs");
+
+// WHERE THE ALERT GOES. Named in its own variable, falling back to Reece's id, and deliberately NOT
+// derived from DAN_TELEGRAM_USER_ID - that list is who may USE the bot, and adding to it or
+// reordering it must never redirect a security alert to a client.
+const KNOCK_ALERT_CHAT_ID = process.env.KNOCK_ALERT_CHAT_ID || "1956924282";
+
+async function tellReeceSomebodyKnocked({ userId, name }) {
+  const day = new Date().toISOString().slice(0, 10);
+  const key = `dant_agent_bot:${userId}`;
+  const store = knockStore();
+  let seen = null;
+  // A cold or unreachable store is not a reason to stay silent: on any read failure we fall through
+  // and tell him. Better a duplicate message than a missed one.
+  try { seen = await store.get(key, { type: "json" }); } catch (e) {}
+  if (seen && seen.lastTold === day) return;
+  try { await store.setJSON(key, { lastTold: day, name: name || null, lastSeen: new Date().toISOString() }); } catch (e) {}
+  await send(KNOCK_ALERT_CHAT_ID,
+    `\u{1F6AA} Somebody tried to use <b>@dant_agent_bot</b> (Dan's website bot) and was turned away.\n\n` +
+    `Their Telegram id: <code>${escapeHtml(String(userId))}</code>` +
+    (name ? `\nThey call themselves: ${escapeHtml(name)}` : "") +
+    `\n\nIf that is someone who should have it, tell an agent to add that id. ` +
+    `I will not mention this person again today.`);
+}
 
 const SITE = (process.env.URL || "https://danieltiwari.com").replace(/\/$/, "");
 
@@ -96,6 +120,10 @@ exports.handler = async (event) => {
     await send(chatId, gate.locked
       ? "Sorry, you're not authorised to edit Daniel's site."
       : `Not yet authorised. Your Telegram id is <b>${escapeHtml(from.id)}</b> — send it to Reece to switch this on.`);
+    // Reece 2026-08-22: he had no way of knowing anyone had ever tried one of his bots. The refusal
+    // above already worked; what was missing was being told. Told once per person per day, and never
+    // allowed to break the refusal itself.
+    await tellReeceSomebodyKnocked({ userId: from.id, name: from.first_name }).catch(() => {});
     return { statusCode: 200, body: "ok" };
   }
 

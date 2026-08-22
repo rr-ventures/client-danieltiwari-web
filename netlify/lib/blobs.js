@@ -92,4 +92,15 @@ function sessionStore() {
     : getStore("agent-sessions");
 }
 
-module.exports = { resultsStore, sessionStore, dripStore, subscribersStore, pendingEditsStore, changesetStore, threadStore, changeGateStore };
+// Refused strangers. One blob per bot+user id holding the last date Reece was told, so someone who
+// keeps messaging the bot cannot turn a locked door into a stream of notifications on his phone.
+// The refusal itself is never suppressed - only the telling.
+function knockStore() {
+  const siteID = process.env.BLOBS_SITE_ID;
+  const token = process.env.BLOBS_TOKEN;
+  return siteID && token
+    ? getStore({ name: "bot-knocks", siteID, token })
+    : getStore("bot-knocks");
+}
+
+module.exports = { resultsStore, sessionStore, dripStore, subscribersStore, pendingEditsStore, changesetStore, threadStore, changeGateStore, knockStore };

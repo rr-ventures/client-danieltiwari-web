@@ -882,7 +882,7 @@ function renderActsWhyLadders(key) {
 // Shared between the review page (renderActsValuesReview) and the notify-email
 // summary (buildQaSummary) so the two never drift out of sync with each other.
 const ACTS_VALUE_DECISION_OPTIONS = [
-  { v: 'approve', label: 'I approve of both.' },
+  { v: 'approve', label: 'I approve of both the value and the action.' },
   { v: 'approve-context', label: "I approve of the value but not of the action/inaction through which I was pursuing it." },
   { v: 'disapprove', label: "I don't approve of the value." },
 ];
@@ -2225,16 +2225,16 @@ function initDeeperStep() {
       `<div class="deeper-subpage" id="deeper-sub-${key}-acts-values" data-area="${label}" hidden>
         <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Your Hidden Values</h3>
         <div class="deeper-field">
-          <label>How would you like to proceed with both the value and the action/inaction with which you were pursuing it in the given context?</label>
+          <label>These values are at the root of how you are contributing to your situation.<br><br>Now that you are aware of what these values are, you have the opportunity to reflect on whether you, as the orchestrator of yourself and your life, consciously approve of these values and of the actions through which you are pursuing them.<br><br>In some cases, you may not approve of the value at all. In that case, the task later becomes replacing that value with a preferred one.<br><br>In other cases, you may approve of the value but not of the actions/inactions through which you are pursuing it. In that case, the task becomes respecting the energy provided by that value through a different and preferred action.<br><br>What is the case for your situation?</label>
           <div id="acts-values-${key}" style="margin-top:.9rem"></div>
         </div>
       </div>`,
       `<div class="deeper-subpage" id="deeper-sub-${key}-control" data-area="${label}" hidden>
         <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Acceptance</h3>
-        <div id="recap-causes-${key}-control" data-label="Why ${label} feels like a ${data.fulfillment}/5" class="recap-block" hidden></div>
-        <div id="recap-not-achievable-${key}" class="recap-block" style="margin-bottom:1.4rem" hidden></div>
         <div class="deeper-field yn-field" data-key="${key}" data-role="control">
-          <label>Is there anything about the above that you cannot change and must therefore accept?</label>
+          <label>That's it for now in regard to the parts of your situation that you are in control over.<br><br>Is there anything about the following that you cannot change and must therefore accept?</label>
+          <div id="recap-causes-${key}-control" data-label="Why ${label} feels like a ${data.fulfillment}/5" class="recap-block" hidden></div>
+          <div id="recap-not-achievable-${key}" class="recap-block" style="margin-bottom:1.4rem" hidden></div>
           <div class="yn-btns">
             <button type="button" class="yn-btn${controlYn === 'yes' ? ' selected' : ''}" data-val="yes">Yes</button>
             <button type="button" class="yn-btn${controlYn === 'no'  ? ' selected' : ''}" data-val="no">No</button>
@@ -2397,15 +2397,16 @@ function initDeeperStep() {
       const ynErr   = ynField?.querySelector('.yn-error');
       const ynLabel = ynField?.querySelector('label');
 
+      const controlIntro = 'That\'s it for now in regard to the parts of your situation that you are in control over.<br><br>';
       if (notAchievable.length) {
-        if (ynLabel) ynLabel.textContent = 'Based on the above, what realities must you accept?';
+        if (ynLabel) ynLabel.innerHTML = controlIntro + 'Based on the following, what realities must you accept?';
         if (ynBtns) ynBtns.hidden = true;
         if (ynErr)  ynErr.hidden  = true;
         if (ynField) ynField.dataset.noValidate = '1';
         _deeperState['deeper_' + key + '_control_yn'] = 'yes';
         if (expand) expand.hidden = false;
       } else {
-        if (ynLabel) ynLabel.textContent = 'Is there anything about the above that you cannot change and must therefore accept?';
+        if (ynLabel) ynLabel.innerHTML = controlIntro + 'Is there anything about the following that you cannot change and must therefore accept?';
         if (ynBtns) ynBtns.hidden = false;
         if (ynErr)  ynErr.hidden  = false;
         if (ynField) delete ynField.dataset.noValidate;

@@ -215,11 +215,11 @@
   .cause-list{display:flex;flex-direction:column;gap:.5rem;margin-top:0}
   .cause-item{display:flex;align-items:center;gap:.6rem}
   .cause-bullet{color:var(--muted);flex-shrink:0;font-size:.95rem;user-select:none}
-  .cause-input{flex:1;background:#fff;border:1px solid var(--hair);color:var(--ink);padding:.4rem 1rem;font-family:var(--body);font-size:.92rem;font-weight:300;border-radius:2px;outline:none;transition:border-color .2s}
-  .cause-input:focus{border-color:var(--accent)}
-  .cause-input::placeholder{color:var(--muted)}
-  .cause-remove{background:none;border:none;color:var(--hair);cursor:pointer;font-size:1.1rem;padding:.2rem .3rem;transition:color .2s;line-height:1;flex-shrink:0}
-  .cause-remove:hover{color:var(--ink)}
+  .cause-input,.desired-input{flex:1;background:#fff;border:1px solid var(--hair);color:var(--ink);padding:.4rem 1rem;font-family:var(--body);font-size:.92rem;font-weight:300;border-radius:2px;outline:none;transition:border-color .2s}
+  .cause-input:focus,.desired-input:focus{border-color:var(--accent)}
+  .cause-input::placeholder,.desired-input::placeholder{color:var(--muted)}
+  .cause-remove,.desired-remove{background:none;border:none;color:var(--hair);cursor:pointer;font-size:1.1rem;padding:.2rem .3rem;transition:color .2s;line-height:1;flex-shrink:0}
+  .cause-remove:hover,.desired-remove:hover{color:var(--ink)}
   .list-add-btn{background:none;border:none;font-family:var(--sc);font-size:.68rem;letter-spacing:.15em;color:var(--muted);cursor:pointer;padding:.1rem 0;transition:color .2s;display:block;text-align:left;align-self:flex-start}
   .list-add-btn:hover{color:var(--ink)}
   /* a separate reason for the same action carries real weight — this button needs to

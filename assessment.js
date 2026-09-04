@@ -1532,12 +1532,15 @@ function renderControlAttitude(key) {
   const feelingKey        = 'deeper_' + key + '_control_feeling';
   const feelingYnKey      = 'deeper_' + key + '_control_feeling_yn';
   const feelingConfirmKey = 'deeper_' + key + '_control_feeling_confirm';
+  const feelingDesiredKey = 'deeper_' + key + '_control_feeling_desired';
   if (typeof _deeperState[feelingKey] !== 'object' || !_deeperState[feelingKey]) _deeperState[feelingKey] = {};
   if (typeof _deeperState[feelingYnKey] !== 'object' || !_deeperState[feelingYnKey]) _deeperState[feelingYnKey] = {};
   if (typeof _deeperState[feelingConfirmKey] !== 'object' || !_deeperState[feelingConfirmKey]) _deeperState[feelingConfirmKey] = {};
+  if (typeof _deeperState[feelingDesiredKey] !== 'object' || !_deeperState[feelingDesiredKey]) _deeperState[feelingDesiredKey] = {};
   const feelings        = _deeperState[feelingKey];
   const feelingYn        = _deeperState[feelingYnKey];
   const feelingConfirm   = _deeperState[feelingConfirmKey];
+  const feelingDesired   = _deeperState[feelingDesiredKey];
 
   function syncHidden(stateKey, stateObj) {
     const h = container.querySelector('input[name="' + stateKey + '"]');
@@ -1604,8 +1607,10 @@ function renderControlAttitude(key) {
     const feelingList = feelings[item];
     if (!Array.isArray(feelingYn[item])) feelingYn[item] = [];
     if (!Array.isArray(feelingConfirm[item])) feelingConfirm[item] = [];
+    if (!Array.isArray(feelingDesired[item])) feelingDesired[item] = [];
     const feelingYnList      = feelingYn[item];
     const feelingConfirmList = feelingConfirm[item];
+    const feelingDesiredList = feelingDesired[item];
 
     const feelingListEl = document.createElement('div');
     feelingListEl.className = 'cause-list';
@@ -1619,8 +1624,10 @@ function renderControlAttitude(key) {
       feelingListEl.innerHTML = '';
       while (feelingYnList.length < feelingList.length) feelingYnList.push('');
       while (feelingConfirmList.length < feelingList.length) feelingConfirmList.push('');
+      while (feelingDesiredList.length < feelingList.length) feelingDesiredList.push('');
       feelingYnList.length = feelingList.length;
       feelingConfirmList.length = feelingList.length;
+      feelingDesiredList.length = feelingList.length;
 
       feelingList.forEach((val, i) => {
         const entryWrap = document.createElement('div');
@@ -1647,15 +1654,18 @@ function renderControlAttitude(key) {
           feelingList.splice(i, 1);
           feelingYnList.splice(i, 1);
           feelingConfirmList.splice(i, 1);
-          if (!feelingList.length) { feelingList.push(''); feelingYnList.push(''); feelingConfirmList.push(''); }
+          feelingDesiredList.splice(i, 1);
+          if (!feelingList.length) { feelingList.push(''); feelingYnList.push(''); feelingConfirmList.push(''); feelingDesiredList.push(''); }
           feelings[item] = feelingList;
           feelingYn[item] = feelingYnList;
           feelingConfirm[item] = feelingConfirmList;
+          feelingDesired[item] = feelingDesiredList;
           _deeperState[feelingKey] = feelings;
           buildFeelingRows();
           syncHidden(feelingKey, feelings);
           syncHidden(feelingYnKey, feelingYn);
           syncHidden(feelingConfirmKey, feelingConfirm);
+          syncHidden(feelingDesiredKey, feelingDesired);
         });
 
         // --- per-feeling "is this how you want to feel about it?" — styled to
@@ -1707,6 +1717,92 @@ function renderControlAttitude(key) {
         confirmWrap.appendChild(confirmCheckRow);
         confirmWrap.appendChild(confirmErr);
 
+        // --- follow-up when it's NOT how they want to feel: ask what they'd
+        // rather feel instead, in the same one-per-line bullet-list format as
+        // the feeling list above, so the answer isn't left as just "no" with
+        // nothing else.
+        if (!Array.isArray(feelingDesiredList[i]) || !feelingDesiredList[i].length) feelingDesiredList[i] = [''];
+        const desiredWrap = document.createElement('div');
+        desiredWrap.className = 'deeper-field';
+        desiredWrap.style.marginTop = '1.2rem';
+        desiredWrap.hidden = feelingYnList[i] !== 'no';
+        const desiredLbl = document.createElement('p');
+        desiredLbl.className = 'list-hint';
+        desiredLbl.textContent = 'How would you rather feel about it?';
+
+        const desiredListWrap = document.createElement('div');
+        const desiredListEl = document.createElement('div');
+        desiredListEl.className = 'cause-list';
+
+        function buildDesiredRows() {
+          const desiredList = feelingDesiredList[i];
+          desiredListEl.innerHTML = '';
+          desiredList.forEach((dval, di) => {
+            const dRow = document.createElement('div');
+            dRow.className = 'cause-item';
+            const dBullet = document.createElement('span');
+            dBullet.className = 'cause-bullet';
+            dBullet.textContent = '•';
+            const dInp = document.createElement('input');
+            dInp.type = 'text';
+            dInp.className = 'desired-input';
+            dInp.value = dval;
+            dInp.placeholder = 'e.g. At peace with it, accepting, calm, hopeful…';
+            const dRm = document.createElement('button');
+            dRm.type = 'button';
+            dRm.className = 'desired-remove';
+            dRm.textContent = '×';
+            dRm.hidden = desiredList.length === 1;
+            dRm.addEventListener('click', () => {
+              desiredList.splice(di, 1);
+              if (!desiredList.length) desiredList.push('');
+              feelingDesired[item] = feelingDesiredList;
+              _deeperState[feelingDesiredKey] = feelingDesired;
+              buildDesiredRows();
+              syncHidden(feelingDesiredKey, feelingDesired);
+            });
+            dInp.addEventListener('input', () => {
+              desiredList[di] = dInp.value;
+              feelingDesired[item] = feelingDesiredList;
+              _deeperState[feelingDesiredKey] = feelingDesired;
+              syncHidden(feelingDesiredKey, feelingDesired);
+              if (window.clearFormError) window.clearFormError();
+              desiredListEl.querySelectorAll('.desired-remove').forEach(b => { b.hidden = desiredList.length === 1; });
+            });
+            dInp.addEventListener('keydown', (e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+                desiredList.push('');
+                buildDesiredRows();
+                const dInputs = desiredListEl.querySelectorAll('.desired-input');
+                if (dInputs.length) dInputs[dInputs.length - 1].focus();
+              }
+            });
+            dRow.appendChild(dBullet); dRow.appendChild(dInp); dRow.appendChild(dRm);
+            desiredListEl.appendChild(dRow);
+          });
+        }
+        buildDesiredRows();
+
+        const desiredAddBtn = document.createElement('button');
+        desiredAddBtn.type = 'button';
+        desiredAddBtn.className = 'list-add-btn';
+        desiredAddBtn.textContent = '+ Add another';
+        desiredAddBtn.addEventListener('click', () => {
+          feelingDesiredList[i].push('');
+          buildDesiredRows();
+          const dInputs = desiredListEl.querySelectorAll('.desired-input');
+          if (dInputs.length) dInputs[dInputs.length - 1].focus();
+        });
+
+        desiredListWrap.appendChild(createListHint(FEELING_LIST_HINT));
+        desiredListWrap.appendChild(desiredListEl);
+        desiredListWrap.appendChild(wrapListAddBtn(desiredAddBtn));
+
+        desiredWrap.appendChild(desiredLbl);
+        desiredWrap.appendChild(desiredListWrap);
+
         ['yes', 'no'].forEach(val2 => {
           const btn = document.createElement('button');
           btn.type = 'button';
@@ -1727,6 +1823,14 @@ function renderControlAttitude(key) {
               syncHidden(feelingConfirmKey, feelingConfirm);
               confirmInput.checked = false;
             }
+            desiredWrap.hidden = val2 !== 'no';
+            if (val2 !== 'no' && distinctNonBlank(feelingDesiredList[i]).length) {
+              feelingDesiredList[i] = [''];
+              feelingDesired[item] = feelingDesiredList;
+              _deeperState[feelingDesiredKey] = feelingDesired;
+              syncHidden(feelingDesiredKey, feelingDesired);
+              buildDesiredRows();
+            }
             if (window.clearFormError) window.clearFormError();
           });
           btns.appendChild(btn);
@@ -1745,7 +1849,7 @@ function renderControlAttitude(key) {
           if (window.clearFormError) window.clearFormError();
           feelingListEl.querySelectorAll('.cause-remove').forEach(b => { b.hidden = feelingList.length === 1; });
           ynRow.hidden = !inp.value.trim();
-          if (!inp.value.trim()) confirmWrap.hidden = true;
+          if (!inp.value.trim()) { confirmWrap.hidden = true; desiredWrap.hidden = true; }
         });
         inp.addEventListener('blur', () => { refreshAllFeelingSuggestions(); });
         inp.addEventListener('keydown', (e) => {
@@ -1755,6 +1859,7 @@ function renderControlAttitude(key) {
             feelingList.push('');
             feelingYnList.push('');
             feelingConfirmList.push('');
+            feelingDesiredList.push('');
             buildFeelingRows();
             const inputs = feelingListEl.querySelectorAll('.cause-input');
             if (inputs.length) inputs[inputs.length - 1].focus();
@@ -1765,6 +1870,7 @@ function renderControlAttitude(key) {
         entryWrap.appendChild(row);
         entryWrap.appendChild(ynRow);
         entryWrap.appendChild(confirmWrap);
+        entryWrap.appendChild(desiredWrap);
         feelingListEl.appendChild(entryWrap);
       });
     }
@@ -1838,6 +1944,9 @@ function renderControlAttitude(key) {
   const h3 = document.createElement('input');
   h3.type = 'hidden'; h3.name = feelingConfirmKey; h3.value = JSON.stringify(feelingConfirm);
   container.appendChild(h3);
+  const h4 = document.createElement('input');
+  h4.type = 'hidden'; h4.name = feelingDesiredKey; h4.value = JSON.stringify(feelingDesired);
+  container.appendChild(h4);
 }
 
 function renderVisionItemAchievable(key) {
@@ -2247,7 +2356,7 @@ function initDeeperStep() {
       </div>`,
       `<div class="deeper-subpage" id="deeper-sub-${key}-control-attitude" data-area="${label}" hidden>
         <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Acceptance</h3>
-        <div class="deeper-field" style="margin-bottom:1.4rem"><label>How do you feel about the following?</label></div>
+        <div class="deeper-field" style="margin-bottom:1.4rem"><label>Although you may not be able to control these aspects of your situation directly, you can still impact your resulting experience through your internal interpretation of and attitude towards them.<br><br>We&rsquo;ll start by assessing how you currently feel.<br><br>It&rsquo;s important you are honest with yourself here. Don&rsquo;t try to feel better or worse than you actually do. Also, we may have multiple, even conflicting feelings towards one and the same situation. Don&rsquo;t disregard or neglect anything.<br><br>How do you feel about the following?</label></div>
         <div id="control-attitude-${key}"></div>
       </div>`,
     ];
@@ -2515,6 +2624,7 @@ function initDeeperStep() {
       const feelings        = _deeperState['deeper_' + key + '_control_feeling'] || {};
       const feelingYn       = _deeperState['deeper_' + key + '_control_feeling_yn'] || {};
       const feelingConfirm  = _deeperState['deeper_' + key + '_control_feeling_confirm'] || {};
+      const feelingDesired  = _deeperState['deeper_' + key + '_control_feeling_desired'] || {};
       const attEl = document.getElementById('control-attitude-' + key);
       const itemBlock = (it) => [...(attEl?.querySelectorAll('.deeper-block') || [])].find(b => b.dataset.item === it) || attEl;
       for (const item of filledItems) {
@@ -2527,6 +2637,7 @@ function initDeeperStep() {
         }
         const ynList      = Array.isArray(feelingYn[item]) ? feelingYn[item] : [];
         const confirmList = Array.isArray(feelingConfirm[item]) ? feelingConfirm[item] : [];
+        const desiredList = Array.isArray(feelingDesired[item]) ? feelingDesired[item] : [];
         for (const i of nonBlankIdx) {
           if (!ynList[i]) {
             setFormErr('Please answer whether this is how you want to feel about each one before continuing.', itemBlock(item));
@@ -2534,6 +2645,10 @@ function initDeeperStep() {
           }
           if (ynList[i] === 'yes' && confirmList[i] !== 'yes') {
             setFormErr('Please confirm before continuing.', itemBlock(item));
+            return false;
+          }
+          if (ynList[i] === 'no' && !distinctNonBlank(desiredList[i]).length) {
+            setFormErr('Please describe how you would rather feel about it before continuing.', itemBlock(item));
             return false;
           }
         }
@@ -2668,9 +2783,11 @@ function initFitSignalsStep() {
 
   const questions = [
     { id: 'q2', type: 'singleselect', headline: 'Readiness', title: 'Capacity',
-      label: 'Assuming you were fully committed to the changes you want to create: Do you feel like you have the mental and emotional capacity to tackle your challenges and create change right now?',
+      label: 'Assuming you were fully committed to the changes you say you want to create: Do you feel like you have the mental and emotional capacity to tackle your challenges and create change right now?',
       options: ['Yes, whatever it takes', 'Yes, but I need to go easy on myself', "No, I'm exhausted"],
-      followup: { triggerValue: "No, I'm exhausted", label: 'What do you think you need right now?', stateKey: 'fs_q2_needs' } },
+      followup: { triggerValue: "No, I'm exhausted", label: 'What do you think would help you the most right now?', stateKey: 'fs_q2_needs' } },
+    { id: 'q2intro', type: 'info', headline: 'Before we continue',
+      label: 'Now we just have a few questions for me to better understand the situation you’re in so that I can provide the most value possible.' },
     { id: 'q3', type: 'multiselect', headline: 'Inner state', title: 'Symptoms',
       label: 'Do you struggle with any of these on a regular basis?',
       options: ['General Anxiety', 'Social Anxiety', 'Depression', 'PTSD', 'Apathy', 'Anger or resentment', 'Frustration or pressure', 'Meaninglessness', 'Panic attacks', 'Hypochondria', 'Insomnia', 'Other', 'None'],
@@ -2709,11 +2826,13 @@ function initFitSignalsStep() {
 
     page.dataset.area = q.headline;
 
-    const qTitle = document.createElement('h3');
-    qTitle.className = 'deeper-page-title';
-    qTitle.style.cssText = 'font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem';
-    qTitle.textContent = q.title;
-    page.appendChild(qTitle);
+    if (q.title) {
+      const qTitle = document.createElement('h3');
+      qTitle.className = 'deeper-page-title';
+      qTitle.style.cssText = 'font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem';
+      qTitle.textContent = q.title;
+      page.appendChild(qTitle);
+    }
 
     const qlbl = document.createElement('p');
     qlbl.className = 'fulfillment-area-desc';
@@ -3191,7 +3310,7 @@ if (!restoreAssessmentProgress()) initFulfillmentStep();
 // ---- Human-readable capture of every question + answer, for the notify email.
 // Labels mirror the fit-signals `questions` array in initFitSignalsStep; keep in sync.
 const FIT_LABELS = {
-  q2: 'Assuming you were fully committed to the changes you want to create: Do you feel like you have the mental and emotional capacity to tackle your challenges and create change right now?',
+  q2: 'Assuming you were fully committed to the changes you say you want to create: Do you feel like you have the mental and emotional capacity to tackle your challenges and create change right now?',
   q3: 'Do you struggle with any of these on a regular basis?',
   q4: 'Do you struggle with any addictions or compulsive habits?',
   q5l: 'Which of the following do you struggle to maintain consistently?',
@@ -3257,14 +3376,18 @@ function captureDeeperFromDom() {
         const items = distinctNonBlank(_deeperState['deeper_' + areaKey + '_control_items']);
         const feelings = _deeperState['deeper_' + areaKey + '_control_feeling'] || {};
         const feelingYn = _deeperState['deeper_' + areaKey + '_control_feeling_yn'] || {};
+        const feelingDesired = _deeperState['deeper_' + areaKey + '_control_feeling_desired'] || {};
         items.forEach((item) => {
           const feelingList = Array.isArray(feelings[item]) ? feelings[item] : (feelings[item] ? [feelings[item]] : []);
           const ynList = Array.isArray(feelingYn[item]) ? feelingYn[item] : [];
+          const desiredList = Array.isArray(feelingDesired[item]) ? feelingDesired[item] : [];
           feelingList.forEach((f, i) => {
             const feeling = (f || '').trim();
             if (!feeling) return;
             const wantsToFeel = ynList[i] === 'yes' ? 'Yes' : ynList[i] === 'no' ? 'No' : '';
-            const a = wantsToFeel ? `Feels: ${feeling}. Wants to feel this way: ${wantsToFeel}.` : `Feels: ${feeling}.`;
+            let a = wantsToFeel ? `Feels: ${feeling}. Wants to feel this way: ${wantsToFeel}.` : `Feels: ${feeling}.`;
+            const desired = distinctNonBlank(desiredList[i]);
+            if (ynList[i] === 'no' && desired.length) a += ` Would rather feel: ${desired.join(', ')}.`;
             rows.push([area ? `${area} — ${item}` : item, a]);
           });
         });
@@ -3440,7 +3563,7 @@ function buildQaSummary(answers) {
     '_confirm', '_confirm_shown',
     '_vision_item_achievable', '_vision_achievable_check', '_vision_items',
     '_why_threads', '_acts_values_continue', '_omits_groups',
-    '_control_feeling',
+    '_control_feeling', '_control_feeling_desired',
   ];
   const extra = [];
   const scan = (state) => {

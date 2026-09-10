@@ -206,7 +206,9 @@
   .deeper-field textarea::placeholder{color:var(--muted)}
   .yn-expand{border-left:2px solid var(--hair);padding-left:1.2rem;margin-top:.2rem}
   .yn-btns{display:flex;gap:.6rem;margin-top:.4rem;justify-content:center}
+  .yn-btns.yn-btns-stack{flex-direction:column;align-items:stretch;max-width:26rem;margin-left:auto;margin-right:auto}
   .yn-btn{padding:.55rem 1.8rem;border:1px solid var(--hair);border-radius:2px;background:transparent;font-family:var(--sc);font-size:.75rem;letter-spacing:.15em;color:var(--ink);cursor:pointer;transition:background .15s,border-color .15s,color .15s}
+  .yn-btns-stack .yn-btn{text-align:center}
   .yn-btn:hover{border-color:var(--accent)}
   .yn-btn.selected{background:var(--ink);color:var(--bg);border-color:var(--ink)}
   .yn-error{display:none;font-family:var(--sc);font-size:.68rem;letter-spacing:.15em;color:#c0392b;margin-top:.5rem}

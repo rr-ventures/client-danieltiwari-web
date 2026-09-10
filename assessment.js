@@ -2782,12 +2782,12 @@ function initFitSignalsStep() {
   if (!container) return;
 
   const questions = [
+    { id: 'q2intro', type: 'info', headline: 'Before we continue',
+      label: 'Now we just have a few questions for me to better understand the situation you’re in so that I can provide the most value possible.' },
     { id: 'q2', type: 'singleselect', headline: 'Readiness', title: 'Capacity',
       label: 'Assuming you were fully committed to the changes you say you want to create: Do you feel like you have the mental and emotional capacity to tackle your challenges and create change right now?',
       options: ['Yes, whatever it takes', 'Yes, but I need to go easy on myself', "No, I'm exhausted"],
       followup: { triggerValue: "No, I'm exhausted", label: 'What do you think would help you the most right now?', stateKey: 'fs_q2_needs' } },
-    { id: 'q2intro', type: 'info', headline: 'Before we continue',
-      label: 'Now we just have a few questions for me to better understand the situation you’re in so that I can provide the most value possible.' },
     { id: 'q3', type: 'multiselect', headline: 'Inner state', title: 'Symptoms',
       label: 'Do you struggle with any of these on a regular basis?',
       options: ['General Anxiety', 'Social Anxiety', 'Depression', 'PTSD', 'Apathy', 'Anger or resentment', 'Frustration or pressure', 'Meaninglessness', 'Panic attacks', 'Hypochondria', 'Insomnia', 'Other', 'None'],
@@ -2805,9 +2805,9 @@ function initFitSignalsStep() {
       low: "Can't think of anything worse", high: "It's exactly what I want" },
     { id: 'q6', type: 'track-record', headline: 'Track record', title: 'Attempts',
       label: 'What have you tried in the past to deal with your situation(s)?' },
-    { id: 'q7', type: 'singleselect', headline: 'The stakes', title: 'Commitment',
+    { id: 'q7', type: 'singleselect', headline: 'The stakes', title: 'Commitment', stack: true,
       label: 'If your life looks exactly the same in 3 years from now, how would you feel?',
-      options: ["I wouldn't mind", "Disappointing, but I'd manage", "Like I'd wasted something important", "Unacceptable — it cannot happen"] },
+      options: ['Genuinely happy, this is the life I want', "Fine, I wouldn't mind", "Frustrated, I know I'm capable of more than this", "Unacceptable, it cannot happen"] },
     { id: 'q9', type: 'singleselect', headline: 'Coaching Ambitions', title: 'Coaching Ambitions',
       label: 'Are you or do you have any ambitions of working as a coach yourself?',
       options: ['Yes', 'Maybe', 'No'] },
@@ -2914,7 +2914,7 @@ function initFitSignalsStep() {
 
     if (q.type === 'singleselect') {
       const btns = document.createElement('div');
-      btns.className = 'yn-btns';
+      btns.className = 'yn-btns' + (q.stack ? ' yn-btns-stack' : '');
       btns.style.flexWrap = 'wrap';
 
       let followupEl = null;

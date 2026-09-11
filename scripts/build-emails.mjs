@@ -23,6 +23,7 @@ const ALLOWED_TOKENS = new Set(["[MAP]", "[BOOK]"]);
 const errors = [];
 
 function parseFrontmatter(raw, file) {
+  raw = raw.replace(/\r\n/g, "\n"); // tolerate Windows-saved files (CRLF) alongside LF
   const m = raw.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
   if (!m) { errors.push(`${file}: missing or malformed frontmatter`); return null; }
   const fm = {};

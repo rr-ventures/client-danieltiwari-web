@@ -159,6 +159,15 @@ function notifyEmailHtml(answers, result) {
   `;
 }
 
+// The browser stores a skipped question as the raw sentinel "prefer_not_to_answer"
+// (in a standalone field, or embedded inside a composed string like a hidden-values
+// chain) — swap it for readable text before it reaches Daniel's inbox. Substring
+// replace on purpose so an embedded occurrence gets caught too, not just an exact match.
+function humanizePreferNot(val) {
+  if (Array.isArray(val)) return val.map(humanizePreferNot);
+  return typeof val === "string" ? val.replaceAll("prefer_not_to_answer", "(prefer not to answer)") : val;
+}
+
 // Dead-simple, human-readable "Question / Answer" list. Every question is numbered,
 // shown in full, with the person's answer clearly labelled right beneath it. `qa` is
 // the answers.qa_summary array the browser sends; empty/absent falls back to raw.
@@ -169,8 +178,9 @@ function qaSummaryHtml(qa) {
     .map((g) => {
       const parentNum = g.subNumbered ? (n += 1) : null;
       const items = (g.rows || [])
-        .map(([q, a], i) => {
+        .map(([q, rawA], i) => {
           const num = parentNum !== null ? `${parentNum}.${i + 1}` : (n += 1);
+          const a = humanizePreferNot(rawA);
           const answerHtml = Array.isArray(a)
             ? `<ul style="margin:4px 0 0;padding-left:20px">${a.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`
             : `<span style="color:#8a857a">Answer:</span> ${escapeHtml(a)}`;

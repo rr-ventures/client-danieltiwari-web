@@ -5,6 +5,44 @@
    initialization, one-at-a-time fulfillment, and submission.
    ============================================================ */
 
+// Sentinel value stored in place of a real answer when someone uses the
+// low-key "prefer not to answer" option. Every reader downstream (scoring,
+// the notify email, the PDF) just needs to treat this as ordinary text —
+// numeric readers already fall back safely on non-numeric input (see
+// `numeric()` in assessment-core.js and the getWheelValues fix below).
+const PREFER_NOT_VALUE = 'prefer_not_to_answer';
+
+// A small, low-contrast "prefer not to answer" link meant to read as an
+// afterthought below a question's real options, not a real answer choice —
+// Daniel wants it present but not inviting. `onPick` should record the
+// sentinel into that question's own state/hidden-input mechanism and clear
+// its validation error. `advance`, when given, is called right after —
+// per Daniel's instruction, clicking skip should immediately move forward
+// to the next page/sub-page, the same as if a real answer had been given
+// and Next clicked. Pass the real Next-button's own click handler (or
+// equivalent) so the exact same validation/routing logic runs.
+function createPreferSkipLink(onPick, advance) {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'prefer-skip';
+  btn.textContent = 'prefer not to answer';
+  btn.addEventListener('click', () => {
+    onPick();
+    btn.textContent = 'skipped';
+    btn.classList.add('picked');
+    if (advance) advance();
+  });
+  return btn;
+}
+// Resets a skip link's picked-state back to normal — call this when a real
+// answer is chosen for the same question, so the two controls never show
+// conflicting state at once.
+function resetPreferSkip(link) {
+  if (!link) return;
+  link.textContent = 'prefer not to answer';
+  link.classList.remove('picked');
+}
+
 const CAUSE_LIST_HINT = 'One reason per line — press "+ Add another" for the next.';
 const VISION_LIST_HINT = 'One part of your vision per line — press "+ Add another" for the next.';
 const CONTROL_LIST_HINT = 'One thing outside your control per line — press "+ Add another" for the next.';
@@ -84,7 +122,10 @@ function updateRangeOutput(input) {
 function getWheelValues() {
   return AREAS.map(([key, label]) => ({
     key, label,
-    fulfillment: parseInt(document.querySelector(`input[name="fulfillment_${key}"]`)?.value || 5),
+    // `numeric()` (assessment-core.js) falls back cleanly when the stored
+    // value is the "prefer not to answer" sentinel instead of a number —
+    // plain parseInt would silently produce NaN and corrupt area ranking.
+    fulfillment: numeric(document.querySelector(`input[name="fulfillment_${key}"]`)?.value, 5),
     urgency: document.querySelector(`input[name="urgency_${key}"]`) ? 1 : 0,
   }));
 }
@@ -104,6 +145,7 @@ function renderFulfillmentCard(index, savedVal = null) {
       ${[1,2,3,4,5].map(n => `<button type="button" class="number-btn" data-val="${n}">${n}</button>`).join("")}
     </div>
     <div class="scale-legend-card"><span>Terrible</span><span>Bad</span><span>Ok</span><span>Good</span><span>Awesome</span></div>
+    <div id="fulfillment-skip-wrap" style="text-align:center"></div>
     <p class="area-counter sc">${index + 1} / ${AREAS.length}</p>
     <div class="fulfillment-nav">
       <p class="fulfillment-error">Please select a number first.</p>
@@ -118,9 +160,18 @@ function renderFulfillmentCard(index, savedVal = null) {
   // this too early left it tagging notes with the previous area's name.
   if (window.updateAssessmentProgress) window.updateAssessmentProgress();
   let selected = savedVal;
-  if (savedVal) {
+  if (savedVal && savedVal !== PREFER_NOT_VALUE) {
     card.querySelector(`.number-btn[data-val="${savedVal}"]`)?.classList.add("selected");
   }
+  const skipLink = createPreferSkipLink(() => {
+    card.querySelectorAll(".number-btn").forEach(b => b.classList.remove("selected"));
+    selected = PREFER_NOT_VALUE;
+    _fulfillmentState[key] = selected;
+    card.querySelector(".fulfillment-error").classList.remove("visible");
+  }, () => card.querySelector(".fulfillment-next-btn")?.click());
+  skipLink.style.textAlign = 'center';
+  card.querySelector("#fulfillment-skip-wrap").appendChild(skipLink);
+  if (savedVal === PREFER_NOT_VALUE) { skipLink.textContent = 'skipped'; skipLink.classList.add('picked'); }
   card.querySelectorAll(".number-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       card.querySelectorAll(".number-btn").forEach(b => b.classList.remove("selected"));
@@ -128,6 +179,7 @@ function renderFulfillmentCard(index, savedVal = null) {
       selected = btn.dataset.val;
       _fulfillmentState[key] = selected;
       card.querySelector(".fulfillment-error").classList.remove("visible");
+      resetPreferSkip(skipLink);
     });
   });
 
@@ -232,14 +284,19 @@ function initSpilloverStep() {
 /* ---- Step 2: Urgency flag ---- */
 function initUrgencyFlagStep() {
   const MAX_URGENT = 3;
+  const PREFER_NOT_URGENCY_NAME = 'urgency_' + PREFER_NOT_VALUE;
 
   const urgent = new Set(
     [...document.querySelectorAll('#urgent-hidden-inputs input[name^="urgency_"]')]
       .map(i => i.name.replace(/^urgency_/, ''))
+      .filter(k => k !== PREFER_NOT_VALUE)
   );
+  let preferNotUrgency = !urgent.size &&
+    !!document.querySelector(`#urgent-hidden-inputs input[name="${PREFER_NOT_URGENCY_NAME}"]`);
 
   function updateUrgentInputs() {
     const inputs = [...urgent].map(key => `<input type="hidden" name="urgency_${key}" value="1">`);
+    if (!urgent.size && preferNotUrgency) inputs.push(`<input type="hidden" name="${PREFER_NOT_URGENCY_NAME}" value="1">`);
     document.getElementById('urgent-hidden-inputs').innerHTML = inputs.join('');
     if (window.clearFormError) window.clearFormError();
   }
@@ -264,6 +321,7 @@ function initUrgencyFlagStep() {
     container.querySelectorAll(".rec-item").forEach(item => {
       item.addEventListener("click", () => {
         const key = item.dataset.key;
+        preferNotUrgency = false;
         if (urgent.has(key)) {
           urgent.delete(key);
         } else if (urgent.size < MAX_URGENT) {
@@ -273,6 +331,19 @@ function initUrgencyFlagStep() {
         renderUrgent();
       });
     });
+
+    const skipWrap = document.createElement('div');
+    skipWrap.style.cssText = 'text-align:center;margin-top:1.4rem';
+    const skipLink = createPreferSkipLink(() => {
+      preferNotUrgency = true;
+      urgent.clear();
+      updateUrgentInputs();
+      renderUrgent();
+    }, () => document.getElementById('btn-next')?.click());
+    if (preferNotUrgency) { skipLink.textContent = 'skipped'; skipLink.classList.add('picked'); }
+    skipLink.style.textAlign = 'center';
+    skipWrap.appendChild(skipLink);
+    container.appendChild(skipWrap);
 
     updateUrgentInputs();
   }
@@ -416,6 +487,13 @@ function renderCauseList(key) {
     const listErr = document.createElement('p');
     listErr.className = 'yn-error list-error';
     container.appendChild(listErr);
+    container.appendChild(wrapListAddBtn(createPreferSkipLink(() => {
+      causes.length = 0;
+      causes.push(PREFER_NOT_VALUE);
+      _deeperState['deeper_' + key + '_causes'] = causes;
+      build();
+      syncAndUpdate();
+    }, () => document.getElementById('btn-next')?.click())));
   }
   build();
 }
@@ -744,6 +822,21 @@ function renderActsWhyLadders(key) {
       }
       nodeEl.appendChild(row);
 
+      // Only the very first "why" prompt for an action gets a skip link —
+      // once someone's already digging deeper on a reason, every nested
+      // "does that matter to you?" layer is optional already (they can say
+      // "this is the final value" any time), so a skip at every depth would
+      // be redundant clutter, not a real second exit.
+      if (isRoot) {
+        const rootSkip = createPreferSkipLink(() => {
+          node.text = PREFER_NOT_VALUE;
+          node.terminal = true;
+          syncThreadsHidden();
+          build();
+        }, () => document.getElementById('btn-next')?.click());
+        nodeEl.appendChild(indentPastBullet(rootSkip, 'indent-row-center'));
+      }
+
       const tailWrap = document.createElement('div');
       let tailSignature = null;
 
@@ -960,6 +1053,13 @@ function renderActsValuesReview(key) {
         });
         wrap.appendChild(ta);
         followUp.appendChild(wrap);
+
+        const reframeSkip = createPreferSkipLink(() => {
+          ta.value = PREFER_NOT_VALUE;
+          _deeperState[reframeKey] = PREFER_NOT_VALUE;
+          if (window.clearFormError) window.clearFormError();
+        }, () => document.getElementById('btn-next')?.click());
+        wrap.appendChild(reframeSkip);
       }
     }
 
@@ -975,10 +1075,20 @@ function renderActsValuesReview(key) {
         syncHidden();
         if (window.clearFormError) window.clearFormError();
         renderFollowUp();
+        resetPreferSkip(valueSkip);
       });
       btns.appendChild(btn);
     });
     block.appendChild(btns);
+    const valueSkip = createPreferSkipLink(() => {
+      btns.querySelectorAll('.yn-btn').forEach(b => b.classList.remove('selected'));
+      decisions[t.id] = PREFER_NOT_VALUE;
+      syncHidden();
+      if (window.clearFormError) window.clearFormError();
+      renderFollowUp();
+    }, () => document.getElementById('btn-next')?.click());
+    valueSkip.style.textAlign = 'center';
+    block.appendChild(valueSkip);
     block.appendChild(followUp);
     container.appendChild(block);
     // Must run after the block above is attached to the live page — the
@@ -1101,6 +1211,22 @@ function renderSimpleBulletList(containerId, stateKey, placeholder, nothingState
       nothingWrap.appendChild(cb);
       nothingWrap.appendChild(lbl);
       container.appendChild(nothingWrap);
+    }
+    if (!isNothing) {
+      // The acts-list page (acts_raw_items) has its own mandatory "before you
+      // continue" reflection checkbox, separate from whether this list has
+      // content — clicking skip has to satisfy that gate too, or Next would
+      // pop that modal instead of moving forward.
+      const actsConfirmKey = stateKey.endsWith('_acts_raw_items')
+        ? stateKey.replace('_acts_raw_items', '_acts_confirm') : null;
+      container.appendChild(wrapListAddBtn(createPreferSkipLink(() => {
+        if (nothingStateKey) state[nothingStateKey] = false;
+        items.length = 0;
+        items.push(PREFER_NOT_VALUE);
+        state[stateKey] = items;
+        if (actsConfirmKey) state[actsConfirmKey] = true;
+        build();
+      }, () => document.getElementById('btn-next')?.click())));
     }
   }
 
@@ -1249,6 +1375,14 @@ function renderTrackRecordList(containerId) {
     nothingWrap.appendChild(nothingCb);
     nothingWrap.appendChild(nothingLbl);
     container.appendChild(nothingWrap);
+
+    if (!isNothing) {
+      container.appendChild(createPreferSkipLink(() => {
+        _fsState['fs_q6_nothing'] = false;
+        _fsState['fs_q6_items'] = [{ what: PREFER_NOT_VALUE, howWell: 5, why: PREFER_NOT_VALUE }];
+        build();
+      }, () => document.getElementById('btn-next')?.click()));
+    }
   }
 
   build();
@@ -1428,6 +1562,19 @@ function renderVisionList(key) {
     const listErr = document.createElement('p');
     listErr.className = 'yn-error list-error';
     container.appendChild(listErr);
+    container.appendChild(wrapListAddBtn(createPreferSkipLink(() => {
+      items.length = 0;
+      items.push(PREFER_NOT_VALUE);
+      _deeperState['deeper_' + key + '_vision_items'] = items;
+      build();
+      // No real vision was given, so there's nothing to confirm "I genuinely
+      // want these" about — keep that reveal hidden rather than forcing a
+      // confirm click on a sentinel value. This also naturally cascades: every
+      // later vision sub-page (achievable/revise/commitment) gates on this
+      // confirm being 'yes', so they self-skip once it never fires.
+      if (valuesReveal) valuesReveal.hidden = true;
+      uncheck();
+    }, () => document.getElementById('btn-next')?.click())));
   }
 
   build();
@@ -1517,6 +1664,13 @@ function renderControlList(key) {
     const listErr = document.createElement('p');
     listErr.className = 'yn-error list-error';
     container.appendChild(listErr);
+    container.appendChild(wrapListAddBtn(createPreferSkipLink(() => {
+      items.length = 0;
+      items.push(PREFER_NOT_VALUE);
+      _deeperState['deeper_' + key + '_control_items'] = items;
+      build();
+      syncAndUpdate();
+    }, () => document.getElementById('btn-next')?.click())));
   }
   build();
 }
@@ -1888,6 +2042,32 @@ function renderControlAttitude(key) {
     });
     feelingListWrap.appendChild(wrapListAddBtn(feelingAddBtn));
 
+    // One skip per circumstance, covering both the feeling text AND the
+    // "is this how you want to feel about it?" follow-up together — setting
+    // the yn-value to the sentinel (rather than 'yes'/'no') satisfies
+    // validation without opening the confirm-checkbox or "how would you
+    // rather feel" follow-ups, since neither branch's condition matches it.
+    feelingListWrap.appendChild(wrapListAddBtn(createPreferSkipLink(() => {
+      feelingList.length = 0; feelingList.push(PREFER_NOT_VALUE);
+      feelingYnList.length = 0; feelingYnList.push(PREFER_NOT_VALUE);
+      feelingConfirmList.length = 0; feelingConfirmList.push('');
+      feelingDesiredList.length = 0; feelingDesiredList.push(['']);
+      feelings[item] = feelingList;
+      feelingYn[item] = feelingYnList;
+      feelingConfirm[item] = feelingConfirmList;
+      feelingDesired[item] = feelingDesiredList;
+      _deeperState[feelingKey] = feelings;
+      _deeperState[feelingYnKey] = feelingYn;
+      _deeperState[feelingConfirmKey] = feelingConfirm;
+      _deeperState[feelingDesiredKey] = feelingDesired;
+      buildFeelingRows();
+      syncHidden(feelingKey, feelings);
+      syncHidden(feelingYnKey, feelingYn);
+      syncHidden(feelingConfirmKey, feelingConfirm);
+      syncHidden(feelingDesiredKey, feelingDesired);
+      if (window.clearFormError) window.clearFormError();
+    }, () => document.getElementById('btn-next')?.click())));
+
     function refreshFeelingSuggestions() {
       const already = new Set(feelingList.map((v) => (v || '').trim().toLowerCase()).filter(Boolean));
       const options = allTypedFeelings().filter((v) => !already.has(v.toLowerCase()));
@@ -2007,6 +2187,22 @@ function renderVisionItemAchievable(key) {
 
   const allBlocks = container.querySelectorAll('.deeper-block');
   if (allBlocks.length) { const last = allBlocks[allBlocks.length - 1]; last.style.borderBottom = 'none'; last.style.paddingBottom = '0'; }
+
+  if (vItems.length) {
+    // One skip for the whole page rather than one per bullet — marking each
+    // point individually would turn a subtle option into a wall of links.
+    const skipWrap = document.createElement('div');
+    skipWrap.style.cssText = 'text-align:center;margin-top:.6rem';
+    const skipLink = createPreferSkipLink(() => {
+      vItems.forEach((_, i) => { achievable[i] = PREFER_NOT_VALUE; });
+      _deeperState[achievableKey] = achievable;
+      syncHidden();
+      renderVisionItemAchievable(key);
+    }, () => document.getElementById('btn-next')?.click());
+    skipLink.style.textAlign = 'center';
+    skipWrap.appendChild(skipLink);
+    container.appendChild(skipWrap);
+  }
 }
 
 function renderVisionAchievableCheck(key) {
@@ -2100,6 +2296,15 @@ function renderVisionAchievableCheck(key) {
   err.className = 'yn-error';
   qWrap.appendChild(err);
 
+  const skipLink = createPreferSkipLink(() => {
+    btns.querySelectorAll('.yn-btn').forEach(b => b.classList.remove('selected'));
+    _deeperState[checkKey] = PREFER_NOT_VALUE;
+    syncHidden();
+    if (window.clearFormError) window.clearFormError();
+  }, () => document.getElementById('btn-next')?.click());
+  skipLink.style.textAlign = 'center';
+  qWrap.appendChild(skipLink);
+
   container.appendChild(qWrap);
 
   const hidden = document.createElement('input');
@@ -2192,6 +2397,15 @@ function renderVisionRevisedCompleteness(key) {
   const err = document.createElement('p');
   err.className = 'yn-error';
   field.appendChild(err);
+
+  const skipLink = createPreferSkipLink(() => {
+    btns.querySelectorAll('.yn-btn').forEach(b => b.classList.remove('selected'));
+    _deeperState[stateKey] = PREFER_NOT_VALUE;
+    if (window.clearFormError) window.clearFormError();
+  }, () => document.getElementById('btn-next')?.click());
+  skipLink.style.textAlign = 'center';
+  field.appendChild(skipLink);
+  if (_deeperState[stateKey] === PREFER_NOT_VALUE) { skipLink.textContent = 'skipped'; skipLink.classList.add('picked'); }
 
   container.appendChild(field);
 }
@@ -2560,7 +2774,9 @@ function initDeeperStep() {
     const expand = field.querySelector('.yn-expand');
     const textareas = expand ? expand.querySelectorAll('textarea') : [];
     const error = field.querySelector('.yn-error');
+    const btnsEl = field.querySelector('.yn-btns');
     const expandOn = role === 'vision' ? (val) => val === 'yes' || val === 'partially' : (val) => val === 'yes';
+    let skipLink = null;
     field.querySelectorAll('.yn-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         field.querySelectorAll('.yn-btn').forEach(b => b.classList.remove('selected'));
@@ -2570,8 +2786,24 @@ function initDeeperStep() {
         if (expand) expand.hidden = !expandOn(val);
         textareas.forEach(ta => { ta.required = expandOn(val); });
         error.classList.remove('visible');
+        resetPreferSkip(skipLink);
       });
     });
+    // `data-no-validate` fields (e.g. control, once every vision point turned
+    // out unachievable) hide their own yn-btns and force an answer — nothing
+    // real to skip there, so no link.
+    if (btnsEl && !field.dataset.noValidate) {
+      skipLink = createPreferSkipLink(() => {
+        field.querySelectorAll('.yn-btn').forEach(b => b.classList.remove('selected'));
+        _deeperState[stateKey] = PREFER_NOT_VALUE;
+        if (expand) expand.hidden = true;
+        textareas.forEach(ta => { ta.required = false; });
+        error.classList.remove('visible');
+      }, () => document.getElementById('btn-next')?.click());
+      skipLink.style.textAlign = 'center';
+      btnsEl.insertAdjacentElement('afterend', skipLink);
+      if (_deeperState[stateKey] === PREFER_NOT_VALUE) { skipLink.textContent = 'skipped'; skipLink.classList.add('picked'); }
+    }
   });
 
   // Persist textarea values
@@ -2588,7 +2820,15 @@ function initDeeperStep() {
     if (!subEl) return true;
     clearFormErr();
 
-    const unansweredYn = [...subEl.querySelectorAll('.yn-field')].find(f => !f.dataset.noValidate && !f.querySelector('.yn-btn.selected'));
+    const unansweredYn = [...subEl.querySelectorAll('.yn-field')].find(f => {
+      if (f.dataset.noValidate) return false;
+      if (f.querySelector('.yn-btn.selected')) return false;
+      // A "prefer not to answer" click clears every yn-btn's selected class
+      // (none of the real buttons match the sentinel), so the state itself
+      // — not button styling — is the source of truth for whether this
+      // field counts as answered.
+      return _deeperState[`deeper_${f.dataset.key}_${f.dataset.role}_yn`] !== PREFER_NOT_VALUE;
+    });
     if (unansweredYn) {
       setFormErr('Please select an answer before continuing.', unansweredYn);
       return false;
@@ -2865,6 +3105,7 @@ function initFitSignalsStep() {
     if (q.type === 'yesno') {
       const btns = document.createElement('div');
       btns.className = 'yn-btns';
+      let primarySkip = null;
 
       let followupEl = null;
       if (q.followup) {
@@ -2904,18 +3145,32 @@ function initFitSignalsStep() {
           btn.classList.add('selected');
           _fsState['fs_' + q.id] = val;
           if (followupEl) followupEl.hidden = val !== 'yes';
+          if (primarySkip) primarySkip.hidden = !!(followupEl && !followupEl.hidden);
           if (window.clearFormError) window.clearFormError();
         });
         btns.appendChild(btn);
       });
       field.appendChild(btns);
       if (followupEl) field.appendChild(followupEl);
+      primarySkip = createPreferSkipLink(() => {
+        btns.querySelectorAll('.yn-btn').forEach(b => b.classList.remove('selected'));
+        _fsState['fs_' + q.id] = PREFER_NOT_VALUE;
+        if (followupEl) followupEl.hidden = true;
+        if (window.clearFormError) window.clearFormError();
+      }, () => document.getElementById('btn-next')?.click());
+      primarySkip.style.textAlign = 'center';
+      // A real answer already revealed the follow-up — from here, "prefer not
+      // to answer" on screen should only ever mean the follow-up, never
+      // silently wipe out the primary answer they already gave.
+      if (followupEl) primarySkip.hidden = !followupEl.hidden;
+      field.appendChild(primarySkip);
     }
 
     if (q.type === 'singleselect') {
       const btns = document.createElement('div');
       btns.className = 'yn-btns' + (q.stack ? ' yn-btns-stack' : '');
       btns.style.flexWrap = 'wrap';
+      let primarySkip = null;
 
       let followupEl = null;
       if (q.followup) {
@@ -2941,12 +3196,25 @@ function initFitSignalsStep() {
           btn.classList.add('selected');
           _fsState['fs_' + q.id] = opt;
           if (followupEl) followupEl.hidden = opt !== q.followup.triggerValue;
+          if (primarySkip) primarySkip.hidden = !!(followupEl && !followupEl.hidden);
           if (window.clearFormError) window.clearFormError();
         });
         btns.appendChild(btn);
       });
       field.appendChild(btns);
       if (followupEl) field.appendChild(followupEl);
+      primarySkip = createPreferSkipLink(() => {
+        btns.querySelectorAll('.yn-btn').forEach(b => b.classList.remove('selected'));
+        _fsState['fs_' + q.id] = PREFER_NOT_VALUE;
+        if (followupEl) followupEl.hidden = true;
+        if (window.clearFormError) window.clearFormError();
+      }, () => document.getElementById('btn-next')?.click());
+      primarySkip.style.textAlign = 'center';
+      // Same reasoning as the yesno block above: once a real answer has
+      // revealed the follow-up, this trailing link must not be allowed to
+      // silently overwrite that real primary answer.
+      if (followupEl) primarySkip.hidden = !followupEl.hidden;
+      field.appendChild(primarySkip);
     }
 
     if (q.type === 'multiselect') {
@@ -2960,6 +3228,7 @@ function initFitSignalsStep() {
       checks.className = 'acts-checkboxes';
       checks.style.cssText = 'margin-top:.8rem;width:20rem;margin-left:auto;margin-right:auto';
       field.appendChild(checks);
+      let primarySkip = null;
       q.options.forEach((opt, i) => {
         const row = document.createElement('label');
         row.className = 'acts-check-label';
@@ -2988,6 +3257,7 @@ function initFitSignalsStep() {
               if (opt === q.other && otherWrap) otherWrap.hidden = true;
             }
           }
+          if (primarySkip) primarySkip.hidden = !!(otherWrap && !otherWrap.hidden);
           if (window.clearFormError) window.clearFormError();
         });
         const span = document.createElement('span');
@@ -3005,6 +3275,18 @@ function initFitSignalsStep() {
           checks.appendChild(otherWrap);
         }
       });
+      primarySkip = createPreferSkipLink(() => {
+        cbEls.forEach(cb => { cb.checked = false; });
+        _fsState['fs_' + q.id] = [PREFER_NOT_VALUE];
+        if (otherWrap) otherWrap.hidden = true;
+        if (window.clearFormError) window.clearFormError();
+      }, () => document.getElementById('btn-next')?.click());
+      primarySkip.style.textAlign = 'center';
+      // Same reasoning as the singleselect/yesno follow-up cases: once "Other"
+      // is checked and its own specify-field is showing, this trailing link
+      // must not be allowed to silently wipe the real checkbox selections.
+      if (otherWrap) primarySkip.hidden = !otherWrap.hidden;
+      field.appendChild(primarySkip);
     }
 
     if (q.type === 'scale5') {
@@ -3034,6 +3316,11 @@ function initFitSignalsStep() {
       scaleWrap.appendChild(btnRow);
       scaleWrap.appendChild(legend);
       field.appendChild(scaleWrap);
+      field.appendChild(createPreferSkipLink(() => {
+        btnRow.querySelectorAll('.number-btn').forEach(b => b.classList.remove('selected'));
+        _fsState['fs_' + q.id] = PREFER_NOT_VALUE;
+        if (window.clearFormError) window.clearFormError();
+      }, () => document.getElementById('btn-next')?.click())).style.textAlign = 'center';
     }
 
     if (q.type === 'track-record') {
@@ -3050,6 +3337,8 @@ function initFitSignalsStep() {
       if (q.placeholder) ta.placeholder = q.placeholder;
       ta.addEventListener('input', () => { _fsState['fs_' + q.id] = ta.value; });
       field.appendChild(ta);
+      // No skip link here — this field is already optional (q8, "anything
+      // else"), so it's already possible to leave it blank and continue.
     }
 
     page.appendChild(field);
@@ -3321,6 +3610,26 @@ const FIT_LABELS = {
   q9: 'Are you or do you have any ambitions of working as a coach yourself?',
 };
 const FIT_ORDER = ['q2', 'q3', 'q4', 'q5l', 'q5', 'q6', 'q7', 'q9', 'q8'];
+// Endpoint text for scale5 fit questions, so a bare 1-5 rating in the email reads
+// like an actual answer instead of a meaningless "Rated 2". Keyed by question id.
+// invert: true means the raw 1-5 stored on the page (which stays exactly as-is
+// for the live questionnaire/scoring) shows flipped in the email only, so the
+// displayed number matches how intense the low-anchor answer actually feels
+// (e.g. "Can't think of anything worse" reads as 5/5, not 1/5).
+const SCALE_LABELS = {
+  q5: { low: "Can't think of anything worse", high: "It's exactly what I want", invert: true },
+};
+// Ordered options for singleselect fit questions that are really a ranked scale —
+// the email keeps the actual text answer but also tags it "(x/n)" so the intensity
+// is visible at a glance. Order matters: last entry = n/n.
+const RANKED_SINGLESELECT = {
+  q7: [
+    'Genuinely happy, this is the life I want',
+    "Fine, I wouldn't mind",
+    "Frustrated, I know I'm capable of more than this",
+    'Unacceptable, it cannot happen',
+  ],
+};
 
 function _prettyKey(k) {
   return String(k).replace(/^deeper_/, '').replace(/_/g, ' ').trim();
@@ -3331,7 +3640,7 @@ function _fmtFitAnswer(id) {
     const items = dedupedForSubmit((_fsState['fs_q6_items'] || []).filter((i) => (i.what || '').trim()), (i) => i.what);
     if (!items.length) return '(none given)';
     const formatted = items
-      .map((i) => `${i.what}${i.howWell != null ? ` (worked ${i.howWell}/5)` : ''}${(i.why || '').trim() ? ` — why: ${i.why}` : ''}`);
+      .map((i) => `${i.what}${i.howWell != null ? ` (worked ${i.howWell}/10)` : ''}${(i.why || '').trim() ? ` — why: ${i.why}` : ''}`);
     return formatted.length > 1 ? formatted : formatted[0];
   }
   let v = _fsState['fs_' + id];
@@ -3342,10 +3651,22 @@ function _fmtFitAnswer(id) {
     if (otherItems.length && arr.includes('Other')) arr = arr.map((o) => (o === 'Other' ? 'Other: ' + otherItems.join('; ') : o));
     out = arr.length > 1 ? arr : (arr.length ? arr[0] : '(none selected)');
   } else if (typeof v === 'number') {
-    out = 'Rated ' + v;
+    const scale = SCALE_LABELS[id];
+    if (scale) {
+      const shown = scale.invert ? 6 - v : v;
+      out = shown === 3 ? '3/5 — right in the middle'
+        : `${shown}/5 — closer to "${v <= 2 ? scale.low : scale.high}"`;
+    } else {
+      out = 'Rated ' + v;
+    }
   } else if (v === 'yes') out = 'Yes';
   else if (v === 'no') out = 'No';
   else out = v == null || v === '' ? '(not answered)' : String(v);
+  const ranked = RANKED_SINGLESELECT[id];
+  if (ranked) {
+    const idx = ranked.indexOf(v);
+    if (idx !== -1) out += ` (${idx + 1}/${ranked.length})`;
+  }
   if (id === 'q2' && v === "No, I'm exhausted" && _fsState['fs_q2_needs']) {
     const needs = distinctNonBlank(_fsState['fs_q2_needs']);
     if (needs.length) out += ' — needs: ' + needs.join('; ');

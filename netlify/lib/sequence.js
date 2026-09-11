@@ -37,7 +37,7 @@ function fillMerge(text, fields) {
 // Render one email's body paragraphs into light, text-forward HTML.
 function renderBody(paragraphs, fields) {
   const linkStyle = "color:#15140f;border-bottom:1px solid #15140f;text-decoration:none;";
-  const blocks = paragraphs.map((raw) => {
+  const blocks = paragraphs.map((raw, i) => {
     if (raw === "[MAP]") {
       if (!fields.map_url) return "";
       return `<p style="margin:1.3rem 0;"><a href="${escapeHtml(fields.map_url)}" style="font-size:1.05rem;${linkStyle}">Open your Authenticity Map &rarr;</a></p>`;
@@ -46,7 +46,11 @@ function renderBody(paragraphs, fields) {
       return `<p style="margin:1.3rem 0;"><a href="${escapeHtml(fields.book_url)}" style="font-size:1.05rem;${linkStyle}">Book a private conversation &rarr;</a></p>`;
     }
     const filled = inlineFormat(escapeHtml(fillMerge(raw, fields)));
-    return `<p style="margin:0 0 1rem;">${filled}</p>`;
+    // Every email in the sequence ends on its sign-off line — give that closing
+    // line extra breathing room above it instead of the same tight paragraph
+    // gap used between regular body lines.
+    const isLast = i === paragraphs.length - 1;
+    return `<p style="margin:${isLast ? "1.6rem" : "0"} 0 1rem;">${filled}</p>`;
   });
   return `<div style="font-family:Georgia,serif;color:#15140f;line-height:1.65;font-size:16px;max-width:32rem;">${blocks.join("")}</div>`;
 }

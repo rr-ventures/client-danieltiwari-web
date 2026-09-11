@@ -29,7 +29,7 @@ Below the second `---` is the email body. **One blank line between paragraphs.**
 - `{{top_focus_area}}` — the life area their quiz flagged (e.g. "Career").
 - `{{authenticity_stage}}` — where they landed on the assessment (e.g. "Questioning").
 - `**bold**` — makes text bold.
-- A line that is just `[MAP]` — inserts the "Open your Authenticity Map" link.
+- A line that is just `[MAP]` — inserts the "Open your Assessment" link.
 - A line that is just `[BOOK]` — inserts the "Book a private conversation" link.
 
 That's the whole list. Don't invent new `{{...}}` or `[...]` tokens — only the ones above work,

@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Your Authenticity Map — Daniel Tiwari</title>
-<meta name="description" content="Your private Authenticity Map.">
+<title>Your Assessment — Daniel Tiwari</title>
+<meta name="description" content="Your private Assessment.">
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <meta name="theme-color" content="#efe9dd">
@@ -26,7 +26,7 @@
 </style>
 </head>
 <body>
-<a class="skip" href="#assessment-result">Skip to your map</a>
+<a class="skip" href="#assessment-result">Skip to your assessment</a>
 
 <header class="bar" id="bar">
   <a class="name sc" href="/">Daniel Tiwari</a>
@@ -35,12 +35,12 @@
 
 <main class="result-page">
   <div id="result-loading" class="result-state">
-    <p>Opening your map…</p>
+    <p>Opening your assessment…</p>
   </div>
 
   <div id="result-error" class="result-state" hidden>
-    <h1>This map couldn't be found</h1>
-    <p>The link may be incomplete or it may have expired.<br>You can always <a href="/assessment.html">take the assessment again</a> for a fresh map.</p>
+    <h1>This assessment couldn't be found</h1>
+    <p>The link may be incomplete or it may have expired.<br>You can always <a href="/assessment.html">take the assessment again</a> for a fresh result.</p>
   </div>
 
   <div id="result-intro" class="result-intro" hidden></div>
@@ -79,13 +79,13 @@
       const intro = document.getElementById("result-intro");
       const fn = firstName(answers);
       intro.innerHTML = `
-        <span class="eyebrow"><span class="dot"></span>Your saved map</span>
-        <h1>${fn ? `${fn}, here is your map.` : "Here is your map."}</h1>
+        <span class="eyebrow"><span class="dot"></span>Your saved assessment</span>
+        <h1>${fn ? `${fn}, here is your assessment.` : "Here is your assessment."}</h1>
         <p>Take it in slowly. Nothing here needs fixing today — it's simply an honest look at where you are.</p>`;
       show("result-intro");
 
       renderResult(result, "viewed");
-      document.title = `${result.authenticity.label} — Your Authenticity Map`;
+      document.title = `${result.authenticity.label} — Your Assessment`;
     } catch (err) {
       hide("result-loading");
       show("result-error");

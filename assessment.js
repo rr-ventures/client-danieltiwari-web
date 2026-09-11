@@ -150,7 +150,7 @@ function renderFulfillmentCard(index, savedVal = null) {
     <div class="fulfillment-nav">
       <p class="fulfillment-error">Please select a number first.</p>
       <div class="fulfillment-nav-buttons">
-        ${!isFirst ? `<button type="button" class="btn btn-ghost fulfillment-back-btn">← Back</button>` : ""}
+        <button type="button" class="btn btn-ghost fulfillment-back-btn">← Back</button>
         <button type="button" class="btn btn-primary fulfillment-next-btn">Next →</button>
       </div>
     </div>
@@ -192,12 +192,20 @@ function renderFulfillmentCard(index, savedVal = null) {
     card.querySelector(`.number-btn[data-val="${n}"]`)?.click();
   };
   document.addEventListener("keydown", _fulfillmentKeyHandler);
-  if (!isFirst) {
-    card.querySelector(".fulfillment-back-btn").addEventListener("click", () => {
-      if (selected) _fulfillmentState[key] = selected;
+  card.querySelector(".fulfillment-back-btn").addEventListener("click", () => {
+    if (selected) _fulfillmentState[key] = selected;
+    if (isFirst) {
+      // First card has nowhere earlier in the card sequence to go back to —
+      // send it back to the very first intro/welcome page instead of doing
+      // nothing, which is what happened here before this fix.
+      document.getElementById("fulfillment-areas").hidden = true;
+      document.getElementById("fulfillment-intro").hidden = false;
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      if (!window._historyNav) history.pushState({ step: 0, sub: -1 }, '');
+    } else {
       history.back();
-    });
-  }
+    }
+  });
   card.querySelector(".fulfillment-next-btn").addEventListener("click", () => {
     if (!selected) {
       card.querySelector(".fulfillment-error").classList.add("visible");
@@ -2592,6 +2600,59 @@ function initDeeperStep() {
     el.appendChild(ul);
   }
 
+  // Pure read-only mirror of the skip conditions inside showDeeperSubPage below —
+  // no rendering, no recursion, no history writes. Needed because
+  // restoreAssessmentProgress (after a page reload) has to know which indices are
+  // real pages BEFORE it rebuilds the browser-history chain, without actually
+  // visiting/rendering every page to find out. Keep this in sync with the
+  // conditions in showDeeperSubPage if that logic ever changes.
+  function isDeeperSubPageSkippable(idx) {
+    const sp = allSubPages[idx];
+    if (!sp) return false;
+    if (sp.qtype === 'control-attitude') {
+      return _deeperState['deeper_' + sp.key + '_control_yn'] !== 'yes';
+    }
+    if (sp.qtype === 'acts-reasons') {
+      const isNothing = !!_deeperState['deeper_' + sp.key + '_acts_raw_nothing'];
+      const items = isNothing ? [] : distinctNonBlank(_deeperState['deeper_' + sp.key + '_acts_raw_items']);
+      return !items.length;
+    }
+    if (sp.qtype === 'acts-values') {
+      return !terminalWhyThreads(sp.key).length;
+    }
+    if (sp.qtype === 'vision-describe') {
+      const vYn = _deeperState['deeper_' + sp.key + '_vision_yn'];
+      return vYn !== 'yes' && vYn !== 'partially';
+    }
+    if (sp.qtype === 'vision-item-achievable') {
+      const vYn = _deeperState['deeper_' + sp.key + '_vision_yn'];
+      const vActual = _deeperState['deeper_' + sp.key + '_vision_actual_yn'];
+      const vItems = distinctNonBlank(_deeperState['deeper_' + sp.key + '_vision_items']);
+      return (vYn !== 'yes' && vYn !== 'partially') || !vItems.length || vActual !== 'yes';
+    }
+    if (sp.qtype === 'vision-achievable-check') {
+      const vYn = _deeperState['deeper_' + sp.key + '_vision_yn'];
+      const vItems = (vYn === 'yes' || vYn === 'partially')
+        ? distinctNonBlank(_deeperState['deeper_' + sp.key + '_vision_items'])
+        : [];
+      const achievable = _deeperState['deeper_' + sp.key + '_vision_item_achievable'] || {};
+      return !vItems.some((_, i) => achievable[i] === 'no');
+    }
+    if (sp.qtype === 'vision-revised') {
+      return _deeperState['deeper_' + sp.key + '_vision_achievable_check'] !== 'revise';
+    }
+    if (sp.qtype === 'vision-commitment') {
+      const vYn = _deeperState['deeper_' + sp.key + '_vision_yn'];
+      const vActual = _deeperState['deeper_' + sp.key + '_vision_actual_yn'];
+      const vItems = distinctNonBlank(_deeperState['deeper_' + sp.key + '_vision_items']);
+      const achievableCheck = _deeperState['deeper_' + sp.key + '_vision_achievable_check'];
+      return (vYn !== 'yes' && vYn !== 'partially') || !vItems.length || vActual !== 'yes'
+        || achievableCheck === 'unknown after vision was rejected as not achievable';
+    }
+    return false;
+  }
+  window._isDeeperSubPageSkippable = isDeeperSubPageSkippable;
+
   function showDeeperSubPage(idx, direction = 1) {
     if (idx >= allSubPages.length) { window.advanceMainStep?.(); return; }
     if (idx < 0) return;
@@ -3574,9 +3635,20 @@ function restoreAssessmentProgress() {
     // it knew a restore was coming. Pushing on top of that stamp instead of
     // overwriting it leaves a phantom "Fulfillment" entry one step behind
     // wherever we actually land, so a single Back skips straight into it.
+    // Deeper-questions sub-pages can be conditionally skipped going forward
+    // (e.g. "vision-revised" only shows if revising) — a skipped index never
+    // gets its own history entry during normal navigation, so this rebuilt
+    // chain has to skip the same indices, not just replay 0..resolvedSub
+    // blindly. Otherwise the browser's real history pointer and the on-screen
+    // page fall out of sync the first time Back has to cascade past one of
+    // these bogus entries, and later Back presses start landing on the wrong
+    // page — this was the actual cause of "the back button skips pages."
+    let pushedAny = false;
     for (let i = 0; i <= resolvedSub; i++) {
-      if (i === 0) history.replaceState({ step, sub: i }, '');
+      if (step === 3 && window._isDeeperSubPageSkippable && window._isDeeperSubPageSkippable(i)) continue;
+      if (!pushedAny) history.replaceState({ step, sub: i }, '');
       else history.pushState({ step, sub: i }, '');
+      pushedAny = true;
     }
     if (window._applyNavState) window._applyNavState({ step, sub: resolvedSub });
     else if (window.gotoStep) window.gotoStep(step, resolvedSub);
@@ -3906,7 +3978,7 @@ function buildQaSummary(answers) {
   return groups;
 }
 
-// Shown in place of the full Authenticity Map while the assessment is still
+// Shown in place of the full Assessment result while the assessment is still
 // being tested — Daniel reviews answers via the notification email himself and
 // follows up directly, rather than the page revealing results on the spot.
 function renderTestingThankYou() {
@@ -3968,6 +4040,49 @@ function initPageFeedbackWidget() {
   };
 }
 initPageFeedbackWidget();
+
+// "Report a bug" — submits straight to Daniel via the site's own backend
+// instead of opening the visitor's email app.
+function initBugReportWidget() {
+  const toggle = document.getElementById("bug-report-toggle");
+  const panel = document.getElementById("bug-report-panel");
+  const textarea = document.getElementById("bug-report-text");
+  const sendBtn = document.getElementById("bug-report-send");
+  const status = document.getElementById("bug-report-status");
+  if (!toggle || !panel || !textarea || !sendBtn || !status) return;
+
+  toggle.addEventListener("click", () => {
+    panel.hidden = !panel.hidden;
+    if (!panel.hidden) textarea.focus();
+  });
+
+  sendBtn.addEventListener("click", async () => {
+    const message = textarea.value.trim();
+    status.hidden = false;
+    if (!message) {
+      status.textContent = "Type what happened first.";
+      return;
+    }
+    sendBtn.disabled = true;
+    status.textContent = "Sending…";
+    try {
+      const res = await fetch("/api/bug-report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message, page: currentFeedbackPageLabel() }),
+      });
+      if (!res.ok) throw new Error("send failed");
+      status.textContent = "Thanks — got it.";
+      textarea.value = "";
+      setTimeout(() => { panel.hidden = true; status.hidden = true; }, 2500);
+    } catch (_e) {
+      status.textContent = "Couldn't send that — try emailing email@danieltiwari.com directly.";
+    } finally {
+      sendBtn.disabled = false;
+    }
+  });
+}
+initBugReportWidget();
 
 window.submitAssessment = async function submitAssessment(form, submitButton) {
   const answers = collectAnswers(form);

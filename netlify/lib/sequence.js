@@ -5,7 +5,7 @@
      Branch A, diagnostic / high-fit · 6 emails / 12 days
      Branch B, nurture / everyone else · 7 emails / 21 days
    Merge fields: {{first_name}} {{top_focus_area}} {{authenticity_stage}}
-   Tokens:  [MAP]  -> link to the hosted Authenticity Map (A1/B1 only)
+   Tokens:  [MAP]  -> link to the hosted Assessment result (A1/B1 only)
             [BOOK] -> booking link (Calendly placeholder for now)
    Email 1 (A1/B1, day 0) is the result-link email, sent instantly.
    ============================================================ */
@@ -40,7 +40,7 @@ function renderBody(paragraphs, fields) {
   const blocks = paragraphs.map((raw, i) => {
     if (raw === "[MAP]") {
       if (!fields.map_url) return "";
-      return `<p style="margin:1.3rem 0;"><a href="${escapeHtml(fields.map_url)}" style="font-size:1.05rem;${linkStyle}">Open your Authenticity Map &rarr;</a></p>`;
+      return `<p style="margin:1.3rem 0;"><a href="${escapeHtml(fields.map_url)}" style="font-size:1.05rem;${linkStyle}">Open your Assessment &rarr;</a></p>`;
     }
     if (raw === "[BOOK]") {
       return `<p style="margin:1.3rem 0;"><a href="${escapeHtml(fields.book_url)}" style="font-size:1.05rem;${linkStyle}">Book a private conversation &rarr;</a></p>`;

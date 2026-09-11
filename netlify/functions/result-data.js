@@ -1,7 +1,7 @@
 const { resultsStore } = require("../lib/blobs");
 
 // GET /api/result-data?id=<id>
-// Returns the stored answers for a hosted Authenticity Map so result.html can
+// Returns the stored answers for a hosted Assessment result so result.html can
 // recompute and render it with the shared assessment-core logic.
 exports.handler = async (event) => {
   if (event.httpMethod !== "GET") {

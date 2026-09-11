@@ -1,8 +1,8 @@
 /* ============================================================
-   Daniel Tiwari — assessment core (shared scoring + Authenticity Map render)
+   Daniel Tiwari — assessment core (shared scoring + assessment result render)
    Single source of truth used by BOTH:
      - assessment.js   (the live quiz: inline render on submit)
-     - result.html     (the polished, persistent, shareable hosted map)
+     - result.html     (the polished, persistent, shareable hosted assessment result)
    Loaded as a plain (non-module) <script defer> BEFORE its consumers, so
    these top-level bindings are visible to the scripts that follow.
    ============================================================ */
@@ -258,27 +258,27 @@ function renderResult(result, emailState = "pending") {
   const roadmap = [
     `<li><span class="step sc">This week</span><p>Start with <strong>${result.focusAreas[0]?.label}</strong> — ${(AREA_READ[result.focusAreas[0]?.key] || {}).shift || ""}</p></li>`,
     `<li><span class="step sc">This month</span><p>${monthMove}</p></li>`,
-    `<li><span class="step sc">When you're ready</span><p>Bring your map to a private conversation, and we read it together — what it's showing, and the one thread worth pulling first.</p></li>`,
+    `<li><span class="step sc">When you're ready</span><p>Bring your assessment to a private conversation, and we read it together — what it's showing, and the one thread worth pulling first.</p></li>`,
   ].join("");
 
   const emailCopy = {
-    pending: "Sending your Authenticity Map to your inbox… If it doesn't show up shortly, check your spam folder.",
-    sent: "A copy of your Authenticity Map is on its way to your inbox. If you don't see it soon, check your spam folder.",
-    skipped: "Your map is ready here. (Email delivery isn't configured in this preview.)",
-    warning: "Your map is ready here. We couldn't confirm the email — check back shortly, and check your spam folder too.",
-    viewed: "This is your saved Authenticity Map — yours to revisit any time.",
+    pending: "Sending your assessment to your inbox… If it doesn't show up shortly, check your spam folder.",
+    sent: "A copy of your assessment is on its way to your inbox. If you don't see it soon, check your spam folder.",
+    skipped: "Your assessment is ready here. (Email delivery isn't configured in this preview.)",
+    warning: "Your assessment is ready here. We couldn't confirm the email — check back shortly, and check your spam folder too.",
+    viewed: "This is your saved assessment — yours to revisit any time.",
   }[emailState] || "";
 
   const nextStep = result.route === "diagnostic"
-    ? `<p>Your answers suggest you're at a point where an outside perspective tends to help most. The next step is a private conversation — a continuation of this map, not a sales call. In thirty minutes we'd read it together: your widest gap (${result.focusAreas[0]?.label}), the pattern underneath it, and whether working together makes sense — or whether you're better placed to do this on your own right now.</p>
-       <a class="btn" href="${CALENDLY}"><span>Read your map with Daniel</span><span class="arrow" aria-hidden="true">→</span></a>`
-    : `<p>You can absolutely keep moving on your own from here — your map above is enough to start. If at some point you'd like a clearer reflection from the outside, the door is open, with no pressure and no pitch.</p>
+    ? `<p>Your answers suggest you're at a point where an outside perspective tends to help most. The next step is a private conversation — a continuation of this assessment, not a sales call. In thirty minutes we'd read it together: your widest gap (${result.focusAreas[0]?.label}), the pattern underneath it, and whether working together makes sense — or whether you're better placed to do this on your own right now.</p>
+       <a class="btn" href="${CALENDLY}"><span>Read your assessment with Daniel</span><span class="arrow" aria-hidden="true">→</span></a>`
+    : `<p>You can absolutely keep moving on your own from here — your assessment above is enough to start. If at some point you'd like a clearer reflection from the outside, the door is open, with no pressure and no pitch.</p>
        <a class="btn secondary-btn" href="${CALENDLY}"><span>Book a conversation when you're ready</span><span class="arrow" aria-hidden="true">→</span></a>`;
 
   el.hidden = false;
   el.innerHTML = `
     <div class="result-panel" id="authenticity-map">
-      <span class="eyebrow"><span class="dot"></span>Your Authenticity Map</span>
+      <span class="eyebrow"><span class="dot"></span>Your Assessment</span>
       <h2>${a.label}</h2>
       <p class="lede tension">${a.tension}</p>
 
@@ -320,7 +320,7 @@ function renderResult(result, emailState = "pending") {
       </div>
 
       <div class="result-actions no-print">
-        <button type="button" class="ghost-btn sc" onclick="window.print()">Save / print your map</button>
+        <button type="button" class="ghost-btn sc" onclick="window.print()">Save / print your assessment</button>
         <p class="form-note"><span class="dot"></span>${emailCopy}</p>
       </div>
     </div>`;

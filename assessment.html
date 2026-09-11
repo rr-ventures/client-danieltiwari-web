@@ -57,6 +57,16 @@
   .page-feedback-hint{font-size:.7rem;color:var(--muted);margin:.6rem 0 0}
   @media (max-width:480px){.page-feedback-widget{right:.8rem;bottom:.8rem}.page-feedback-panel{width:min(17rem,78vw)}}
 
+  /* "report a bug" — submits straight through our own system, no email client needed */
+  .bug-report-widget{text-align:center;margin-top:.6rem}
+  .bug-report-toggle{background:none;border:none;padding:0;font-family:var(--sc);font-size:.68rem;letter-spacing:.15em;color:var(--muted);cursor:pointer;transition:color .2s}
+  .bug-report-toggle:hover{color:var(--ink)}
+  .bug-report-panel{max-width:26rem;margin:.8rem auto 0;text-align:left}
+  .bug-report-textarea{display:block;width:100%;min-height:5rem;font-family:var(--body);font-size:.9rem;color:var(--ink);padding:.6rem;border:1px solid var(--hair);border-radius:4px;resize:vertical;background:#fff;box-sizing:border-box}
+  .bug-report-actions{text-align:center;margin-top:.6rem}
+  .bug-report-send-btn{padding:.6rem 1.6rem;font-size:.7rem}
+  .bug-report-status{font-size:.75rem;color:var(--muted);text-align:center;margin:.6rem 0 0}
+
   /* buttons */
   .btn{display:inline-block;font-family:var(--sc);font-size:.8rem;font-weight:500;letter-spacing:.18em;padding:1.1rem 2.6rem;border:1px solid;border-radius:2px;transition:background .2s,color .2s,border-color .2s;cursor:pointer;text-decoration:none}
   .btn-primary,.btn.btn-primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
@@ -492,7 +502,16 @@
       <div style="text-align:center;margin-top:1.2rem;font-family:var(--sc);font-size:.68rem;letter-spacing:.2em;color:var(--muted)" id="stopwatch" hidden>
         <span id="stopwatch-display">0:00</span>
       </div>
-      <div style="text-align:center;margin-top:.6rem"><a href="mailto:email@danieltiwari.com?subject=Bug%20report" style="font-family:var(--sc);font-size:.68rem;letter-spacing:.15em;color:var(--muted);text-decoration:none;transition:color .2s" onmouseover="this.style.color='var(--ink)'" onmouseout="this.style.color='var(--muted)'">Report a bug</a></div>
+      <div class="bug-report-widget">
+        <button type="button" id="bug-report-toggle" class="bug-report-toggle">Report a bug</button>
+        <div id="bug-report-panel" class="bug-report-panel" hidden>
+          <textarea id="bug-report-text" class="bug-report-textarea" placeholder="What went wrong?"></textarea>
+          <div class="bug-report-actions">
+            <button type="button" id="bug-report-send" class="btn btn-primary bug-report-send-btn">Send</button>
+          </div>
+          <p id="bug-report-status" class="bug-report-status" hidden></p>
+        </div>
+      </div>
 
     </form>
 
@@ -686,6 +705,11 @@
         document.getElementById('fulfillment-intro').hidden=true;
         document.getElementById('fulfillment-areas').hidden=false;
         renderFulfillmentCard(st.sub);
+      } else if(st.step===0&&st.sub===-1){
+        current=0;
+        showStep(0);
+        document.getElementById('fulfillment-areas').hidden=true;
+        document.getElementById('fulfillment-intro').hidden=false;
       } else {
         current=st.step;
         showStep(st.step);

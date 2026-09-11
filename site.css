@@ -267,7 +267,7 @@ footer.foot a:hover{color:var(--dark-ink)}
 .btn.secondary-btn{background:transparent;color:var(--ink);border-color:rgba(28,26,20,.4)}
 .btn.secondary-btn:hover{background:rgba(28,26,20,.04);box-shadow:none}
 
-/* ---- Authenticity Map (deep result) ---- */
+/* ---- Assessment (deep result) ---- */
 .result-panel .tension{color:var(--ink);font-style:italic;font-size:clamp(1.2rem,2vw,1.45rem);margin-top:.6rem}
 .wheel-read{margin-top:.6rem;color:var(--muted);font-size:1.04rem;line-height:1.7;max-width:36rem}
 .wheel-read strong{color:var(--ink);font-weight:500}
@@ -287,7 +287,7 @@ footer.foot a:hover{color:var(--dark-ink)}
 .result-actions .form-note{margin-top:1.2rem;display:flex}
 @media(max-width:560px){.roadmap li{grid-template-columns:1fr;gap:.3rem}}
 
-/* print = the keepsake "map" */
+/* print = the keepsake "assessment" */
 @media print{
   header.bar, .assess-hero, .assessment-wrap > form, .assessment-intro, footer.foot, .no-print{display:none !important}
   body{background:#fff}

@@ -39,7 +39,7 @@ function siteBaseUrl(event) {
 }
 
 // Persist the raw answers so the hosted result page can recompute the full
-// Authenticity Map with the SAME core logic the live quiz uses.
+// Assessment result with the SAME core logic the live quiz uses.
 async function storeResult(id, answers) {
   const store = resultsStore();
   await store.setJSON(id, {
@@ -240,6 +240,12 @@ exports.handler = async (event) => {
   // enrollment while the sequence copy is being rewritten. The assessment
   // result itself (result page + Daniel's internal notification) still fires.
   const NURTURE_PAUSED = /^(1|true|yes)$/i.test(String(process.env.NURTURE_PAUSED || ""));
+  // Daniel wants ONLY the day-0 email going out right now (2026-09-11) — the
+  // rest of the multi-day follow-up sequence hasn't had his voice pass yet.
+  // Day-0 still sends normally; nobody gets enrolled in the later drip, so
+  // no day-1-onward email can ever fire for them. Flip to false (or remove)
+  // once he's ready to turn the rest of the sequence back on.
+  const ONLY_DAY_ZERO_FOR_NOW = true;
   const TEST_EMAIL = process.env.TEST_EMAIL || "reece.j.rainer@gmail.com";
   const { from, replyTo, bookUrl } = mailConfig();
   const notifyTo = TEST_MODE ? TEST_EMAIL : (process.env.NOTIFY_TO || process.env.DAN_NOTIFY_EMAIL || "email@danieltiwari.com");
@@ -272,10 +278,10 @@ exports.handler = async (event) => {
 
   // persist drip progress (day 0 marked sent). The drip store holds the lead's
   // real email so subsequent emails reach them; in TEST_MODE we store TEST_EMAIL.
-  // While paused, skip enrollment entirely so nobody is queued up for a rush
-  // of catch-up sends once the sequence is turned back on with new copy.
+  // While paused (or while ONLY_DAY_ZERO_FOR_NOW), skip enrollment entirely so
+  // nobody is queued up for a rush of catch-up sends once the sequence resumes.
   let dripWarning;
-  const writeDrip = NURTURE_PAUSED
+  const writeDrip = (NURTURE_PAUSED || ONLY_DAY_ZERO_FOR_NOW)
     ? Promise.resolve()
     : (async () => {
         try {
@@ -321,7 +327,8 @@ exports.handler = async (event) => {
     statusCode: 200,
     body: JSON.stringify({
       ok: true, id, resultUrl, result, storeWarning, dripWarning,
-      testMode: TEST_MODE, branch: result.route, enrolled: sequence.length,
+      testMode: TEST_MODE, branch: result.route,
+      enrolled: (NURTURE_PAUSED || ONLY_DAY_ZERO_FOR_NOW) ? 0 : sequence.length,
       emailWarning, emailSkipped,
     }),
   };

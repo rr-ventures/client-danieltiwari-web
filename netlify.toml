@@ -25,7 +25,7 @@
   to = "/.netlify/functions/result-data"
   status = 200
 
-# Hosted Authenticity Map, short shareable id, rendered client-side by result.html.
+# Hosted Assessment result, short shareable id, rendered client-side by result.html.
 [[redirects]]
   from = "/r/*"
   to = "/result.html"
@@ -73,6 +73,11 @@
 [[redirects]]
   from = "/api/assessment-notify"
   to = "/.netlify/functions/assessment-notify"
+  status = 200
+
+[[redirects]]
+  from = "/api/bug-report"
+  to = "/.netlify/functions/bug-report"
   status = 200
 
 # Working/scratch files, never publicly reachable.

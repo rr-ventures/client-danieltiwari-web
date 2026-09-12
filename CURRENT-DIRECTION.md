@@ -8,41 +8,21 @@ Read its `## Outstanding` and `## Progress log` before changing anything here. T
 plan is the source of truth for what is decided and what is still open; files in
 this repo can be ahead of it or behind it.
 
-## What is live right now (2026-09-12)
+## What is live right now (13 September 2026)
 
-The assessment's hand-written-results work is **merged into `main` and built**
-(head commit `7032b5d`, approved by Reece in session). `feat/hand-written-assessment-results`
-is merged and finished with.
+The hand-written-results work is **merged, published and serving**. It went live 12 September
+04:51; Daniel then shipped his own copy fix on top (`869976a`, live 21:07).
 
-It is built but **not yet serving**. This site's own change gate holds every build back
-and emails an approve-and-publish link to Daniel and Reece (`netlify/lib/change-gate.js`,
-triggered by `deploy-succeeded.js`); the site keeps serving the previous deploy until one
-of them clicks Approve. Three of those emails went out on 12 September as commits landed (03:23, 03:26, 03:31).
-**Each approve link publishes ITS OWN commit**, so approving an older one ships an older
-site. The newest, titled "Assessment results, email+code login...", is the one that carries
-everything. Check which
-deploy is actually serving with the Netlify API's `published_deploy`, never by assuming a
-green build means live.
+Proven against the published site, not assumed:
+- 14/14 exposure checks pass. A bare result link and a forged pass both get 401.
+- The reader login works end to end: code requested, sent, delivered, wrong code refused, real
+  code accepted, page opened, an unwritten result says "not ready", the pass will not open
+  anyone else's result, and the code cannot be reused.
 
-**While it is unpublished, the OLD behaviour is what danieltiwari.com serves**, and that
-old `result-data` hands a person's raw answers to anyone holding their result link with no
-login at all. Approving the waiting build is what closes that.
-
-What that branch changes, and why, in one line each:
-
-- The automatic result page is **off** for prospects. Daniel reads their answers and
-  writes each result himself at `/results`; `assessment-core.js` still scores the quiz,
-  but only to fill the teaser and his own notification.
-- Submitting sends **one** email: a thank-you plus two headline findings, no result link.
-- Publishing a result emails that person the link, **once**. Editing a live page never
-  re-sends it.
-- Readers open a result with a 6-digit code sent to the email they submitted with, then
-  hold a pass for 30 days.
-- `RESULTS_AUTHOR_TOKEN` lets Daniel's own assistant write a result through the same
-  endpoints. See `docs/writing-assessment-results.md`.
-
-How it all fits together: `AGENTS.md`. How to prove it still works:
-`bash scripts/check-results-feature.sh`.
+**Still waiting on one approval click:** the newest build carries the thank-you wording fix, and
+Netlify bakes SECRET env values in at BUILD time, so `RESULTS_AUTHOR_TOKEN` only reaches the
+functions once a build made after the rotation is published. Until then the workspace API
+answers 401 to that token.
 
 ## Known and not fixed
 

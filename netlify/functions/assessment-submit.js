@@ -203,8 +203,10 @@ function qaSummaryHtml(qa) {
 }
 
 // The confirmation the person gets on submit: it arrived, here are the two things
-// their answers already point at, and Daniel writes the rest himself.
-// Deliberately short. The teaser is the two merge fields the assessment is most
+// their answers already point at, and the rest is written by hand.
+// Deliberately short, and deliberately not written from the outside — it reads as
+// his own note, with the first person used once rather than in every sentence
+// (Reece 2026-09-12). The teaser is the two merge fields the assessment is most
 // confident about — never a full reading, which is his job and his voice.
 function confirmationEmail(fields) {
   const name = String(fields.first_name || "").trim();
@@ -223,9 +225,9 @@ function confirmationEmail(fields) {
 
   return `<div style="font-family:Georgia,serif;color:#15140f;line-height:1.7;max-width:32rem">
     <p style="margin:0 0 1rem">${name ? `${escapeHtml(name)}, thank you` : "Thank you"} — your assessment is in.</p>
-    <p style="margin:0 0 1rem">I read these myself rather than letting something automatic hand you a verdict. Here is what your answers already point at:</p>
+    <p style="margin:0 0 1rem">These get read properly. Nothing automatic hands you a verdict here, so what comes back is written rather than assembled. This is what your answers already point at:</p>
     ${teaserHtml}
-    <p style="margin:0 0 1rem">The rest takes me a little longer, because it is written for you rather than assembled. I'll email you the moment yours is ready, with a link and a code to open it.</p>
+    <p style="margin:0 0 1rem">The rest takes a little longer. I'll send it the moment it's ready, with a link and a code to open it.</p>
     <p style="margin:0 0 1rem">Daniel</p>
   </div>`;
 }

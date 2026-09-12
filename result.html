@@ -64,7 +64,7 @@
        remembered for 30 days, so re-reading it later is not a chore. -->
   <div id="gate" class="gate" hidden>
     <h1>Your assessment</h1>
-    <p id="gate-lede">This is private. Enter the email you took the assessment with and we'll send you a 6-digit code.</p>
+    <p id="gate-lede">This is private. Enter the email the assessment came in on and a 6-digit code will be sent to it.</p>
     <p id="gate-msg" class="msg" role="status" aria-live="polite"></p>
 
     <form id="email-form">
@@ -89,7 +89,7 @@
   <!-- Step 2a: Daniel hasn't written it yet. -->
   <div id="not-ready" class="result-state" hidden>
     <h1 id="not-ready-title">It's on its way</h1>
-    <p>Daniel is reading your answers himself and writing your assessment by hand.<br>You'll get an email the moment it's here — this page will be waiting for you.</p>
+    <p>Your answers are being read properly, and your assessment is being written by hand rather than assembled.<br>An email comes the moment it's ready — this page will be waiting for you.</p>
   </div>
 
   <!-- Step 2b: his words. -->
@@ -98,7 +98,7 @@
 </main>
 
 <footer class="result-foot">
-  <p>A private reflection from <a href="/">Daniel Tiwari</a> · <a href="mailto:email@danieltiwari.com">email@danieltiwari.com</a></p>
+  <p>A private reflection · <a href="mailto:email@danieltiwari.com">email@danieltiwari.com</a></p>
 </footer>
 
 <script defer>
@@ -156,7 +156,7 @@
     intro.innerHTML = `
       <span class="eyebrow"><span class="dot"></span>Your assessment</span>
       <h1>${data.firstName ? `${data.firstName}, here is your assessment.` : "Here is your assessment."}</h1>
-      <p>Written for you by Daniel. Take it in slowly \u2014 nothing here needs fixing today.</p>`;
+      <p>Written for you, not generated. Take it in slowly \u2014 nothing here needs fixing today.</p>`;
     show("result-intro");
     const body = $("assessment-result");
     body.innerHTML = (data.draft ? '<div class="draft-flag">Draft \u2014 only you can see this. It is not published yet.</div>' : "") + (data.html || "");

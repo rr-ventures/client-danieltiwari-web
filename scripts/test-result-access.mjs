@@ -43,6 +43,27 @@ t("unpublishing never emails", a.shouldNotify({ previous: { status: "published" 
 t("a quiet correction can mute it", a.shouldNotify({ previous: null, next: "published", notify: false }) === false);
 t("re-publishing after an unpublish emails again", a.shouldNotify({ previous: { status: "draft" }, next: "published" }) === true);
 
+// The approval email must never be headlined by the tidy-up commit that happened
+// to be last. Reece, 2026-09-12: a whole assessment rebuild went out labelled
+// "Keep local verification screenshots out of the repo".
+const rel = createRequire(import.meta.url)("../netlify/lib/release-headline.js");
+const commit = (subject, merge) => ({ commit: { message: subject }, parents: merge ? [1, 2] : [1] });
+
+let r = rel.headlineFrom([commit("Assessment: hand-written results"), commit("Fix two defects"), commit("Keep local verification screenshots out of the repo")]);
+t("housekeeping landing last no longer becomes the headline", r.headline === "Assessment: hand-written results");
+t("every commit in the release is still listed", r.subjects.length === 3);
+
+r = rel.headlineFrom([commit("Add a thing"), commit("Merge: the whole assessment rebuild", true), commit("chore: tidy")]);
+t("a merge message wins, it describes the whole batch", r.headline === "Merge: the whole assessment rebuild");
+
+r = rel.headlineFrom([commit("wip: poking"), commit("chore: lint")]);
+t("an all-housekeeping release still gets a headline", r.headline === "wip: poking");
+
+t("a single commit is left alone", rel.headlineFrom([commit("Rebuild the homepage")]).headline === "Rebuild the homepage");
+t("no commits at all does not throw", rel.headlineFrom([]).headline === "");
+t("'bump deps' counts as housekeeping", rel.CHORE.test("bump deps"));
+t("a real change does not", !rel.CHORE.test("Open the assessment to everyone"));
+
 for (const [name, pass] of results) console.log(`${pass ? "PASS" : "FAIL"}  ${name}`);
 const passed = results.filter(([, p]) => p).length;
 console.log(`\n${passed}/${results.length} passed`);

@@ -7,6 +7,7 @@
 // Mirrors the Telegram bot's gate, but for EVERY change from any source.
 const crypto = require("node:crypto");
 const { changeGateStore } = require("./blobs");
+const { headlineFrom } = require("./release-headline");
 const { sendResendEmail, mailConfig } = require("./send");
 const { escapeHtml } = require("./telegram");
 
@@ -54,25 +55,29 @@ async function github(path) {
   return res.json();
 }
 
-// Returns { message, diff } for `sha`, diffed against `base` when given.
+// Returns { message, diff, subjects } for `sha`, diffed against `base` when given.
+// `subjects` is every commit in the range, so the email can show the whole batch
+// rather than leaning on one line being the right one.
 async function commitDetails(sha, base) {
-  let message = "", files = [];
+  let message = "", files = [], subjects = [];
   try {
     if (base && base !== sha) {
       const cmp = await github(`/repos/${REPO}/compare/${base}...${sha}`);
       files = cmp.files || [];
-      const head = (cmp.commits && cmp.commits[cmp.commits.length - 1]) || {};
-      message = head.commit ? head.commit.message : "";
+      const picked = headlineFrom(cmp.commits);
+      message = picked.headline;
+      subjects = picked.subjects;
     } else {
       const c = await github(`/repos/${REPO}/commits/${sha}`);
       message = c.commit ? c.commit.message : "";
       files = c.files || [];
+      subjects = [String(message).split("\n")[0]].filter(Boolean);
     }
   } catch { /* best effort — email still goes out with whatever we have */ }
   const diff = files
     .map((f) => `diff --git ${f.filename}\n@@ ${f.status} ${f.filename} @@\n${f.patch || "(binary or too large to show)"}`)
     .join("\n").slice(0, 60000);
-  return { message, diff };
+  return { message, diff, subjects, fileCount: files.length };
 }
 
 // ---- Email ----------------------------------------------------------------
@@ -136,13 +141,21 @@ function resolvedMessage(done) {
   return "This change was already handled.";
 }
 
-function approvalEmail({ subject, who, sha, diff, approve, reject }) {
+function approvalEmail({ subject, who, sha, diff, approve, reject, subjects, fileCount }) {
+  // When a deploy carries several commits, list every one. Picking a headline is a
+  // guess; showing the whole batch is not.
+  const rest = (subjects || []).filter((t) => t && t !== String(subject || "").split("\n")[0]);
+  const alsoHtml = rest.length
+    ? `<p style="margin:14px 0 4px;font-size:13px;color:#444;text-transform:uppercase;letter-spacing:.05em">Everything in this release (${(subjects || []).length} changes${fileCount ? `, ${fileCount} files` : ""})</p>
+       <ul style="margin:0;padding-left:20px;font-size:14px;color:#333">${rest.map((t) => `<li style="margin:2px 0">${escapeHtml(t)}</li>`).join("")}</ul>`
+    : "";
   return `
   <div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#15140f;line-height:1.55;max-width:46rem">
     <h2 style="font-weight:600;font-size:19px;margin-bottom:6px">Approve this change to danieltiwari.com?</h2>
     <p style="margin:0 0 8px"><span style="display:inline-block;background:#eef1f4;border-radius:999px;padding:3px 13px;font-size:13px;font-weight:600;color:#15140f">Change by ${escapeHtml(who || "an agent on Reece's behalf")}</span></p>
     <p style="color:#666;margin-top:0">It has been built, but <b>will not go live</b> until it is approved.</p>
     <div style="background:#f6f8fa;border-left:3px solid #15140f;padding:12px 16px;border-radius:6px;font-size:15px">${escapeHtml((subject || "(no commit message)").split("\n")[0])}</div>
+    ${alsoHtml}
     <p style="margin:30px 0 6px">
       <a href="${approve}" style="background:#137333;color:#fff;padding:13px 26px;text-decoration:none;border-radius:6px;font-weight:600;font-size:15px">✓ Approve &amp; publish</a>
       &nbsp;&nbsp;&nbsp;<a href="${reject}" style="color:#888;font-size:14px">Reject</a>
@@ -188,7 +201,7 @@ async function onDeploySucceeded(deploy) {
   if (published && (published === sha || sha.startsWith(published) || published.startsWith(sha))) return "already-live";
   if (await store.get(`seen:${sha}`).catch(() => null)) return "already-staged";
 
-  const { message, diff } = await commitDetails(sha, published);
+  const { message, diff, subjects, fileCount } = await commitDetails(sha, published);
 
   // Telegram-approved changes already passed a human gate → publish, no email.
   if (/via Telegram/i.test(message || deploy.title || "")) {
@@ -212,8 +225,10 @@ async function onDeploySucceeded(deploy) {
     const reject = `${SELF}?reject=${token}&by=${encodeURIComponent(r.who)}`;
     const mail = await sendResendEmail({
       from, to: [r.email],
-      subject: `Approve a change to danieltiwari.com — ${subject.slice(0, 60) || sha.slice(0, 7)}`,
-      html: approvalEmail({ subject, who, sha, diff, approve, reject }),
+      // Say HOW MANY changes when it is a batch, so a release never reads as one
+      // small thing because of whichever commit happened to be last.
+      subject: `Approve ${(subjects || []).length > 1 ? `${subjects.length} changes` : "a change"} to danieltiwari.com: ${subject.slice(0, 60) || sha.slice(0, 7)}`,
+      html: approvalEmail({ subject, who, sha, diff, approve, reject, subjects, fileCount }),
       tags: [{ name: "source", value: "change_gate" }],
     }).catch((e) => ({ error: e.message }));
     if (mail && mail.error) lastErr = mail.error;

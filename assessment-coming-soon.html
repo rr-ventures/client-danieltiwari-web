@@ -169,6 +169,20 @@
   testerSubmit.addEventListener('click', attemptAccess);
   testerPw.addEventListener('keydown', (e) => { if (e.key === 'Enter') attemptAccess(); });
 
+  // A one-click tester link, so Daniel can send someone straight in instead of
+  // asking them to find a hidden box and type a password (Reece 2026-09-12).
+  // Netlify keeps the query string when it bounces /assessment to this page, so
+  // danieltiwari.com/assessment?key=danielpreview lands here and passes through.
+  // This is an unlisted door, not a locked one: the key sits in this page's code
+  // and always has. It keeps the assessment off the open web, nothing more.
+  (function letTesterStraightIn() {
+    const key = new URLSearchParams(location.search).get('key');
+    if (key && key === PREVIEW_PASSWORD) {
+      document.cookie = 'preview_access=true; path=/; max-age=604800; SameSite=Lax';
+      location.replace('/assessment');
+    }
+  })();
+
   const bar = document.getElementById('bar');
   window.addEventListener('scroll', () => bar.classList.toggle('scrolled', scrollY > 8), { passive: true });
 

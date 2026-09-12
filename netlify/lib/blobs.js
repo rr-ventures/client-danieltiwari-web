@@ -103,4 +103,26 @@ function knockStore() {
     : getStore("bot-knocks");
 }
 
-module.exports = { resultsStore, sessionStore, dripStore, subscribersStore, pendingEditsStore, changesetStore, threadStore, changeGateStore, knockStore };
+// Daniel's HAND-WRITTEN results pages. One blob per submission id:
+// { html, status: "draft"|"published", updatedAt, publishedAt }
+// Deliberately separate from resultsStore (the raw answers) so a rewrite of his
+// words can never damage what the prospect actually submitted.
+function resultPagesStore() {
+  const siteID = process.env.BLOBS_SITE_ID;
+  const token = process.env.BLOBS_TOKEN;
+  return siteID && token
+    ? getStore({ name: "assessment-result-pages", siteID, token })
+    : getStore("assessment-result-pages");
+}
+
+// Short-lived one-time login codes for viewing a result. One blob per submission
+// id: { codeHash, expiresAt, attempts }. Never stores the code itself.
+function loginCodesStore() {
+  const siteID = process.env.BLOBS_SITE_ID;
+  const token = process.env.BLOBS_TOKEN;
+  return siteID && token
+    ? getStore({ name: "result-login-codes", siteID, token })
+    : getStore("result-login-codes");
+}
+
+module.exports = { resultsStore, sessionStore, dripStore, subscribersStore, pendingEditsStore, changesetStore, threadStore, changeGateStore, knockStore, resultPagesStore, loginCodesStore };

@@ -6,7 +6,7 @@
 const crypto = require("node:crypto");
 const { runAgent, MODEL } = require("../lib/repo-agent");
 const { lineDiff } = require("../lib/repo-commit");
-const { changesetStore, threadStore } = require("../lib/blobs");
+const { changesetStore, threadStore, sessionStore } = require("../lib/blobs");
 const { send, escapeHtml } = require("../lib/telegram");
 const { sendResendEmail, mailConfig } = require("../lib/send");
 

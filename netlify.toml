@@ -25,6 +25,22 @@
   to = "/.netlify/functions/result-data"
   status = 200
 
+[[redirects]]
+  from = "/api/result-login"
+  to = "/.netlify/functions/result-login"
+  status = 200
+
+[[redirects]]
+  from = "/api/result-admin"
+  to = "/.netlify/functions/result-admin"
+  status = 200
+
+# Daniel's private workspace for writing each person's result.
+[[redirects]]
+  from = "/results"
+  to = "/results-admin.html"
+  status = 200
+
 # Hosted Assessment result, short shareable id, rendered client-side by result.html.
 [[redirects]]
   from = "/r/*"
@@ -44,35 +60,13 @@
   status = 301
   force = true
 
-# Assessment under construction, preview testers bypass with cookie; everyone else gets coming-soon.
-# Cookie condition must come first and WITHOUT force=true so Netlify evaluates it before the fallback.
+# The assessment is OPEN to everyone (Reece 2026-09-12). It used to be held behind a
+# preview_access cookie with a coming-soon page for everyone else; those four rules
+# were removed here. assessment-coming-soon.html is kept in the repo so the gate can
+# be put back by restoring them, and it is no longer reachable.
 [[redirects]]
   from = "/assessment"
   to = "/assessment.html"
-  status = 200
-  [redirects.conditions]
-    Cookie = ["preview_access=true"]
-
-[[redirects]]
-  from = "/assessment.html"
-  to = "/assessment.html"
-  status = 200
-  [redirects.conditions]
-    Cookie = ["preview_access=true"]
-
-[[redirects]]
-  from = "/assessment"
-  to = "/assessment-coming-soon.html"
-  status = 302
-
-[[redirects]]
-  from = "/assessment.html"
-  to = "/assessment-coming-soon.html"
-  status = 302
-
-[[redirects]]
-  from = "/api/assessment-notify"
-  to = "/.netlify/functions/assessment-notify"
   status = 200
 
 [[redirects]]

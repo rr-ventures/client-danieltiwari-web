@@ -37,7 +37,10 @@ This repo is Daniel's public coaching website plus its Netlify Functions. Change
   - `/api/newsletter-submit` -> `netlify/functions/newsletter-submit.js`.
   - `/api/assessment-submit` -> `netlify/functions/assessment-submit.js`.
   - `/api/result-data` -> `netlify/functions/result-data.js`.
+  - `/api/result-login` -> `netlify/functions/result-login.js` (6-digit code login).
+  - `/api/result-admin` -> `netlify/functions/result-admin.js` (Daniel writes results).
   - `/r/*` -> `result.html`.
+  - `/results` -> `results-admin.html` (Daniel's private writing workspace).
 
 ## Live Forms And Emails
 
@@ -62,9 +65,22 @@ This repo is Daniel's public coaching website plus its Netlify Functions. Change
 - Assessment and result nurture:
   - Quiz UI: `assessment.html`, `assessment.js`, and `assessment-core.js`.
   - Submit handler: `netlify/functions/assessment-submit.js`.
-  - On submit, it stores the result in Netlify Blobs, sends the day-0 result-link
-    email, and schedules/enrols the remaining nurture flow.
-  - Result page: `result.html`, served at `/r/<id>` by `netlify.toml`.
+  - On submit, it stores the answers in Netlify Blobs and sends ONE email: a
+    confirmation plus a two-line teaser (`confirmationEmail()` in the submit
+    handler). It deliberately does NOT send a result link — see below.
+  - THE AUTOMATIC RESULT IS OFF (Reece 2026-09-12). Daniel reads each person's
+    answers and writes their result by hand at `/results`; `assessment-core.js`
+    still scores the quiz for the teaser and his internal notification, but no
+    machine-written reading is ever shown to a prospect.
+  - Result page: `result.html`, served at `/r/<id>`. It shows Daniel's written
+    page only, and only after the reader proves they own the submitting email
+    with a 6-digit code (pass remembered 30 days). Before he publishes, they see
+    "it's on its way".
+  - His workspace: `results-admin.html` at `/results`, backed by
+    `netlify/functions/result-admin.js`. The same endpoints take
+    `Authorization: Bearer <RESULTS_AUTHOR_TOKEN>` so his own assistant can write
+    a result unattended. How-to: `docs/writing-assessment-results.md`.
+  - Access rules live in one place: `netlify/lib/result-access.js`.
   - Editable nurture email copy: `content/emails/branch-a/*.md` and
     `content/emails/branch-b/*.md`.
   - Email build step: `scripts/build-emails.mjs` validates the Markdown and writes
@@ -77,7 +93,11 @@ This repo is Daniel's public coaching website plus its Netlify Functions. Change
 
 Netlify Blobs is used as lightweight key/value storage:
 
-- `assessment-results`: hosted quiz-result payloads for `/r/<id>`.
+- `assessment-results`: the raw answers a person submitted. Never overwritten by
+  Daniel's writing.
+- `assessment-result-pages`: Daniel's hand-written result for each submission,
+  `{ html, status: draft|published }`.
+- `result-login-codes`: short-lived one-time login codes (hashed, never the code).
 - `nurture-drip`: per-lead nurture state for the daily drip sender.
 - `newsletter-subscribers`: homepage newsletter subscribers and one-time
   confirmation-token records.

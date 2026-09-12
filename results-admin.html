@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Assessment results · Daniel Tiwari</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alegreya+SC:wght@400;500;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/site.css">
+<style>
+  /* site.css gives buttons a display, which outranks the browser's own
+     [hidden] rule — without this, a hidden button still shows. */
+  [hidden]{display:none !important}
+  body{background:var(--bg)}
+  .wrap{max-width:78rem;margin:0 auto;padding:2rem 1.5rem 6rem}
+  .top{display:flex;align-items:baseline;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1.6rem}
+  .top h1{font-family:var(--display);font-weight:500;font-size:1.8rem}
+  .top .who{font-size:.85rem;color:var(--muted)}
+  .gate{max-width:24rem;margin:12vh auto;padding-inline:1.25rem;text-align:center}
+  .gate h1{font-family:var(--display);font-weight:500;font-size:1.9rem;margin-bottom:.8rem}
+  .gate p{color:var(--muted);margin-bottom:1.4rem}
+  input,textarea,button{font-family:var(--body)}
+  .gate input{display:block;width:100%;box-sizing:border-box;font-size:1rem;padding:.75rem .8rem;border:1px solid var(--hair);border-radius:4px;background:#fff;margin-bottom:1rem}
+  .gate input.code{font-family:monospace;font-size:1.5rem;letter-spacing:.4em;text-align:center}
+  .gate button{width:100%}
+  .msg{font-size:.9rem;min-height:1.2rem;margin-bottom:.8rem}
+  .msg.bad{color:#b3261e}
+  .msg.good{color:#137333}
+
+  .cols{display:grid;grid-template-columns:17rem 1fr;gap:1.4rem;align-items:start}
+  @media (max-width:900px){.cols{grid-template-columns:1fr}}
+  .panel{background:#fff;border:1px solid var(--hair);border-radius:8px}
+  .list{max-height:76vh;overflow:auto}
+  .row{display:block;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--hair);padding:.8rem .9rem;cursor:pointer;font-size:.9rem;color:var(--ink)}
+  .row:last-child{border-bottom:0}
+  .row:hover{background:#faf8f4}
+  .row[aria-current="true"]{background:#f2ede3}
+  .row .nm{display:block;font-weight:600}
+  .row .em{display:block;color:var(--muted);font-size:.8rem;word-break:break-all}
+  .pill{display:inline-block;font-family:var(--sc);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;padding:.12rem .45rem;border-radius:999px;margin-top:.35rem}
+  .pill.none{background:#f1efea;color:#8a857a}
+  .pill.draft{background:#fff6e0;color:#8a6d13}
+  .pill.published{background:#e6ffed;color:#137333}
+  .pill.warn{background:#ffe8e6;color:#b3261e;margin-left:.3rem}
+
+  .editor{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem}
+  @media (max-width:1100px){.editor{grid-template-columns:1fr}}
+  .box{padding:1rem 1.1rem}
+  .box h2{font-family:var(--sc);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 .8rem}
+  .answers{max-height:64vh;overflow:auto;font-size:.9rem;line-height:1.6}
+  .answers dt{font-family:var(--sc);font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:.9rem}
+  .answers dd{margin:.2rem 0 0;white-space:pre-wrap}
+  textarea{width:100%;box-sizing:border-box;min-height:58vh;font-size:.92rem;line-height:1.6;padding:.8rem;border:1px solid var(--hair);border-radius:4px;background:#fff;resize:vertical}
+  .actions{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;margin-top:.8rem}
+  .btn{padding:.6rem 1.2rem;font-family:var(--sc);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;border:1px solid var(--ink);background:var(--ink);color:var(--bg);border-radius:999px;cursor:pointer}
+  .btn.ghost{background:none;color:var(--ink)}
+  .btn:disabled{opacity:.5;cursor:default}
+  .hint{font-size:.8rem;color:var(--muted);margin:.6rem 0 0}
+  .empty{padding:3rem 1rem;text-align:center;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<!-- Sign in: a code to Daniel's own address. Same door his assistant uses with a
+     standing token, so either of them can write a result. -->
+<div class="gate" id="gate">
+  <h1>Assessment results</h1>
+  <p>Enter your email and we'll send you a 6-digit code.</p>
+  <p class="msg" id="gate-msg" role="status" aria-live="polite"></p>
+  <form id="email-form">
+    <input id="email" type="email" autocomplete="email" required placeholder="you@example.com">
+    <button class="btn" type="submit">Send me a code</button>
+  </form>
+  <form id="code-form" hidden>
+    <input id="code" class="code" inputmode="numeric" maxlength="6" required placeholder="000000">
+    <button class="btn" type="submit">Open</button>
+  </form>
+</div>
+
+<div class="wrap" id="app" hidden>
+  <div class="top">
+    <h1>Assessment results</h1>
+    <span class="who" id="count"></span>
+  </div>
+  <div class="cols">
+    <div class="panel list" id="list"></div>
+    <div class="panel box" id="stage">
+      <div class="empty">Pick someone on the left to write their assessment.</div>
+    </div>
+  </div>
+</div>
+
+<template id="editor-tpl">
+  <div class="editor">
+    <div>
+      <h2>What they answered</h2>
+      <dl class="answers" id="answers"></dl>
+    </div>
+    <div>
+      <h2>Their assessment <span id="status-pill"></span></h2>
+      <textarea id="html" spellcheck="true"></textarea>
+      <div class="actions">
+        <button class="btn ghost" id="save" type="button">Save draft</button>
+        <button class="btn" id="publish" type="button">Publish to them</button>
+        <button class="btn ghost" id="unpublish" type="button" hidden>Unpublish</button>
+        <button class="btn ghost" id="template" type="button">Insert blank template</button>
+        <span class="msg" id="edit-msg" role="status" aria-live="polite"></span>
+      </div>
+      <p class="hint">Write in plain paragraphs. &lt;h2&gt; for a section heading, &lt;p&gt; for a paragraph, &lt;ul&gt;&lt;li&gt; for a list, &lt;blockquote&gt; to quote their own words back to them.<br><strong>Publish emails them the link</strong> and lets them open it with a code. Editing an already-published one does not email them again.</p>
+    </div>
+  </div>
+</template>
+
+<script defer>
+  const $ = (id) => document.getElementById(id);
+  const PASS_KEY = "dt_author_pass";
+  const getPass = () => { try { return localStorage.getItem(PASS_KEY) || ""; } catch { return ""; } };
+  const setPass = (p) => { try { localStorage.setItem(PASS_KEY, p); } catch {} };
+  const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  // The blank template Daniel starts from — his shape, empty of content.
+  const TEMPLATE = [
+    "<h2>Where you are</h2>",
+    "<p></p>",
+    "",
+    "<h2>What I noticed in your answers</h2>",
+    "<p></p>",
+    "",
+    "<blockquote></blockquote>",
+    "",
+    "<h2>What I'd work on first</h2>",
+    "<p></p>",
+    "",
+    "<h2>What this looks like from here</h2>",
+    "<p></p>",
+  ].join("\n");
+
+  function say(el, text, kind) {
+    el.textContent = text || "";
+    el.className = "msg" + (kind ? " " + kind : "");
+  }
+
+  async function api(path, opts = {}) {
+    const res = await fetch(path, {
+      ...opts,
+      headers: { "Content-Type": "application/json", "X-Result-Pass": getPass(), ...(opts.headers || {}) },
+    });
+    return { ok: res.ok, status: res.status, data: await res.json().catch(() => ({})) };
+  }
+
+  // ---- sign in ----
+  async function login(body) {
+    const res = await fetch("/api/result-login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: "author", ...body }),
+    });
+    return { ok: res.ok, data: await res.json().catch(() => ({})) };
+  }
+
+  $("email-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    say($("gate-msg"), "Sending…");
+    const { data } = await login({ action: "request", email: $("email").value });
+    say($("gate-msg"), data.message || data.error || "Check your email.", data.error ? "bad" : "");
+    $("email-form").hidden = true; $("code-form").hidden = false; $("code").focus();
+  });
+
+  $("code-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    say($("gate-msg"), "Checking…");
+    const { ok, data } = await login({ action: "verify", code: $("code").value });
+    if (!ok || !data.pass) { say($("gate-msg"), data.error || "That didn't work.", "bad"); return; }
+    setPass(data.pass);
+    start();
+  });
+
+  // ---- list ----
+  let rows = [];
+  let currentId = null;
+
+  async function start() {
+    const { ok, data, status } = await api("/api/result-admin?action=list");
+    if (status === 401) { $("gate").hidden = false; $("app").hidden = true; return; }
+    if (!ok) { say($("gate-msg"), data.error || "Could not load.", "bad"); return; }
+    $("gate").hidden = true; $("app").hidden = false;
+    rows = data.rows || [];
+    renderList();
+  }
+
+  function renderList() {
+    $("count").textContent = rows.length === 1 ? "1 submission" : `${rows.length} submissions`;
+    const list = $("list");
+    if (!rows.length) { list.innerHTML = '<div class="empty">Nothing has come in yet.</div>'; return; }
+    list.innerHTML = rows.map((r) => `
+      <button class="row" data-id="${esc(r.id)}" aria-current="${r.id === currentId}">
+        <span class="nm">${esc(r.name || "(no name)")}</span>
+        <span class="em">${esc(r.email || "")}</span>
+        <span class="pill ${esc(r.status)}">${r.status === "none" ? "not started" : esc(r.status)}</span>${r.notifyFailed ? '<span class="pill warn">you were not emailed</span>' : ""}
+      </button>`).join("");
+    list.querySelectorAll(".row").forEach((b) => b.addEventListener("click", () => open(b.dataset.id)));
+  }
+
+  // ---- one person ----
+  async function open(id) {
+    currentId = id;
+    renderList();
+    const { ok, data } = await api(`/api/result-admin?action=get&id=${encodeURIComponent(id)}`);
+    const stage = $("stage");
+    if (!ok) { stage.innerHTML = `<div class="empty">${esc(data.error || "Could not open that.")}</div>`; return; }
+
+    stage.innerHTML = "";
+    stage.appendChild($("editor-tpl").content.cloneNode(true));
+
+    const answers = data.answers || {};
+    $("answers").innerHTML = Object.keys(answers)
+      .filter((k) => answers[k] !== "" && answers[k] != null && k !== "qa_summary")
+      .map((k) => `<dt>${esc(k.replace(/_/g, " "))}</dt><dd>${esc(typeof answers[k] === "object" ? JSON.stringify(answers[k], null, 2) : answers[k])}</dd>`)
+      .join("");
+
+    $("html").value = data.html || "";
+    paintStatus(data.status);
+
+    $("template").addEventListener("click", () => {
+      if ($("html").value.trim() && !confirm("Replace what's in the box with the blank template?")) return;
+      $("html").value = TEMPLATE;
+    });
+    $("save").addEventListener("click", () => write("save"));
+    $("publish").addEventListener("click", () => write("publish"));
+    $("unpublish").addEventListener("click", () => write("unpublish"));
+  }
+
+  function paintStatus(status) {
+    const pill = $("status-pill");
+    pill.className = "pill " + status;
+    pill.textContent = status === "none" ? "not started" : status;
+    $("unpublish").hidden = status !== "published";
+    const row = rows.find((r) => r.id === currentId);
+    if (row) { row.status = status; renderList(); }
+  }
+
+  async function write(action) {
+    const msg = $("edit-msg");
+    say(msg, action === "publish" ? "Publishing…" : "Saving…");
+    const body = { action, id: currentId };
+    if (action !== "unpublish") body.html = $("html").value;
+    const { ok, data } = await api("/api/result-admin", { method: "POST", body: JSON.stringify(body) });
+    if (!ok) { say(msg, data.error || "That didn't save.", "bad"); return; }
+    paintStatus(data.status);
+    const published = action === "publish";
+    const mailed = data.notified && data.notified.sent
+      ? " They've been emailed the link."
+      : data.notified && data.notified.error
+        ? ` Could not email them: ${data.notified.error}`
+        : "";
+    say(msg,
+      published ? "Published. They can read it now." + mailed
+        : action === "unpublish" ? "Unpublished." : "Draft saved.",
+      published && data.notified && data.notified.error ? "bad" : "good");
+  }
+
+  if (getPass()) start(); else $("gate").hidden = false;
+</script>
+</body>
+</html>

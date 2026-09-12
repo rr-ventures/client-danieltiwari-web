@@ -11,13 +11,16 @@ this repo can be ahead of it or behind it.
 ## What is live right now (2026-09-12)
 
 The assessment's hand-written-results work is **merged into `main` and built**
-(commit `12726f0`, approved by Reece in session). `feat/hand-written-assessment-results`
+(head commit `7032b5d`, approved by Reece in session). `feat/hand-written-assessment-results`
 is merged and finished with.
 
 It is built but **not yet serving**. This site's own change gate holds every build back
 and emails an approve-and-publish link to Daniel and Reece (`netlify/lib/change-gate.js`,
 triggered by `deploy-succeeded.js`); the site keeps serving the previous deploy until one
-of them clicks Approve. Both emails were delivered at 03:23 on 12 September. Check which
+of them clicks Approve. Three of those emails went out on 12 September as commits landed (03:23, 03:26, 03:31).
+**Each approve link publishes ITS OWN commit**, so approving an older one ships an older
+site. The newest, titled "Assessment results, email+code login...", is the one that carries
+everything. Check which
 deploy is actually serving with the Netlify API's `published_deploy`, never by assuming a
 green build means live.
 
@@ -53,6 +56,10 @@ How it all fits together: `AGENTS.md`. How to prove it still works:
   Dead route, safe to delete.
 - The on-screen thank-you after submitting still says "Thanks for testing this with me",
   which reads wrong once these are real prospects rather than testers.
+- The approval email used to be headlined by the NEWEST commit in a release, so a batch
+  ending in a tidy-up went out looking like housekeeping. `netlify/lib/release-headline.js`
+  now prefers a merge message, then the first non-chore commit, and the email lists every
+  commit with a file count. Covered by 8 checks in `scripts/check-results-feature.sh`.
 - The publish approval lives in the DEPLOY gate, not in `result-admin.js`. Daniel hitting
   Publish there makes a result readable by that one person immediately, and emails them the
   link; that is the intended behaviour and is his call to make, not something to approve.

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Your Assessment — Daniel Tiwari</title>
+<title>Your Assessment · Daniel Tiwari</title>
 <meta name="description" content="Your private Assessment.">
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -89,7 +89,7 @@
   <!-- Step 2a: Daniel hasn't written it yet. -->
   <div id="not-ready" class="result-state" hidden>
     <h1 id="not-ready-title">It's on its way</h1>
-    <p>Your answers are being read properly, and your assessment is being written by hand rather than assembled.<br>An email comes the moment it's ready — this page will be waiting for you.</p>
+    <p>Your answers are being read properly, and your assessment is being written by hand rather than assembled.<br>An email comes the moment it's ready, and this page will be waiting for you.</p>
   </div>
 
   <!-- Step 2b: his words. -->
@@ -156,10 +156,10 @@
     intro.innerHTML = `
       <span class="eyebrow"><span class="dot"></span>Your assessment</span>
       <h1>${data.firstName ? `${data.firstName}, here is your assessment.` : "Here is your assessment."}</h1>
-      <p>Written for you, not generated. Take it in slowly \u2014 nothing here needs fixing today.</p>`;
+      <p>Written for you, not generated. Take it in slowly. Nothing here needs fixing today.</p>`;
     show("result-intro");
     const body = $("assessment-result");
-    body.innerHTML = (data.draft ? '<div class="draft-flag">Draft \u2014 only you can see this. It is not published yet.</div>' : "") + (data.html || "");
+    body.innerHTML = (data.draft ? '<div class="draft-flag">Draft. Only you can see this. It is not published yet.</div>' : "") + (data.html || "");
     show("assessment-result");
   }
 

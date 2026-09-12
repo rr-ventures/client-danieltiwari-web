@@ -34,6 +34,15 @@ t("missing code record rejected", a.checkCode(null, code, "abc123") === "expired
 t("cookie is HttpOnly and Secure", a.passCookie(vp, 30).includes("HttpOnly") && a.passCookie(vp, 30).includes("Secure"));
 t("cookie reads back", a.passFromRequest({ headers: { cookie: "x=1; dt_result_pass=" + encodeURIComponent(vp) } }) === vp);
 
+// Publishing must email them exactly once: on the way in, never on an edit.
+t("first publish emails them", a.shouldNotify({ previous: null, next: "published" }) === true);
+t("publishing a saved draft emails them", a.shouldNotify({ previous: { status: "draft" }, next: "published" }) === true);
+t("editing an already-live page does not email again", a.shouldNotify({ previous: { status: "published" }, next: "published" }) === false);
+t("saving a draft never emails", a.shouldNotify({ previous: { status: "draft" }, next: "draft" }) === false);
+t("unpublishing never emails", a.shouldNotify({ previous: { status: "published" }, next: "draft" }) === false);
+t("a quiet correction can mute it", a.shouldNotify({ previous: null, next: "published", notify: false }) === false);
+t("re-publishing after an unpublish emails again", a.shouldNotify({ previous: { status: "draft" }, next: "published" }) === true);
+
 for (const [name, pass] of results) console.log(`${pass ? "PASS" : "FAIL"}  ${name}`);
 const passed = results.filter(([, p]) => p).length;
 console.log(`\n${passed}/${results.length} passed`);

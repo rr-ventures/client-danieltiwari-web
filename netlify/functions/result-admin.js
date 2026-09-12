@@ -14,7 +14,8 @@
 // Auth: an author pass (code emailed to DAN_NOTIFY_EMAIL) or
 // `Authorization: Bearer <RESULTS_AUTHOR_TOKEN>` for his assistant.
 const { resultsStore, resultPagesStore } = require("../lib/blobs");
-const { isAuthor } = require("../lib/result-access");
+const { isAuthor, shouldNotify } = require("../lib/result-access");
+const { sendResendEmail, mailConfig } = require("../lib/send");
 
 const json = (statusCode, body) => ({
   statusCode,
@@ -34,6 +35,31 @@ function cleanHtml(input) {
     .replace(/\son[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, "")
     .replace(/javascript:/gi, "")
     .slice(0, 200 * 1024);
+}
+
+// The email that tells someone their result exists. Without this, publishing is
+// silent: they were promised they would hear, and nothing would ever arrive.
+// Found in the red team of Daniel's own list, 2026-09-12.
+function readyEmail({ firstName, url }) {
+  const hi = firstName ? `${escapeText(firstName)}, your` : "Your";
+  return `<div style="font-family:Georgia,serif;color:#15140f;line-height:1.7;max-width:32rem">
+    <p style="margin:0 0 1rem">${hi} assessment is ready.</p>
+    <p style="margin:0 0 1.4rem">It's here, and it's private to you:</p>
+    <p style="margin:0 0 1.4rem"><a href="${escapeText(url)}" style="color:#15140f">${escapeText(url)}</a></p>
+    <p style="margin:0 0 1rem">Opening it asks for the email address you used, then sends a 6-digit code to it. That keeps it yours and nobody else's. After the first time your browser remembers you, so you can come back to it whenever you want.</p>
+    <p style="margin:0 0 1rem">Take it slowly.</p>
+    <p style="margin:0 0 1rem">Daniel</p>
+  </div>`;
+}
+
+function escapeText(value) {
+  return String(value == null ? "" : value)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+function firstNameOf(answers) {
+  const n = String((answers && (answers.first_name || answers.name)) || "").trim();
+  return n ? n.split(/\s+/)[0] : "";
 }
 
 function summarise(id, record, page) {
@@ -109,7 +135,7 @@ exports.handler = async (event) => {
       ? (current && current.html) || ""
       : cleanHtml(body.html);
     if (body.action === "publish" && !html.trim()) {
-      return json(400, { error: "Nothing to publish yet — write the result first." });
+      return json(400, { error: "Nothing to publish yet. Write the result first." });
     }
     const next = {
       html,
@@ -118,7 +144,30 @@ exports.handler = async (event) => {
       publishedAt: body.action === "publish" ? now : (current && current.publishedAt) || null,
     };
     await pages.setJSON(id, next);
-    return json(200, { ok: true, id, status: next.status, updatedAt: next.updatedAt });
+
+    // Only on the transition INTO published, and never again on a re-publish of
+    // an already-live page: a tweak to one paragraph must not email them twice.
+    // `notify: false` turns it off for a correction Daniel does not want announced.
+    let notified = null;
+    if (shouldNotify({ previous: current, next: next.status, notify: body.notify })) {
+      const to = String((exists.answers && exists.answers.email) || "").trim();
+      if (to) {
+        const { from, replyTo } = mailConfig();
+        const site = (process.env.URL || "https://danieltiwari.com").replace(/\/$/, "");
+        notified = await sendResendEmail({
+          from,
+          to: [to],
+          reply_to: replyTo,
+          subject: "Your assessment is ready",
+          html: readyEmail({ firstName: firstNameOf(exists.answers), url: `${site}/r/${id}` }),
+          tags: [{ name: "source", value: "assessment_result_ready" }],
+        }).then(() => ({ sent: true })).catch((e) => ({ sent: false, error: e.message }));
+      } else {
+        notified = { sent: false, error: "no email on that submission" };
+      }
+    }
+
+    return json(200, { ok: true, id, status: next.status, updatedAt: next.updatedAt, notified });
   }
 
   if (body.action === "unpublish") {

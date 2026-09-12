@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Assessment results — Daniel Tiwari</title>
+<title>Assessment results · Daniel Tiwari</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -108,7 +108,7 @@
         <button class="btn ghost" id="template" type="button">Insert blank template</button>
         <span class="msg" id="edit-msg" role="status" aria-live="polite"></span>
       </div>
-      <p class="hint">Write in plain paragraphs. &lt;h2&gt; for a section heading, &lt;p&gt; for a paragraph, &lt;ul&gt;&lt;li&gt; for a list, &lt;blockquote&gt; to quote their own words back to them. Publish is what lets them read it.</p>
+      <p class="hint">Write in plain paragraphs. &lt;h2&gt; for a section heading, &lt;p&gt; for a paragraph, &lt;ul&gt;&lt;li&gt; for a list, &lt;blockquote&gt; to quote their own words back to them.<br><strong>Publish emails them the link</strong> and lets them open it with a code. Editing an already-published one does not email them again.</p>
     </div>
   </div>
 </template>
@@ -249,7 +249,16 @@
     const { ok, data } = await api("/api/result-admin", { method: "POST", body: JSON.stringify(body) });
     if (!ok) { say(msg, data.error || "That didn't save.", "bad"); return; }
     paintStatus(data.status);
-    say(msg, action === "publish" ? "Published — they can read it now." : action === "unpublish" ? "Unpublished." : "Draft saved.", "good");
+    const published = action === "publish";
+    const mailed = data.notified && data.notified.sent
+      ? " They've been emailed the link."
+      : data.notified && data.notified.error
+        ? ` Could not email them: ${data.notified.error}`
+        : "";
+    say(msg,
+      published ? "Published. They can read it now." + mailed
+        : action === "unpublish" ? "Unpublished." : "Draft saved.",
+      published && data.notified && data.notified.error ? "bad" : "good");
   }
 
   if (getPass()) start(); else $("gate").hidden = false;

@@ -129,7 +129,7 @@ function calculateResult(answers) {
     rebel,
     route: highFit ? "diagnostic" : "nurture",
     cta: highFit
-      ? "The next step is a private diagnostic conversation — a continuation of this assessment, not a sales call."
+      ? "The next step is a private diagnostic conversation, a continuation of this assessment rather than a sales call."
       : "You can keep moving on your own from here. If you'd like a clearer reflection from the outside, the door is open.",
   };
 }
@@ -145,7 +145,7 @@ function notifyEmailHtml(answers, result) {
 
   return `
     <div style="font-family: Georgia, serif; color: #15140f; line-height: 1.6;">
-      <h2>Assessment answers — ${escapeHtml(fullNameOf(answers) || "Unnamed")}</h2>
+      <h2>Assessment answers: ${escapeHtml(fullNameOf(answers) || "Unnamed")}</h2>
       <p><strong>Email:</strong> ${escapeHtml(answers.email)}</p>
       <p><strong>Route:</strong> ${escapeHtml(result.route)}</p>
       <p><strong>Authenticity:</strong> ${escapeHtml(result.authenticity.label)} (${result.authenticity.stage})</p>
@@ -224,7 +224,7 @@ function confirmationEmail(fields) {
     : "";
 
   return `<div style="font-family:Georgia,serif;color:#15140f;line-height:1.7;max-width:32rem">
-    <p style="margin:0 0 1rem">${name ? `${escapeHtml(name)}, thank you` : "Thank you"} — your assessment is in.</p>
+    <p style="margin:0 0 1rem">${name ? `${escapeHtml(name)}, thank you` : "Thank you"}. Your assessment is in.</p>
     <p style="margin:0 0 1rem">These get read properly. Nothing automatic hands you a verdict here, so what comes back is written rather than assembled. This is what your answers already point at:</p>
     ${teaserHtml}
     <p style="margin:0 0 1rem">The rest takes a little longer. I'll send it the moment it's ready, with a link and a code to open it.</p>
@@ -338,14 +338,14 @@ exports.handler = async (event) => {
     from,
     to: String(notifyTo).split(",").map((s) => s.trim()).filter(Boolean),
     reply_to: TEST_MODE ? replyTo : answers.email,
-    subject: `New assessment submission — ${fullNameOf(answers) || answers.email}`,
+    subject: `New assessment submission: ${fullNameOf(answers) || answers.email}`,
     html: leadActionEmail({
       kind: "Assessment submission",
       rows: [
         ["Name", escapeHtml(fullNameOf(answers) || "(not given)")],
         ["Email", escapeHtml(answers.email)],
-        ["Top focus", escapeHtml(mergeFields.top_focus_area || "—")],
-        ["Stage", escapeHtml(mergeFields.authenticity_stage || "—")],
+        ["Top focus", escapeHtml(mergeFields.top_focus_area || "not given")],
+        ["Stage", escapeHtml(mergeFields.authenticity_stage || "not given")],
       ],
       extraHtml: `<p style="font-family:Georgia,serif;margin-top:1rem"><strong>Write their assessment:</strong> <a href="${escapeHtml(adminUrl)}">${escapeHtml(adminUrl)}</a><br><span style="font-size:.85rem;color:#8a857a">They cannot see anything until you publish it. Their page: ${escapeHtml(resultUrl)}</span></p>
         ${qaSummaryHtml(answers.qa_summary)}

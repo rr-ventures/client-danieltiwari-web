@@ -114,10 +114,19 @@ function checkCode(record, code, id) {
   return a.length === b.length && crypto.timingSafeEqual(a, b) ? "ok" : "wrong";
 }
 
+// Should publishing this email them? Only when it is crossing INTO published for
+// the first time, and only when Daniel has not muted it for a quiet correction.
+// Pulled out as its own function so it can be tested without a mail server.
+function shouldNotify({ previous, next, notify }) {
+  if (notify === false) return false;
+  if (next !== "published") return false;
+  return !previous || previous.status !== "published";
+}
+
 const normEmail = (v) => String(v || "").trim().toLowerCase();
 
 module.exports = {
   VIEWER_DAYS, AUTHOR_HOURS, CODE_TTL_MIN, MAX_CODE_ATTEMPTS,
   issueViewerPass, issueAuthorPass, verify, viewerOf, isAuthor,
-  passFromRequest, passCookie, newCode, codeRecord, checkCode, normEmail,
+  passFromRequest, passCookie, newCode, codeRecord, checkCode, normEmail, shouldNotify,
 };

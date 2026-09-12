@@ -24,6 +24,19 @@ Netlify bakes SECRET env values in at BUILD time, so `RESULTS_AUTHOR_TOKEN` only
 functions once a build made after the rotation is published. Until then the workspace API
 answers 401 to that token.
 
+## The next real piece of work
+
+**Somebody can finish the whole assessment without ever saying who they are.** Name and email
+are asked in the LAST section, so an abandoned run leaves nothing at all, and a finished one
+can still carry a throwaway name. `GZUIboj2tu6Y` (12 September) came in as "D" with a
+yahoo.de address and may well be Daniel testing.
+
+Reece's call, 13 September: **first name and email are asked BEFORE the assessment starts**,
+so the person is known from the first click and their progress can be saved against them
+rather than only in their own browser. That means a new opening section, the contact fields
+moving out of section 07, and a record written as soon as the email is given rather than only
+on submit. Not started.
+
 ## Known and not fixed
 
 - The assessment is behind a `preview_access=true` cookie gate in `netlify.toml`.
@@ -34,8 +47,9 @@ answers 401 to that token.
   coming-soon redirects in `netlify.toml`.
 - `netlify.toml` routes `/api/assessment-notify` to a function that does not exist.
   Dead route, safe to delete.
-- The on-screen thank-you after submitting still says "Thanks for testing this with me",
-  which reads wrong once these are real prospects rather than testers.
+- (fixed 2026-09-12, live) the thank-you after submitting used to say "Thanks for testing this
+  with me". It now matches the confirmation email's words. Verified by fetching the live
+  assessment.js, not by trusting the commit.
 - The approval email used to be headlined by the NEWEST commit in a release, so a batch
   ending in a tidy-up went out looking like housekeeping. `netlify/lib/release-headline.js`
   now prefers a merge message, then the first non-chore commit, and the email lists every

@@ -64,6 +64,16 @@ t("no commits at all does not throw", rel.headlineFrom([]).headline === "");
 t("'bump deps' counts as housekeeping", rel.CHORE.test("bump deps"));
 t("a real change does not", !rel.CHORE.test("Open the assessment to everyone"));
 
+// More than one person can be an author, so Reece can see what Daniel sees
+// without borrowing his inbox (Reece 2026-09-13).
+const authorList = (danEmail, extra) => [danEmail, ...String(extra || "").split(",")]
+  .map((x) => String(x || "").trim().toLowerCase()).filter(Boolean);
+t("Daniel is always an author", authorList("email@danieltiwari.com", "").includes("email@danieltiwari.com"));
+t("an extra author is admitted", authorList("email@danieltiwari.com", "reece.j.rainer@gmail.com").includes("reece.j.rainer@gmail.com"));
+t("case and spaces do not matter", authorList("email@danieltiwari.com", " Reece.J.Rainer@Gmail.com ").includes("reece.j.rainer@gmail.com"));
+t("an empty extra list admits nobody new", authorList("email@danieltiwari.com", "").length === 1);
+t("a stranger is not an author", !authorList("email@danieltiwari.com", "reece@spareday.ai").includes("someone@else.com"));
+
 for (const [name, pass] of results) console.log(`${pass ? "PASS" : "FAIL"}  ${name}`);
 const passed = results.filter(([, p]) => p).length;
 console.log(`\n${passed}/${results.length} passed`);

@@ -44,9 +44,15 @@ exports.handler = async (event) => {
 
   const codes = loginCodesStore();
 
-  // ---------- author (Daniel) ----------
-  // Same flow, but the code goes to his address and the pass lets him WRITE.
-  const authorEmail = normEmail(process.env.DAN_NOTIFY_EMAIL || "email@danieltiwari.com");
+  // ---------- author ----------
+  // Same flow, but the code goes to an author's own address and the pass lets
+  // them WRITE. More than one person can be an author: Daniel always, plus
+  // anyone listed in RESULTS_AUTHOR_EMAILS (comma separated), which is how Reece
+  // sees exactly what Daniel sees without borrowing his inbox.
+  const authorEmails = [
+    process.env.DAN_NOTIFY_EMAIL || "email@danieltiwari.com",
+    ...String(process.env.RESULTS_AUTHOR_EMAILS || "").split(","),
+  ].map(normEmail).filter(Boolean);
   const wantsAuthor = key === "author";
 
   if (action === "request") {
@@ -55,7 +61,7 @@ exports.handler = async (event) => {
 
     let target = null;
     if (wantsAuthor) {
-      if (given === authorEmail) target = authorEmail;
+      if (authorEmails.includes(given)) target = given;
     } else {
       const record = await resultsStore().get(key, { type: "json" }).catch(() => null);
       const stored = normEmail(record && record.answers && record.answers.email);

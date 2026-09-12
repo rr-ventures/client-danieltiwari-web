@@ -71,3 +71,36 @@ result yet.
 Daniel hitting Publish on a result and that person being emailed the link. It passes 7 test
 cases, and it cannot be driven from outside because the workspace key only reaches the site's
 functions when a build is published. Two builds are waiting on an approval click.
+
+## The publish half, proven live 13 September
+
+Driven against Reece's own 29 June submission after the build was approved. Nothing fake, and
+Daniel was never emailed.
+```
+PASS  his workspace lists every submission           [HTTP 200, 8 rows]
+PASS  it opens that person's answers and draft       [HTTP 200, draft 1377 chars, status draft]
+PASS  before publishing, the link alone shows nothing [HTTP 401]
+PASS  publishing works                               [HTTP 200 published]
+PASS  publishing EMAILS them the link                [{"sent": true}]
+PASS  re-publishing does NOT email them again        [null]
+PASS  even published, a bare link shows nothing      [HTTP 401]
+PASS  a stranger asking for a code gets the same answer
+PASS  the author can read the published page         [ready=true, 1377 chars]
+
+9/9 passed
+```
+
+Then the reader side, on the real page in a real browser at phone width: the code arrived,
+a wrong one was refused, the right one opened the page, the written result rendered, the pass
+would not open anyone else's result, the code could not be reused, and nothing scrolled
+sideways. Mail provider confirmed **delivered** for both "Your assessment is ready" and the
+login code.
+
+Reece's result was put back to a draft afterwards, so Daniel does not find a published page he
+did not write. The workspace holds 8 real submissions, 7 not started and 1 draft.
+
+## RESULTS_AUTHOR_TOKEN
+
+Rotated on 13 September to drive the checks above. Netlify bakes SECRET values in at BUILD
+time, so a change only reaches the functions once a later build is published. When Daniel's
+assistant is wired up, issue it a fresh value and publish a build before expecting it to work.

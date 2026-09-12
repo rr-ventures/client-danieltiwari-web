@@ -145,10 +145,10 @@ function renderFulfillmentCard(index, savedVal = null) {
       ${[1,2,3,4,5].map(n => `<button type="button" class="number-btn" data-val="${n}">${n}</button>`).join("")}
     </div>
     <div class="scale-legend-card"><span>Terrible</span><span>Bad</span><span>Ok</span><span>Good</span><span>Awesome</span></div>
-    <div id="fulfillment-skip-wrap" style="text-align:center"></div>
     <p class="area-counter sc">${index + 1} / ${AREAS.length}</p>
     <div class="fulfillment-nav">
       <p class="fulfillment-error">Please select a number first.</p>
+      <div id="fulfillment-skip-wrap" style="text-align:center;margin-bottom:1.2rem"></div>
       <div class="fulfillment-nav-buttons">
         <button type="button" class="btn btn-ghost fulfillment-back-btn">← Back</button>
         <button type="button" class="btn btn-primary fulfillment-next-btn">Next →</button>
@@ -202,6 +202,7 @@ function renderFulfillmentCard(index, savedVal = null) {
       document.getElementById("fulfillment-intro").hidden = false;
       window.scrollTo({ top: 0, behavior: "smooth" });
       if (!window._historyNav) history.pushState({ step: 0, sub: -1 }, '');
+      attachGetStartedHandler();
     } else {
       history.back();
     }
@@ -237,15 +238,24 @@ function initFulfillmentStep() {
   } else {
     document.getElementById("fulfillment-intro").hidden = false;
     document.getElementById("fulfillment-areas").hidden = true;
-    document.getElementById("btn-get-started").addEventListener("click", () => {
-      document.getElementById("fulfillment-intro").hidden = true;
-      document.getElementById("fulfillment-areas").hidden = false;
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      if (!window._historyNav) history.pushState({ step: 0, sub: 0 }, '');
-      if (window.startStopwatch) window.startStopwatch();
-      renderFulfillmentCard(0);
-    }, { once: true });
+    attachGetStartedHandler();
   }
+}
+
+// Wires the intro page's "Get started" button. The listener removes itself
+// after firing once, so every place that (re)shows the intro page — this
+// function, the first fulfillment card's back button, and the browser
+// back/forward handler in assessment.html — must call this again, or a
+// second visit to the intro page leaves the button dead.
+function attachGetStartedHandler() {
+  document.getElementById("btn-get-started").addEventListener("click", () => {
+    document.getElementById("fulfillment-intro").hidden = true;
+    document.getElementById("fulfillment-areas").hidden = false;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    if (!window._historyNav) history.pushState({ step: 0, sub: 0 }, '');
+    if (window.startStopwatch) window.startStopwatch();
+    renderFulfillmentCard(0);
+  }, { once: true });
 }
 
 /* ---- Step 3: Spillover ---- */
@@ -1950,7 +1960,7 @@ function renderControlAttitude(key) {
         const desiredAddBtn = document.createElement('button');
         desiredAddBtn.type = 'button';
         desiredAddBtn.className = 'list-add-btn';
-        desiredAddBtn.textContent = '+ Add another';
+        desiredAddBtn.textContent = '+ Add another way you\'d rather feel';
         desiredAddBtn.addEventListener('click', () => {
           feelingDesiredList[i].push('');
           buildDesiredRows();
@@ -2041,7 +2051,7 @@ function renderControlAttitude(key) {
     const feelingAddBtn = document.createElement('button');
     feelingAddBtn.type = 'button';
     feelingAddBtn.className = 'list-add-btn';
-    feelingAddBtn.textContent = '+ Add another';
+    feelingAddBtn.textContent = '+ Add another feeling';
     feelingAddBtn.addEventListener('click', () => {
       feelingList.push('');
       buildFeelingRows();

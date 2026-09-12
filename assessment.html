@@ -326,10 +326,14 @@
   .indent-row-center>.cause-bullet{display:none}
 
   /* "prefer not to answer" — deliberately low-key: reads as an afterthought
-     below the real options, not a real answer choice. Not centered by
-     default so it can sit under left-aligned bullet lists too; call sites
-     that follow a centered yn-btns group set text-align:center inline. */
-  .prefer-skip{display:block;margin-top:.7rem;background:none;border:none;padding:0;font-family:var(--body);font-weight:300;font-size:.72rem;color:var(--hair);cursor:pointer;text-align:left;transition:color .3s}
+     below the real options, not a real answer choice. Always centered, same
+     as the Back/Next row it sits above. display:table (not block) matters
+     here: a button shrink-wraps to its text regardless of display, so a
+     plain block box never actually fills its row — text-align then only
+     centers the text inside that already-text-width box, doing nothing
+     visually. display:table keeps the shrink-wrap but makes margin:auto
+     actually center the box itself. */
+  .prefer-skip{display:table;margin:.7rem auto 0;background:none;border:none;padding:0;font-family:var(--body);font-weight:300;font-size:.72rem;color:var(--hair);cursor:pointer;text-align:center;transition:color .3s}
   .prefer-skip:hover{color:var(--muted)}
   .prefer-skip.picked{color:var(--muted)}
 </style>
@@ -391,7 +395,7 @@
             <p><em>"Until we make the unconscious conscious, it will direct your life, and you will call it fate."</em> — Carl Jung. We are a far greater factor in our own lives than we realize, and we're constantly being deceived by our own mind. Reflection and self-honesty are what create clarity. Only once we become aware of how we've been creating our lives all along — even the circumstances we say we don't want — are we actually in a position to change them. If you want to know what you want, take a look at what you have.</p>
           </div>
           <div class="guide-text" style="margin-top:0">
-            <p>The more accurate and honest you can be with your answers, the more valuable your results will be. That said, honesty doesn't mean full disclosure. If any question touches something too personal to put into words here, writing <em>too personal</em> or <em>prefer not to say</em> is a completely valid answer.</p>
+            <p>The more accurate and honest you can be with your answers, the more valuable your results will be. That said, honesty doesn't mean full disclosure. If any question touches something too personal, just click the "prefer not to answer" button above the back and next buttons. I have, however, put together these questions for a reason, and the more you can answer, the more insightful your results will be.</p>
             <p>If you really take the time and make the effort to go through this assessment, I believe it will be life-changing — the beginning of a new chapter.</p>
           </div>
           <div style="text-align:center;padding-top:1.6rem">
@@ -710,6 +714,7 @@
         showStep(0);
         document.getElementById('fulfillment-areas').hidden=true;
         document.getElementById('fulfillment-intro').hidden=false;
+        window.attachGetStartedHandler&&window.attachGetStartedHandler();
       } else {
         current=st.step;
         showStep(st.step);

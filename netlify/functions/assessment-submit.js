@@ -202,6 +202,34 @@ function qaSummaryHtml(qa) {
     </div>`;
 }
 
+// The confirmation the person gets on submit: it arrived, here are the two things
+// their answers already point at, and Daniel writes the rest himself.
+// Deliberately short. The teaser is the two merge fields the assessment is most
+// confident about — never a full reading, which is his job and his voice.
+function confirmationEmail(fields) {
+  const name = String(fields.first_name || "").trim();
+  const teaser = [
+    fields.top_focus_area ? ["What your answers point at most", fields.top_focus_area] : null,
+    fields.authenticity_stage ? ["Where you're sitting right now", fields.authenticity_stage] : null,
+  ].filter(Boolean);
+
+  const teaserHtml = teaser.length
+    ? `<table style="border-collapse:collapse;margin:1.4rem 0;font-size:.95rem">${teaser
+        .map(([label, value]) =>
+          `<tr><td style="padding:6px 14px 6px 0;color:#8a857a;white-space:nowrap;vertical-align:top">${escapeHtml(label)}</td>
+           <td style="padding:6px 0;color:#15140f"><strong>${escapeHtml(value)}</strong></td></tr>`)
+        .join("")}</table>`
+    : "";
+
+  return `<div style="font-family:Georgia,serif;color:#15140f;line-height:1.7;max-width:32rem">
+    <p style="margin:0 0 1rem">${name ? `${escapeHtml(name)}, thank you` : "Thank you"} — your assessment is in.</p>
+    <p style="margin:0 0 1rem">I read these myself rather than letting something automatic hand you a verdict. Here is what your answers already point at:</p>
+    ${teaserHtml}
+    <p style="margin:0 0 1rem">The rest takes me a little longer, because it is written for you rather than assembled. I'll email you the moment yours is ready, with a link and a code to open it.</p>
+    <p style="margin:0 0 1rem">Daniel</p>
+  </div>`;
+}
+
 exports.handler = async (event) => {
   if (event.httpMethod === "OPTIONS") {
     return { statusCode: 204, headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "Content-Type" } };
@@ -227,6 +255,7 @@ exports.handler = async (event) => {
   // Persist the result and mint its shareable link (the email carries this).
   const id = shortId();
   const resultUrl = `${siteBaseUrl(event)}/r/${id}`;
+  const adminUrl = `${siteBaseUrl(event)}/results`;
   let storeWarning;
   try {
     await storeResult(id, answers);
@@ -260,21 +289,25 @@ exports.handler = async (event) => {
     book_url: bookUrl,
   };
 
-  // ---- Model B: send ONLY the day-0 email now; record the lead so the daily
-  // nurture-drip function can send each later email from the CURRENT repo copy.
+  // ---- What the person gets the moment they submit ----
+  // Reece 2026-09-12: a thank-you PLUS a short teaser, not the full automatic
+  // result. Daniel reads their answers himself and writes their real assessment;
+  // this email's whole job is to confirm it arrived and say what happens next.
+  // The result link is deliberately NOT in here: the page is empty until he
+  // publishes, and a link to an empty page reads as a broken promise.
   const sequence = buildBranch(result.route, mergeFields);
   const dayZero = sequence.find((e) => e.day === 0) || sequence[0];
 
-  const dayZeroSend = NURTURE_PAUSED
+  const confirmSend = NURTURE_PAUSED
     ? Promise.resolve({ skipped: true, reason: "nurture paused" })
     : sendResendEmail({
         from,
         to: [leadTo],
         reply_to: replyTo,
-        subject: dayZero.subject,
-        html: dayZero.html,
-        tags: [{ name: "source", value: "assessment_sequence" }],
-      }).catch((err) => ({ error: err.message, subject: dayZero.subject }));
+        subject: "Your assessment is in",
+        html: confirmationEmail(mergeFields),
+        tags: [{ name: "source", value: "assessment_confirmation" }],
+      }).catch((err) => ({ error: err.message, subject: "Your assessment is in" }));
 
   // persist drip progress (day 0 marked sent). The drip store holds the lead's
   // real email so subsequent emails reach them; in TEST_MODE we store TEST_EMAIL.
@@ -312,15 +345,15 @@ exports.handler = async (event) => {
         ["Top focus", escapeHtml(mergeFields.top_focus_area || "—")],
         ["Stage", escapeHtml(mergeFields.authenticity_stage || "—")],
       ],
-      extraHtml: `<p style="font-family:Georgia,serif;margin-top:1rem"><strong>Result page:</strong> <a href="${escapeHtml(resultUrl)}">${escapeHtml(resultUrl)}</a></p>
+      extraHtml: `<p style="font-family:Georgia,serif;margin-top:1rem"><strong>Write their assessment:</strong> <a href="${escapeHtml(adminUrl)}">${escapeHtml(adminUrl)}</a><br><span style="font-size:.85rem;color:#8a857a">They cannot see anything until you publish it. Their page: ${escapeHtml(resultUrl)}</span></p>
         ${qaSummaryHtml(answers.qa_summary)}
         <details style="margin-top:1.4rem"><summary style="cursor:pointer;color:#8a857a;font-size:.85rem">Raw data (all fields)</summary>${notifyEmailHtml(answers, result)}</details>`,
     }),
     tags: [{ name: "source", value: "assessment_notify" }],
   }).catch((err) => ({ error: err.message }));
 
-  const [dayZeroResult, notifyResult] = await Promise.all([dayZeroSend, notifyEmail, writeDrip]);
-  const emailResults = [dayZeroResult, notifyResult];
+  const [confirmResult, notifyResult] = await Promise.all([confirmSend, notifyEmail, writeDrip]);
+  const emailResults = [confirmResult, notifyResult];
   const emailWarning = emailResults.find((r) => r && r.error)?.error;
   const emailSkipped = emailResults.every((r) => r && r.skipped);
   return {

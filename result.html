@@ -23,6 +23,25 @@
   .result-state a{color:var(--ink);border-bottom:1px solid var(--ink);text-decoration:none}
   .result-foot{text-align:center;padding:0 2rem 6rem;color:var(--muted);font-family:var(--sc);letter-spacing:.04em;font-size:.86rem}
   .result-foot a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--hair)}
+  .gate{max-width:26rem;margin:0 auto;padding:9rem 0 0;text-align:center}
+  .gate h1{font-family:var(--display);font-weight:500;font-size:clamp(1.8rem,3.6vw,2.4rem);line-height:1.15;margin-bottom:.9rem}
+  .gate p{color:var(--muted);margin:0 0 1.6rem}
+  .gate label{display:block;text-align:left;font-family:var(--sc);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 .4rem}
+  .gate input{display:block;width:100%;box-sizing:border-box;font-family:var(--body);font-size:1rem;color:var(--ink);background:#fff;border:1px solid var(--hair);border-radius:4px;padding:.75rem .8rem;margin-bottom:1rem}
+  .gate input.code{font-family:monospace;font-size:1.6rem;letter-spacing:.45em;text-align:center}
+  .gate button{width:100%;padding:.8rem 1.4rem;font-size:.72rem}
+  .gate .note{font-size:.82rem;color:var(--muted);margin-top:1rem}
+  .gate .msg{font-size:.9rem;margin:0 0 1rem;min-height:1.2rem}
+  .gate .msg.bad{color:#b3261e}
+  .gate .linkish{background:none;border:none;padding:0;width:auto;color:var(--muted);text-decoration:underline;cursor:pointer;font-size:.82rem;letter-spacing:0;font-family:var(--body);text-transform:none}
+  .written{font-size:1.05rem;line-height:1.75}
+  .written h2{font-family:var(--display);font-weight:500;font-size:1.7rem;margin:2.4rem 0 .8rem}
+  .written h3{font-family:var(--sc);font-size:.82rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:2rem 0 .6rem}
+  .written p{margin:0 0 1.1rem}
+  .written ul,.written ol{margin:0 0 1.1rem 1.2rem}
+  .written li{margin-bottom:.4rem}
+  .written blockquote{margin:1.4rem 0;padding-left:1.2rem;border-left:2px solid var(--hair);color:var(--muted);font-style:italic}
+  .draft-flag{background:#fff6e0;border:1px solid #e8d48a;border-radius:6px;padding:.7rem 1rem;font-size:.85rem;margin-bottom:1.6rem}
 </style>
 </head>
 <body>
@@ -35,7 +54,28 @@
 
 <main class="result-page">
   <div id="result-loading" class="result-state">
-    <p>Opening your assessment…</p>
+    <p>One moment…</p>
+  </div>
+
+  <!-- Step 1: prove this is your result. Reece 2026-09-12: a code once, then
+       remembered for 30 days, so re-reading it later is not a chore. -->
+  <div id="gate" class="gate" hidden>
+    <h1>Your assessment</h1>
+    <p id="gate-lede">This is private. Enter the email you took the assessment with and we'll send you a 6-digit code.</p>
+    <p id="gate-msg" class="msg" role="status" aria-live="polite"></p>
+
+    <form id="email-form">
+      <label for="gate-email">Your email</label>
+      <input id="gate-email" type="email" name="email" autocomplete="email" required placeholder="you@example.com">
+      <button class="cta sc" type="submit">Send me a code</button>
+    </form>
+
+    <form id="code-form" hidden>
+      <label for="gate-code">6-digit code</label>
+      <input id="gate-code" class="code" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code" required placeholder="000000">
+      <button class="cta sc" type="submit">Open my assessment</button>
+      <p class="note"><button type="button" id="again" class="linkish">Use a different email</button></p>
+    </form>
   </div>
 
   <div id="result-error" class="result-state" hidden>
@@ -43,59 +83,125 @@
     <p>The link may be incomplete or it may have expired.<br>You can always <a href="/assessment.html">take the assessment again</a> for a fresh result.</p>
   </div>
 
+  <!-- Step 2a: Daniel hasn't written it yet. -->
+  <div id="not-ready" class="result-state" hidden>
+    <h1 id="not-ready-title">It's on its way</h1>
+    <p>Daniel is reading your answers himself and writing your assessment by hand.<br>You'll get an email the moment it's here — this page will be waiting for you.</p>
+  </div>
+
+  <!-- Step 2b: his words. -->
   <div id="result-intro" class="result-intro" hidden></div>
-  <section id="assessment-result" class="assessment-result" hidden aria-live="polite"></section>
+  <section id="assessment-result" class="written" hidden aria-live="polite"></section>
 </main>
 
 <footer class="result-foot">
   <p>A private reflection from <a href="/">Daniel Tiwari</a> · <a href="mailto:email@danieltiwari.com">email@danieltiwari.com</a></p>
 </footer>
 
-<script src="/assessment-core.js" defer></script>
 <script defer>
+  const $ = (id) => document.getElementById(id);
+  const show = (id) => { const el = $(id); if (el) el.hidden = false; };
+  const hide = (id) => { const el = $(id); if (el) el.hidden = true; };
+
   function getId() {
     const m = location.pathname.match(/\/r\/([A-Za-z0-9_-]{6,32})\/?$/);
     if (m) return m[1];
     return new URLSearchParams(location.search).get("id") || "";
   }
-  function firstName(answers) {
-    const n = (answers.first_name || answers.name || "").trim();
-    return n ? n.split(/\s+/)[0] : "";
-  }
-  function show(id) { const el = document.getElementById(id); if (el) el.hidden = false; }
-  function hide(id) { const el = document.getElementById(id); if (el) el.hidden = true; }
+  const ID = getId();
+  const PASS_KEY = "dt_result_pass:" + ID;
+  const getPass = () => { try { return localStorage.getItem(PASS_KEY) || ""; } catch { return ""; } };
+  const setPass = (p) => { try { localStorage.setItem(PASS_KEY, p); } catch {} };
 
-  async function load() {
-    const id = getId();
-    if (!id) { hide("result-loading"); show("result-error"); return; }
-    try {
-      const res = await fetch(`/api/result-data?id=${encodeURIComponent(id)}`);
-      if (!res.ok) throw new Error(String(res.status));
-      const data = await res.json();
-      const answers = data.answers || {};
-      const result = calculateResult(answers);
-      hide("result-loading");
-
-      const intro = document.getElementById("result-intro");
-      const fn = firstName(answers);
-      intro.innerHTML = `
-        <span class="eyebrow"><span class="dot"></span>Your saved assessment</span>
-        <h1>${fn ? `${fn}, here is your assessment.` : "Here is your assessment."}</h1>
-        <p>Take it in slowly. Nothing here needs fixing today — it's simply an honest look at where you are.</p>`;
-      show("result-intro");
-
-      renderResult(result, "viewed");
-      document.title = `${result.authenticity.label} — Your Assessment`;
-    } catch (err) {
-      hide("result-loading");
-      show("result-error");
-    }
+  function say(text, bad) {
+    const el = $("gate-msg");
+    el.textContent = text || "";
+    el.classList.toggle("bad", Boolean(bad));
   }
 
-  if (document.readyState !== "loading") setTimeout(load, 0);
-  else document.addEventListener("DOMContentLoaded", () => setTimeout(load, 0));
+  async function post(body) {
+    const res = await fetch("/api/result-login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: ID, ...body }),
+    });
+    return { ok: res.ok, data: await res.json().catch(() => ({})) };
+  }
 
-  const bar = document.getElementById("bar");
+  // Try the pass we already hold. 401 just means "sign in again".
+  async function loadResult() {
+    const res = await fetch(`/api/result-data?id=${encodeURIComponent(ID)}`, {
+      headers: getPass() ? { "X-Result-Pass": getPass() } : {},
+    });
+    if (res.status === 401) return "needs-login";
+    if (!res.ok) return "error";
+    const data = await res.json();
+    if (!data.ready && !data.html) { renderNotReady(data.firstName); return "not-ready"; }
+    renderWritten(data);
+    return "shown";
+  }
+
+  function renderNotReady(firstName) {
+    hide("result-loading"); hide("gate");
+    if (firstName) $("not-ready-title").textContent = `${firstName}, it's on its way`;
+    show("not-ready");
+  }
+
+  function renderWritten(data) {
+    hide("result-loading"); hide("gate"); hide("not-ready");
+    const intro = $("result-intro");
+    intro.innerHTML = `
+      <span class="eyebrow"><span class="dot"></span>Your assessment</span>
+      <h1>${data.firstName ? `${data.firstName}, here is your assessment.` : "Here is your assessment."}</h1>
+      <p>Written for you by Daniel. Take it in slowly \u2014 nothing here needs fixing today.</p>`;
+    show("result-intro");
+    const body = $("assessment-result");
+    body.innerHTML = (data.draft ? '<div class="draft-flag">Draft \u2014 only you can see this. It is not published yet.</div>' : "") + (data.html || "");
+    show("assessment-result");
+  }
+
+  function openGate(lede) {
+    hide("result-loading");
+    if (lede) $("gate-lede").textContent = lede;
+    show("gate");
+    $("gate-email").focus();
+  }
+
+  $("email-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = e.target.querySelector("button");
+    btn.disabled = true; say("Sending\u2026");
+    const { data } = await post({ action: "request", email: $("gate-email").value });
+    btn.disabled = false;
+    say(data.message || data.error || "Check your email.", Boolean(data.error));
+    hide("email-form"); show("code-form"); $("gate-code").focus();
+  });
+
+  $("code-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = e.target.querySelector("button");
+    btn.disabled = true; say("Checking\u2026");
+    const { ok, data } = await post({ action: "verify", code: $("gate-code").value });
+    btn.disabled = false;
+    if (!ok || !data.pass) { say(data.error || "That didn't work.", true); return; }
+    setPass(data.pass);
+    say("");
+    const state = await loadResult();
+    if (state === "error") { hide("gate"); show("result-error"); }
+  });
+
+  $("again").addEventListener("click", () => {
+    show("email-form"); hide("code-form"); say(""); $("gate-email").focus();
+  });
+
+  (async function start() {
+    if (!ID) { hide("result-loading"); show("result-error"); return; }
+    const state = await loadResult();
+    if (state === "needs-login") openGate();
+    else if (state === "error") { hide("result-loading"); show("result-error"); }
+  })();
+
+  const bar = $("bar");
   const onScroll = () => bar.classList.toggle("scrolled", scrollY > 8);
   addEventListener("scroll", onScroll, { passive: true }); onScroll();
 </script>

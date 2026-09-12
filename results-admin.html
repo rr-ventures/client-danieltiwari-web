@@ -44,6 +44,7 @@
   .pill.none{background:#f1efea;color:#8a857a}
   .pill.draft{background:#fff6e0;color:#8a6d13}
   .pill.published{background:#e6ffed;color:#137333}
+  .pill.warn{background:#ffe8e6;color:#b3261e;margin-left:.3rem}
 
   .editor{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem}
   @media (max-width:1100px){.editor{grid-template-columns:1fr}}
@@ -198,7 +199,7 @@
       <button class="row" data-id="${esc(r.id)}" aria-current="${r.id === currentId}">
         <span class="nm">${esc(r.name || "(no name)")}</span>
         <span class="em">${esc(r.email || "")}</span>
-        <span class="pill ${esc(r.status)}">${r.status === "none" ? "not started" : esc(r.status)}</span>
+        <span class="pill ${esc(r.status)}">${r.status === "none" ? "not started" : esc(r.status)}</span>${r.notifyFailed ? '<span class="pill warn">you were not emailed</span>' : ""}
       </button>`).join("");
     list.querySelectorAll(".row").forEach((b) => b.addEventListener("click", () => open(b.dataset.id)));
   }

@@ -355,6 +355,35 @@ exports.handler = async (event) => {
   }).catch((err) => ({ error: err.message }));
 
   const [confirmResult, notifyResult] = await Promise.all([confirmSend, notifyEmail, writeDrip]);
+
+  // If Daniel's copy of the submission failed to send, the whole point of the
+  // form has silently died: the answers are stored and nobody knows they arrived.
+  // So record it on the submission (his workspace shows it) and tell Reece the id
+  // ONLY. Never their answers or their address: those are the lead's private
+  // information and were never Reece's to see (Daniel, 2026-09-12).
+  if (notifyResult && notifyResult.error) {
+    try {
+      const store = resultsStore();
+      const rec = await store.get(id, { type: "json" });
+      if (rec) await store.setJSON(id, { ...rec, notifyFailed: notifyResult.error, notifyFailedAt: new Date().toISOString() });
+    } catch (_e) { /* the alert below still goes */ }
+
+    const alertTo = process.env.REECE_NOTIFY_EMAIL;
+    if (alertTo) {
+      await sendResendEmail({
+        from,
+        to: [alertTo],
+        subject: "Assessment notification failed to send",
+        html: `<div style="font-family:Georgia,serif;line-height:1.6">
+          <p>A submission came in on danieltiwari.com and the email telling Daniel about it did not send.</p>
+          <p>The answers are stored safely. Submission id: <code>${escapeHtml(id)}</code></p>
+          <p>Reason given: ${escapeHtml(notifyResult.error)}</p>
+          <p style="color:#8a857a;font-size:.85rem">No personal details are included here on purpose.</p>
+        </div>`,
+        tags: [{ name: "source", value: "notify_failure_alert" }],
+      }).catch(() => null);
+    }
+  }
   const emailResults = [confirmResult, notifyResult];
   const emailWarning = emailResults.find((r) => r && r.error)?.error;
   const emailSkipped = emailResults.every((r) => r && r.skipped);

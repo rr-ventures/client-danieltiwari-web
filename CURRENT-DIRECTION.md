@@ -33,13 +33,17 @@ How it all fits together: `AGENTS.md`. How to prove it still works:
 
 ## Known and not fixed
 
-- The assessment is behind a `preview_access=true` cookie gate in `netlify.toml`, so
-  anyone without that cookie gets `assessment-coming-soon.html`. Nobody can be sent the
-  assessment until that is opened.
+- The assessment is behind a `preview_access=true` cookie gate in `netlify.toml`.
+  Testers get in with **`danieltiwari.com/assessment?key=danielpreview`**, which sets the
+  cookie and passes them straight through (built 2026-09-12). The key sits in
+  `assessment-coming-soon.html` in plain sight and always has: this keeps the assessment
+  off the open web, it is not security. Opening it to everyone means deleting the two
+  coming-soon redirects in `netlify.toml`.
 - `netlify.toml` routes `/api/assessment-notify` to a function that does not exist.
   Dead route, safe to delete.
 - The on-screen thank-you after submitting still says "Thanks for testing this with me",
   which reads wrong once these are real prospects rather than testers.
-- Daniel's Telegram website agent is not working. The webhook, the bot token, the GitHub
-  token and the model id all check out; the AI key is a Netlify secret and cannot be read
-  back to test, so the next step is one live message to it.
+- Daniel's Telegram website agent **works**. Proven 2026-09-12 by posting a real update to
+  the live webhook as Reece and reading the answer back in Telegram. Its AI key was replaced
+  from the secret store earlier that day; whether that was the fix cannot be proven, because
+  a Netlify secret cannot be read back. Model: `anthropic/claude-sonnet-5` via `AGENT_MODEL`.

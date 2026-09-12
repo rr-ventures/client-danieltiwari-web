@@ -72,6 +72,9 @@ function summarise(id, record, page) {
     status: (page && page.status) || "none",
     updatedAt: page && page.updatedAt,
     hasDraft: Boolean(page && page.html),
+    // set when the email telling Daniel about this submission never sent, so a
+    // submission he was never told about is visible rather than just missing
+    notifyFailed: Boolean(record && record.notifyFailed),
   };
 }
 

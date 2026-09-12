@@ -62,9 +62,15 @@ exports.handler = async (event) => {
       if (stored && stored === given) target = stored;
     }
 
-    if (target) {
+    // Anyone can ask for a code, so anyone could otherwise flood an inbox with
+    // them. One code a minute per result. The reply is unchanged either way, so
+    // this cannot be used to work out whether an address exists.
+    const existing = await codes.get(key, { type: "json" }).catch(() => null);
+    const tooSoon = existing && existing.issuedAt && Date.now() - existing.issuedAt < 60000;
+
+    if (target && !tooSoon) {
       const code = newCode();
-      await codes.setJSON(key, codeRecord(code, key));
+      await codes.setJSON(key, { ...codeRecord(code, key), issuedAt: Date.now() });
       const { from, replyTo } = mailConfig();
       await sendResendEmail({
         from,

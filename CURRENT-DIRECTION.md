@@ -10,10 +10,20 @@ this repo can be ahead of it or behind it.
 
 ## What is live right now (2026-09-12)
 
-The assessment's hand-written-results work is built on the branch
-`feat/hand-written-assessment-results` and is **deliberately not on `main`**, because
-pushing to `main` queues an approve-and-publish email to Daniel. It ships when Reece
-says so, not before.
+The assessment's hand-written-results work is **merged into `main` and built**
+(commit `12726f0`, approved by Reece in session). `feat/hand-written-assessment-results`
+is merged and finished with.
+
+It is built but **not yet serving**. This site's own change gate holds every build back
+and emails an approve-and-publish link to Daniel and Reece (`netlify/lib/change-gate.js`,
+triggered by `deploy-succeeded.js`); the site keeps serving the previous deploy until one
+of them clicks Approve. Both emails were delivered at 03:23 on 12 September. Check which
+deploy is actually serving with the Netlify API's `published_deploy`, never by assuming a
+green build means live.
+
+**While it is unpublished, the OLD behaviour is what danieltiwari.com serves**, and that
+old `result-data` hands a person's raw answers to anyone holding their result link with no
+login at all. Approving the waiting build is what closes that.
 
 What that branch changes, and why, in one line each:
 
@@ -43,6 +53,9 @@ How it all fits together: `AGENTS.md`. How to prove it still works:
   Dead route, safe to delete.
 - The on-screen thank-you after submitting still says "Thanks for testing this with me",
   which reads wrong once these are real prospects rather than testers.
+- The publish approval lives in the DEPLOY gate, not in `result-admin.js`. Daniel hitting
+  Publish there makes a result readable by that one person immediately, and emails them the
+  link; that is the intended behaviour and is his call to make, not something to approve.
 - Daniel's Telegram website agent **works**. Proven 2026-09-12 by posting a real update to
   the live webhook as Reece and reading the answer back in Telegram. Its AI key was replaced
   from the secret store earlier that day; whether that was the fix cannot be proven, because

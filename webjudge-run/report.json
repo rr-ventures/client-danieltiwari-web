@@ -1,0 +1,12 @@
+{
+  "verdict": "PASS",
+  "pages": 1,
+  "widths": [
+    390,
+    1024,
+    1440
+  ],
+  "faults": [],
+  "unproven": [],
+  "shots": "webjudge-run/shots"
+}

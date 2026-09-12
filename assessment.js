@@ -3998,8 +3998,8 @@ function renderTestingThankYou() {
   el.innerHTML = `
     <div class="result-panel">
       <span class="eyebrow"><span class="dot"></span>Thank you</span>
-      <h2>Thanks for testing this with me.</h2>
-      <p class="lede">I've got your answers — you'll hear from me soon.</p>
+      <h2>Thank you.</h2>
+      <p class="lede">Your answers are in. These get read properly, so yours will take a little time. Check your email, there's a note waiting.</p>
     </div>`;
 }
 

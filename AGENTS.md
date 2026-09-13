@@ -63,6 +63,13 @@ This repo is Daniel's public coaching website plus its Netlify Functions. Change
     repo file proves that. The current newsletter welcome email is in this repo.
 
 - Assessment and result nurture:
+  - THE ASSESSMENT IS OPEN TO EVERYONE (13 Sep 2026). No cookie, no tester key, no
+    coming-soon page. `danieltiwari.com/assessment` opens the first question for anybody
+    with the link. It keeps its own noindex so it does not show up in search. If asked who
+    can take it, the answer is anyone. `assessment-coming-soon.html` has been DELETED so
+    nothing in this repo can suggest otherwise.
+  - The person gives their first name and email after pressing Start and before the first
+    question, framed as saving their answers as they go.
   - Quiz UI: `assessment.html`, `assessment.js`, and `assessment-core.js`.
   - Submit handler: `netlify/functions/assessment-submit.js`.
   - On submit, it stores the answers in Netlify Blobs and sends ONE email: a

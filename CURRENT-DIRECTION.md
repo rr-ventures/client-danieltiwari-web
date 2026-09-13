@@ -35,7 +35,8 @@ What they type is carried into the contact fields at the end, and a returning vi
 again. 8 browser checks cover it.
 
 **A second gate was found and removed the same day.** `assessment.html` carried its own script that
-replaced the page with the coming-soon one unless the visitor had a `preview_access` cookie.
+replaced the page with a coming-soon one unless the visitor had a `preview_access` cookie.
+That script, those redirects and the coming-soon page itself are all gone now.
 Deleting the redirects in `netlify.toml` never touched it, so the assessment stayed shut for
 everyone Daniel sent it to while every check reported it open. A fetch of the page returns 200
 either way, which is exactly why it went unnoticed. **Any check on whether a page works has to LOAD

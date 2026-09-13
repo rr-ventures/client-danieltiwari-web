@@ -65,10 +65,10 @@
   status = 301
   force = true
 
-# The assessment is OPEN to everyone (Reece 2026-09-12). It used to be held behind a
-# preview_access cookie with a coming-soon page for everyone else; those four rules
-# were removed here. assessment-coming-soon.html is kept in the repo so the gate can
-# be put back by restoring them, and it is no longer reachable.
+# The assessment is OPEN to everyone (Reece 2026-09-12, second gate removed 13 Sep).
+# There is no cookie, no tester key and no coming-soon page: that page was deleted so
+# nothing in this repo can suggest the assessment is shut. The page keeps its own
+# noindex, so it is reachable by link without turning up in search.
 [[redirects]]
   from = "/assessment"
   to = "/assessment.html"

@@ -422,6 +422,17 @@
               <p>The more accurate and honest you can be with your answers, the more valuable your results will be. That said, honesty doesn't mean full disclosure. If any question touches something too personal, just click the "prefer not to answer" button above the back and next buttons. I have, however, put together these questions for a reason, and the more you can answer, the more insightful your results will be.</p>
               <p>If you really take the time and make the effort to go through this assessment, I believe it will be life-changing — the beginning of a new chapter.</p>
             </div>
+            <!-- Shown instead of the start button when this browser already has progress
+                 saved from a previous visit (Daniel, 2026-09-13) — resuming used to happen
+                 automatically before the person ever saw the intro, which defeated the
+                 point of moving Start to the bottom. Now they choose. -->
+            <div id="resume-choice" style="text-align:center;padding-top:1.6rem" hidden>
+              <p style="margin:0 0 1rem">Looks like you've started this before on this device. Want to pick up where you left off, or start fresh?</p>
+              <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap">
+                <button type="button" class="btn btn-primary" id="btn-resume">Resume where I left off</button>
+                <button type="button" class="btn btn-ghost" id="btn-start-over">Start from scratch</button>
+              </div>
+            </div>
             <!-- The only start button: after the introduction, not before it. -->
             <div id="start-bottom" style="text-align:center;padding-top:1.6rem">
               <p style="font-family:var(--sc);font-size:.72rem;letter-spacing:.25em;color:var(--muted);margin-bottom:1rem">~30 minutes</p>
@@ -755,7 +766,7 @@
     };
     // Render-only — no history.pushState of its own (applyNavState already
     // guards that internally via window._historyNav). Exposed so a restore
-    // can build its own chain of history entries first (see restoreAssessmentProgress
+    // can build its own chain of history entries first (see applySavedProgress
     // in assessment.js), then render the final one, instead of getting a single
     // jump-entry that leaves Back with nowhere sensible to retrace to.
     window._applyNavState=applyNavState;

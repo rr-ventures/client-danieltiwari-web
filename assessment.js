@@ -3711,13 +3711,30 @@ document.addEventListener('input', saveAssessmentProgress, true);
 document.addEventListener('click', saveAssessmentProgress, true);
 window.addEventListener('beforeunload', () => { clearTimeout(_saveTimer); saveAssessmentProgress(); });
 
-function restoreAssessmentProgress() {
+// Reads a saved snapshot without acting on it — safe to call just to check
+// whether one exists.
+function readSavedProgress() {
   let saved;
   try { saved = JSON.parse(localStorage.getItem(ASSESSMENT_SAVE_KEY) || 'null'); } catch (_e) { saved = null; }
   if (!saved || saved.schema !== ASSESSMENT_SAVE_SCHEMA) {
     try { localStorage.removeItem(ASSESSMENT_SAVE_KEY); } catch (_e) { /* not fatal */ }
-    return false;
+    return null;
   }
+  return saved;
+}
+
+function clearSavedProgress() {
+  try { localStorage.removeItem(ASSESSMENT_SAVE_KEY); } catch (_e) { /* not fatal */ }
+  [_fulfillmentState, _deeperState, _fsState].forEach((obj) => Object.keys(obj).forEach((k) => delete obj[k]));
+}
+
+// Restores answers into memory and navigates straight to wherever they left
+// off. Only called once the person has explicitly chosen to resume (Daniel,
+// 2026-09-13) — it used to run automatically on every page load, which meant
+// the intro was silently skipped for anyone with ANY leftover progress on
+// that browser, even from a much earlier visit. That defeated the point of
+// moving Start to the bottom so people are forced to read the intro first.
+function applySavedProgress(saved) {
 
   Object.assign(_fulfillmentState, saved.fulfillment || {});
   Object.assign(_deeperState, saved.deeper || {});
@@ -3794,8 +3811,32 @@ function restoreAssessmentProgress() {
   return true;
 }
 
-// Initialize step 0 — showStep(0) ran before this script loaded
-if (!restoreAssessmentProgress()) initFulfillmentStep();
+// Offers the choice instead of resuming automatically. Shown on the intro
+// page in place of the normal Start button when there's something to resume.
+function showResumeChoice(saved) {
+  const block = document.getElementById('resume-choice');
+  if (!block) { applySavedProgress(saved); return; } // markup missing — fail safe to the old behaviour
+  document.getElementById('start-bottom')?.setAttribute('hidden', '');
+  block.hidden = false;
+  document.getElementById('btn-resume')?.addEventListener('click', () => {
+    block.hidden = true;
+    applySavedProgress(saved);
+  }, { once: true });
+  document.getElementById('btn-start-over')?.addEventListener('click', () => {
+    clearSavedProgress();
+    block.hidden = true;
+    document.getElementById('start-bottom')?.removeAttribute('hidden');
+  }, { once: true });
+}
+
+// Initialize step 0 — showStep(0) ran before this script loaded. Always show
+// the intro; only offer to resume rather than jumping straight past it.
+initFulfillmentStep();
+{
+  const _saved = readSavedProgress();
+  const _hasProgress = _saved && ((_saved.step || 0) > 0 || Object.keys(_saved.fulfillment || {}).length > 0);
+  if (_hasProgress) showResumeChoice(_saved);
+}
 
 /* ---- Submission ---- */
 // ---- Human-readable capture of every question + answer, for the notify email.

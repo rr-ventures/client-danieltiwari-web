@@ -75,6 +75,11 @@ function isAuthor(event) {
   const h = event.headers || {};
   const bearer = String(h.authorization || h.Authorization || "").replace(/^Bearer\s+/i, "");
   if (isAuthorToken(bearer) || isAuthorToken(h["x-author-token"])) return true;
+  // The workspace page sends whatever it is holding in this header. Accept the
+  // standing token here too, so /results?k=<token> makes it a bookmark and
+  // neither Daniel nor Reece is ever locked out waiting on an email
+  // (Reece 2026-09-13).
+  if (isAuthorToken(passFromRequest(event))) return true;
   const p = verify(passFromRequest(event));
   return Boolean(p && p.role === "author");
 }
@@ -125,8 +130,39 @@ function shouldNotify({ previous, next, notify }) {
 
 const normEmail = (v) => String(v || "").trim().toLowerCase();
 
+// ---- the key that opens a result ----
+//
+// Reece 2026-09-13: the six-digit code was a bad experience. It expired, it
+// arrived separately, and he locked himself out of his own result. A result now
+// has ONE key that does not expire, sent in the same email as the link, and the
+// link carries it so the usual case is a single click with nothing typed.
+//
+// This is an access key for one document, not a login. It is deliberately not a
+// password anyone reuses, it only ever opens this one page, and the person can
+// throw it away by asking for the page to be taken down. That trade is his call,
+// made knowing the email that carries the link also carries the key.
+//
+// No ambiguous characters: no O/0, no l/1/I. Three groups of four, so it can be
+// read off a phone screen and typed without squinting.
+const KEY_ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789";
+function newResultKey() {
+  const pick = () => KEY_ALPHABET[crypto.randomInt(0, KEY_ALPHABET.length)];
+  const group = () => Array.from({ length: 4 }, pick).join("");
+  return `${group()}-${group()}-${group()}`;
+}
+
+const normKey = (v) => String(v || "").trim().toLowerCase().replace(/\s+/g, "");
+
+// Constant-time compare, so the time taken never hints at how much was right.
+function keyMatches(given, stored) {
+  const a = Buffer.from(normKey(given));
+  const b = Buffer.from(normKey(stored));
+  return a.length > 0 && a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
 module.exports = {
   VIEWER_DAYS, AUTHOR_HOURS, CODE_TTL_MIN, MAX_CODE_ATTEMPTS,
   issueViewerPass, issueAuthorPass, verify, viewerOf, isAuthor,
   passFromRequest, passCookie, newCode, codeRecord, checkCode, normEmail, shouldNotify,
+  newResultKey, normKey, keyMatches,
 };

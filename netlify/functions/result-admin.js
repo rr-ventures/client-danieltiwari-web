@@ -14,7 +14,7 @@
 // Auth: an author pass (code emailed to DAN_NOTIFY_EMAIL) or
 // `Authorization: Bearer <RESULTS_AUTHOR_TOKEN>` for his assistant.
 const { resultsStore, resultPagesStore } = require("../lib/blobs");
-const { isAuthor, shouldNotify } = require("../lib/result-access");
+const { isAuthor, shouldNotify, newResultKey } = require("../lib/result-access");
 const { sendResendEmail, mailConfig } = require("../lib/send");
 
 const json = (statusCode, body) => ({
@@ -40,13 +40,15 @@ function cleanHtml(input) {
 // The email that tells someone their result exists. Without this, publishing is
 // silent: they were promised they would hear, and nothing would ever arrive.
 // Found in the red team of Daniel's own list, 2026-09-12.
-function readyEmail({ firstName, url }) {
+function readyEmail({ firstName, url, accessKey }) {
   const hi = firstName ? `${escapeText(firstName)}, your` : "Your";
   return `<div style="font-family:Georgia,serif;color:#15140f;line-height:1.7;max-width:32rem">
     <p style="margin:0 0 1rem">${hi} assessment is ready.</p>
     <p style="margin:0 0 1.4rem">It's here, and it's private to you:</p>
     <p style="margin:0 0 1.4rem"><a href="${escapeText(url)}" style="color:#15140f">${escapeText(url)}</a></p>
-    <p style="margin:0 0 1rem">Opening it asks for the email address you used, then sends a 6-digit code to it. That keeps it yours and nobody else's. After the first time your browser remembers you, so you can come back to it whenever you want.</p>
+    <p style="margin:0 0 1rem">That link opens it. If it ever asks, the key is:</p>
+    <p style="font-family:monospace;font-size:1.5rem;letter-spacing:.12em;margin:0 0 1.4rem;color:#15140f">${escapeText(accessKey)}</p>
+    <p style="margin:0 0 1rem">Keep this email and you can come back to your assessment whenever you want. The key does not expire.</p>
     <p style="margin:0 0 1rem">Take it slowly.</p>
     <p style="margin:0 0 1rem">Daniel</p>
   </div>`;
@@ -148,6 +150,10 @@ exports.handler = async (event) => {
       status: body.action === "publish" ? "published" : (current && current.status === "published" ? "published" : "draft"),
       updatedAt: now,
       publishedAt: body.action === "publish" ? now : (current && current.publishedAt) || null,
+      // One key per result, minted the first time it is published and kept for
+      // good after that, so the link in their email never stops working and
+      // re-publishing a correction does not lock them out (Reece 2026-09-13).
+      accessKey: (current && current.accessKey) || newResultKey(),
     };
     await pages.setJSON(id, next);
 
@@ -165,7 +171,11 @@ exports.handler = async (event) => {
           to: [to],
           reply_to: replyTo,
           subject: "Your assessment is ready",
-          html: readyEmail({ firstName: firstNameOf(exists.answers), url: `${site}/r/${id}` }),
+          html: readyEmail({
+            firstName: firstNameOf(exists.answers),
+            url: `${site}/r/${id}?k=${encodeURIComponent(next.accessKey)}`,
+            accessKey: next.accessKey,
+          }),
           tags: [{ name: "source", value: "assessment_result_ready" }],
         }).then(() => ({ sent: true })).catch((e) => ({ sent: false, error: e.message }));
       } else {

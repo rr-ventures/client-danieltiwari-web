@@ -60,24 +60,20 @@
     <p>One moment…</p>
   </div>
 
-  <!-- Step 1: prove this is your result. Reece 2026-09-12: a code once, then
-       remembered for 30 days, so re-reading it later is not a chore. -->
+  <!-- Step 1: the key from their email. Reece 2026-09-13: the six-digit code was
+       a bad experience and locked him out of his own result, so a result now has
+       one key that does not expire. The link in the email carries it, so most
+       people never see this at all. -->
   <div id="gate" class="gate" hidden>
     <h1>Your assessment</h1>
-    <p id="gate-lede">This is private. Enter the email the assessment came in on and a 6-digit code will be sent to it.</p>
+    <p id="gate-lede">This is private to you. Paste the key from the email your assessment came in.</p>
     <p id="gate-msg" class="msg" role="status" aria-live="polite"></p>
 
-    <form id="email-form">
-      <label for="gate-email">Your email</label>
-      <input id="gate-email" type="email" name="email" autocomplete="email" required placeholder="you@example.com">
-      <button class="cta sc" type="submit">Send me a code</button>
-    </form>
-
-    <form id="code-form" hidden>
-      <label for="gate-code">6-digit code</label>
-      <input id="gate-code" class="code" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code" required placeholder="000000">
+    <form id="key-form">
+      <label for="gate-key">Your key</label>
+      <input id="gate-key" class="code" autocomplete="off" autocapitalize="off" spellcheck="false" required placeholder="abcd-efgh-jkmn">
       <button class="cta sc" type="submit">Open my assessment</button>
-      <p class="note"><button type="button" id="again" class="linkish">Use a different email</button></p>
+      <p class="note">It is in the email titled "Your assessment is ready". It does not expire.</p>
     </form>
   </div>
 
@@ -167,41 +163,50 @@
     hide("result-loading");
     if (lede) $("gate-lede").textContent = lede;
     show("gate");
-    $("gate-email").focus();
+    $("gate-key").focus();
   }
 
-  $("email-form").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const btn = e.target.querySelector("button");
-    btn.disabled = true; say("Sending\u2026");
-    const { data } = await post({ action: "request", email: $("gate-email").value });
-    btn.disabled = false;
-    say(data.message || data.error || "Check your email.", Boolean(data.error));
-    hide("email-form"); show("code-form"); $("gate-code").focus();
-  });
-
-  $("code-form").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const btn = e.target.querySelector("button");
-    btn.disabled = true; say("Checking\u2026");
-    const { ok, data } = await post({ action: "verify", code: $("gate-code").value });
-    btn.disabled = false;
-    if (!ok || !data.pass) { say(data.error || "That didn't work.", true); return; }
+  // Try a key: the one typed in the box, or the one the email's link carried.
+  async function tryKey(value, quiet) {
+    if (!quiet) say("Opening\u2026");
+    const { data } = await post({ action: "key", key: value });
+    if (!data.ok || !data.pass) {
+      if (!quiet) say(data.error || "That didn't work.", true);
+      return false;
+    }
     setPass(data.pass);
     say("");
     const state = await loadResult();
     if (state === "error") { hide("gate"); show("result-error"); }
-  });
+    return true;
+  }
 
-  $("again").addEventListener("click", () => {
-    show("email-form"); hide("code-form"); say(""); $("gate-email").focus();
+  $("key-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = e.target.querySelector("button");
+    btn.disabled = true;
+    await tryKey($("gate-key").value);
+    btn.disabled = false;
   });
 
   (async function start() {
     if (!ID) { hide("result-loading"); show("result-error"); return; }
-    const state = await loadResult();
-    if (state === "needs-login") openGate();
-    else if (state === "error") { hide("result-loading"); show("result-error"); }
+    let state = await loadResult();
+    if (state === "needs-login") {
+      // The link in their email carries the key, so the normal case is that they
+      // click it and the page simply opens with nothing typed. Take the key out
+      // of the address bar afterwards so a shared screenshot of the URL does not
+      // hand it to somebody else.
+      const fromLink = new URLSearchParams(location.search).get("k");
+      if (fromLink && await tryKey(fromLink, true)) {
+        history.replaceState({}, "", location.pathname);
+        return;
+      }
+      if (fromLink) history.replaceState({}, "", location.pathname);
+      openGate();
+      return;
+    }
+    if (state === "error") { hide("result-loading"); show("result-error"); }
   })();
 
   const bar = $("bar");

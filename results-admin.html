@@ -120,6 +120,18 @@
   const PASS_KEY = "dt_author_pass";
   const getPass = () => { try { return localStorage.getItem(PASS_KEY) || ""; } catch { return ""; } };
   const setPass = (p) => { try { localStorage.setItem(PASS_KEY, p); } catch {} };
+
+  // A bookmarkable way in, so Daniel and Reece are never locked out of their own
+  // workspace waiting on an email (Reece 2026-09-13). Open /results?k=<token>
+  // once, on the phone or laptop, and the browser holds it from then on. The key
+  // is taken straight back out of the address bar so it is not left sitting in a
+  // screenshot or a shared link.
+  (function keyFromLink() {
+    const k = new URLSearchParams(location.search).get("k");
+    if (!k) return;
+    setPass(k);
+    history.replaceState({}, "", location.pathname);
+  })();
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
   // The blank template Daniel starts from — his shape, empty of content.

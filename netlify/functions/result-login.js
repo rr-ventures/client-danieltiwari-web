@@ -1,4 +1,12 @@
-// "Send me a code" / "here's my code" for viewing a finished assessment result.
+// Opening a finished assessment result.
+//
+// action=key is how a PERSON opens theirs: the key that came in the same email as
+// the link, which never expires (Reece 2026-09-13, after the six-digit code locked
+// him out of his own result). The link carries it, so the usual case is one click.
+//
+// The email-and-code flow below is kept for DANIEL and Reece signing in to the
+// writing workspace, where the thing being opened is everybody's private answers
+// at once and a standing key in an inbox would be the wrong trade.
 //
 // Step 1 (action=request): the visitor types the email they took the assessment
 // with. If it matches the stored submission we email a 6-digit code. If it does
@@ -10,7 +18,7 @@ const { resultsStore, resultPagesStore, loginCodesStore } = require("../lib/blob
 const { sendResendEmail, mailConfig } = require("../lib/send");
 const {
   issueViewerPass, issueAuthorPass, newCode, codeRecord, checkCode,
-  normEmail, passCookie, VIEWER_DAYS, AUTHOR_HOURS, CODE_TTL_MIN,
+  normEmail, passCookie, VIEWER_DAYS, AUTHOR_HOURS, CODE_TTL_MIN, keyMatches,
 } = require("../lib/result-access");
 
 const json = (statusCode, body, headers = {}) => ({
@@ -43,6 +51,29 @@ exports.handler = async (event) => {
   if (!key) return json(400, { error: "Missing result id" });
 
   const codes = loginCodesStore();
+
+  // The way a person actually opens their result now (Reece 2026-09-13): the key
+  // that came in the same email as the link. It does not expire, so there is no
+  // being locked out. Wrong guesses are counted and the page shuts for an hour
+  // after ten of them, which is what stops the key being guessed at leisure.
+  if (action === "key") {
+    const page = await resultPagesStore().get(key, { type: "json" }).catch(() => null);
+    if (!page || page.status !== "published" || !page.accessKey) {
+      return json(200, { ok: false, error: "That link is not ready yet." });
+    }
+    const tries = (await codes.get(`tries:${key}`, { type: "json" }).catch(() => null)) || { n: 0, until: 0 };
+    if (tries.until && Date.now() < tries.until) {
+      return json(200, { ok: false, error: "Too many tries. Wait an hour and use the key from your email." });
+    }
+    if (!keyMatches(body.key || body.password || code, page.accessKey)) {
+      const n = (tries.n || 0) + 1;
+      await codes.setJSON(`tries:${key}`, { n, until: n >= 10 ? Date.now() + 3600000 : 0 }).catch(() => {});
+      return json(200, { ok: false, error: "That key is not right. Check the email it came in." });
+    }
+    await codes.delete(`tries:${key}`).catch(() => {});
+    const pass = issueViewerPass(key);
+    return json(200, { ok: true, pass }, { "Set-Cookie": passCookie(pass, VIEWER_DAYS) });
+  }
 
   // ---------- author ----------
   // Same flow, but the code goes to an author's own address and the pass lets

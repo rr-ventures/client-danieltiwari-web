@@ -38,17 +38,25 @@ const keep = [];
 const drop = [];
 let rateKeys = 0;
 
-for (const { key } of blobs) {
-  if (key.startsWith("rate:")) { rateKeys++; continue; } // the guard's own counters
+// 1,100+ records read one at a time is minutes of waiting, so read in batches.
+const CONCURRENCY = 24;
+const keys = blobs.map((b) => b.key).filter((k) => { if (k.startsWith("rate:")) { rateKeys++; return false; } return true; });
+
+async function classify(key) {
   let rec = null;
   try { rec = await store.get(key, { type: "json" }); } catch { /* unreadable */ }
   const created = Date.parse(rec?.createdAt || "") || 0;
   const confirmed = Boolean(rec?.confirmedAt);
   const pendingToken = key.startsWith("confirm:");
-  if (confirmed) { keep.push(key); continue; }
-  if (created && created > cutoff) { keep.push(key); continue; }  // still in grace
-  if (!created && !pendingToken) { keep.push(key); continue; }    // no date: leave alone
-  drop.push({ key, email: rec?.email || "?", created: rec?.createdAt || "(no date)", pendingToken });
+  if (confirmed) return { keep: key };
+  if (created && created > cutoff) return { keep: key };
+  if (!created && !pendingToken) return { keep: key };
+  return { drop: { key, email: rec?.email || "?", created: rec?.createdAt || "(no date)", pendingToken } };
+}
+
+for (let i = 0; i < keys.length; i += CONCURRENCY) {
+  const batch = await Promise.all(keys.slice(i, i + CONCURRENCY).map(classify));
+  for (const r of batch) { if (r.keep) keep.push(r.keep); else drop.push(r.drop); }
 }
 
 console.log(`subscriber store: ${blobs.length} records (${rateKeys} are rate counters)`);
@@ -60,8 +68,11 @@ console.log("  sample:", drop.slice(0, 5).map((d) => d.email).join(", "));
 if (!APPLY) { console.log("\nReport only. Re-run with --apply to delete."); process.exit(0); }
 
 let done = 0, failed = 0;
-for (const d of drop) {
-  try { await store.delete(d.key); done++; } catch { failed++; }
+for (let i = 0; i < drop.length; i += CONCURRENCY) {
+  const batch = await Promise.all(drop.slice(i, i + CONCURRENCY).map(async (d) => {
+    try { await store.delete(d.key); return true; } catch { return false; }
+  }));
+  for (const ok of batch) { if (ok) done++; else failed++; }
 }
 console.log(`\ndeleted ${done}, failed ${failed}`);
 const after = await store.list();

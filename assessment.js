@@ -2581,7 +2581,7 @@ function initDeeperStep() {
     const { label, desc } = areaMap[key] || { label: key, desc: '' };
     const labelHtml = ampSafe(label);
     const data = wheelMap[key] || {};
-    const q3Toggle = `If you don't know what you want, you can't steer towards it with intention.<br><br>After having identified the aspects of your situation you're not happy with, it's time to consider what you would rather want instead.<br><br>Are you consciously aware of what your 5/5 in ${labelHtml} would look like?`;
+    const q3Toggle = `If you don't know what you want, you can't steer towards it with intention.<br><br>After having identified the aspects of your situation you're not happy with, it's time to consider what you would rather want instead.<br><br><span class="qa-q">Are you consciously aware of what your 5/5 in ${labelHtml} would look like?</span>`;
     const q3Expand = `Describe the version of this area that would feel fully alive…`;
     const controlYn      = _deeperState[`deeper_${key}_control_yn`] || '';
     const controlItems   = _deeperState[`deeper_${key}_control_items`] || [];
@@ -2593,7 +2593,7 @@ function initDeeperStep() {
       `<div class="deeper-subpage" id="deeper-sub-${key}-cause" data-area="${label}" hidden>
         <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Getting Specific</h3>
         <div class="deeper-field">
-          <label>A solid understanding and clarity about ourselves and our situation is essential to actually putting ourselves in a position from which we can consciously change our lives with intention. Too often, when we're not forced to explain things to someone or something external, we just don't think things through. We prematurely jump to negative conclusions (that are often false) without questioning them, and we also never receive the insights and the gifts that our sufferings hold, that would enable us to move forward.<br><br>Therefore, get specific about the situation you're finding yourself in right now, and what exactly it is you're dissatisfied with.<br><br>Why does ${labelHtml} only feel like a ${data.fulfillment}/5 right now?</label>
+          <label>A solid understanding and clarity about ourselves and our situation is essential to actually putting ourselves in a position from which we can consciously change our lives with intention. Too often, when we're not forced to explain things to someone or something external, we just don't think things through. We prematurely jump to negative conclusions (that are often false) without questioning them, and we also never receive the insights and the gifts that our sufferings hold, that would enable us to move forward.<br><br>Therefore, get specific about the situation you're finding yourself in right now, and what exactly it is you're dissatisfied with.<br><br><span class="qa-q">Why does ${labelHtml} only feel like a ${data.fulfillment}/5 right now?</span></label>
           <div id="cause-list-${key}"></div>
         </div>
       </div>`,
@@ -2658,7 +2658,7 @@ function initDeeperStep() {
         <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Conviction</h3>
         <div id="vision-commitment-recap-${key}" class="recap-block" style="margin-bottom:1.6rem" hidden></div>
         <div class="deeper-field yn-field" data-key="${key}" data-role="commitment">
-          <label><strong>WILL</strong> you achieve this?<br><br>Be honest with yourself here. This isn't a test you need to pass, and there are no right or wrong answers. The best answer you can give is the honest one. If your reaction to this question is not a clear yes, it's a no.</label>
+          <label><span class="qa-q"><strong>WILL</strong> you achieve this?</span><br><br>Be honest with yourself here. This isn't a test you need to pass, and there are no right or wrong answers. The best answer you can give is the honest one. If your reaction to this question is not a clear yes, it's a no.</label>
           <div class="yn-btns">
             <button type="button" class="yn-btn${commitmentYn === 'certain'  ? ' selected' : ''}" data-val="certain">There is no other way</button>
             <button type="button" class="yn-btn${commitmentYn === 'doubtful' ? ' selected' : ''}" data-val="doubtful">I have doubts</button>
@@ -2670,7 +2670,7 @@ function initDeeperStep() {
         <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Your Contribution</h3>
         <div id="recap-causes-${key}-acts-list" data-label="Why ${label} only feels like a ${data.fulfillment}/5:" class="recap-block" hidden></div>
         <div class="deeper-field">
-          <label>We are the common denominator of all areas of our lives, and we also have the biggest impact on our life circumstances. Therefore, we want to make sure that we are playing our part in achieving the life circumstances and life experiences that we want and not getting in our own way.<br><br>One of the most important things we can look at when we find ourselves dissatisfied with something are the ways in which we are contributing to the circumstances we say we don't want. It doesn't matter whether that contribution consists of taking a certain action (activity) or NOT taking a certain action (passivity).<br><br>So, how are you actively or passively contributing to the above? What are the things that you are actively doing that are playing into the above? What are the things you are NOT doing but COULD be doing to change or improve the above?</label>
+          <label>We are the common denominator of all areas of our lives, and we also have the biggest impact on our life circumstances. Therefore, we want to make sure that we are playing our part in achieving the life circumstances and life experiences that we want and not getting in our own way.<br><br>One of the most important things we can look at when we find ourselves dissatisfied with something are the ways in which we are contributing to the circumstances we say we don't want. It doesn't matter whether that contribution consists of taking a certain action (activity) or NOT taking a certain action (passivity).<br><br><span class="qa-q">So, how are you actively or passively contributing to the above? What are the things that you are actively doing that are playing into the above? What are the things you are NOT doing but COULD be doing to change or improve the above?</span></label>
           <div id="acts-items-${key}" style="margin-top:.5rem"></div>
         </div>
         <div id="acts-confirm-${key}" style="margin-top:1.2rem" hidden></div>
@@ -2679,21 +2679,21 @@ function initDeeperStep() {
         <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Hidden Values</h3>
         <div id="recap-acts-${key}-acts-reasons" data-label="How you are contributing to this" class="recap-block" hidden></div>
         <div class="deeper-field">
-          <label>Now we're getting deeper to the core of what might be the cause of you feeling stuck or limited. As Carl Jung said, "Until you make the unconscious conscious, it will direct your life and you will call it fate." What we're doing now is making the unconscious conscious. We are shining a light on the drivers of the actions/inactions that have in a certain sense been "self-sabotaging" (secretly-serving?) you.<br><br>For each action above, why do you do it? Or in the case of an inaction, why do you not do it? Keep asking yourself why?...why?...why?...until you eventually land on the real, possibly uncomfortable value of yours that this action or inaction is serving!</label>
+          <label>Now we're getting deeper to the core of what might be the cause of you feeling stuck or limited. As Carl Jung said, "Until you make the unconscious conscious, it will direct your life and you will call it fate." What we're doing now is making the unconscious conscious. We are shining a light on the drivers of the actions/inactions that have in a certain sense been "self-sabotaging" (secretly-serving?) you.<br><br><span class="qa-q">For each action above, why do you do it? Or in the case of an inaction, why do you not do it? Keep asking yourself why?...why?...why?...until you eventually land on the real, possibly uncomfortable value of yours that this action or inaction is serving!</span></label>
           <div id="acts-why-groups-${key}" style="margin-top:.9rem"></div>
         </div>
       </div>`,
       `<div class="deeper-subpage" id="deeper-sub-${key}-acts-values" data-area="${label}" hidden>
         <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Your Hidden Values</h3>
         <div class="deeper-field">
-          <label>These values are at the root of how you are contributing to your situation.<br><br>Now that you are aware of what these values are, you have the opportunity to reflect on whether you, as the orchestrator of yourself and your life, consciously approve of these values and of the actions through which you are pursuing them.<br><br>In some cases, you may not approve of the value at all. In that case, the task later becomes replacing that value with a preferred one.<br><br>In other cases, you may approve of the value but not of the actions/inactions through which you are pursuing it. In that case, the task becomes respecting the energy provided by that value through a different and preferred action.<br><br>What is the case for your situation?</label>
+          <label>These values are at the root of how you are contributing to your situation.<br><br>Now that you are aware of what these values are, you have the opportunity to reflect on whether you, as the orchestrator of yourself and your life, consciously approve of these values and of the actions through which you are pursuing them.<br><br>In some cases, you may not approve of the value at all. In that case, the task later becomes replacing that value with a preferred one.<br><br>In other cases, you may approve of the value but not of the actions/inactions through which you are pursuing it. In that case, the task becomes respecting the energy provided by that value through a different and preferred action.<br><br><span class="qa-q">What is the case for your situation?</span></label>
           <div id="acts-values-${key}" style="margin-top:.9rem"></div>
         </div>
       </div>`,
       `<div class="deeper-subpage" id="deeper-sub-${key}-control" data-area="${label}" hidden>
         <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Acceptance</h3>
         <div class="deeper-field yn-field" data-key="${key}" data-role="control">
-          <label>That's it for now in regard to the parts of your situation that you are in control over.<br><br>Is there anything about the following that you cannot change and must therefore accept?</label>
+          <label>That's it for now in regard to the parts of your situation that you are in control over.<br><br><span class="qa-q">Is there anything about the following that you cannot change and must therefore accept?</span></label>
           <div id="recap-causes-${key}-control" data-label="Why ${label} feels like a ${data.fulfillment}/5" class="recap-block" hidden></div>
           <div id="recap-not-achievable-${key}" class="recap-block" style="margin-bottom:1.4rem" hidden></div>
           <div class="yn-btns">
@@ -2708,7 +2708,7 @@ function initDeeperStep() {
       </div>`,
       `<div class="deeper-subpage" id="deeper-sub-${key}-control-attitude" data-area="${label}" hidden>
         <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Acceptance</h3>
-        <div class="deeper-field" style="margin-bottom:1.4rem"><label>Although you may not be able to control these aspects of your situation directly, you can still impact your resulting experience through your internal interpretation of and attitude towards them.<br><br>We&rsquo;ll start by assessing how you currently feel.<br><br>It&rsquo;s important you are honest with yourself here. Don&rsquo;t try to feel better or worse than you actually do. Also, we may have multiple, even conflicting feelings towards one and the same situation. Don&rsquo;t disregard or neglect anything.<br><br>How do you feel about the following?</label></div>
+        <div class="deeper-field" style="margin-bottom:1.4rem"><label>Although you may not be able to control these aspects of your situation directly, you can still impact your resulting experience through your internal interpretation of and attitude towards them.<br><br>We&rsquo;ll start by assessing how you currently feel.<br><br>It&rsquo;s important you are honest with yourself here. Don&rsquo;t try to feel better or worse than you actually do. Also, we may have multiple, even conflicting feelings towards one and the same situation. Don&rsquo;t disregard or neglect anything.<br><br><span class="qa-q">How do you feel about the following?</span></label></div>
         <div id="control-attitude-${key}"></div>
       </div>`,
     ];
@@ -3954,7 +3954,13 @@ function captureDeeperFromDom() {
         if (field.classList.contains('vision-achievable-check-field')) return; // whether it's still worth achieving / needs revising — not needed in the email
         if (field.classList.contains('confirm-check-field')) return; // mandatory confirm checkbox (e.g. control-attitude) — answer is always the same, not worth showing
         const lblEl = [...field.children].find((c) => c.tagName === 'LABEL') || field.querySelector('label');
-        const q = (lblEl?.textContent || '').replace(/\s+/g, ' ').trim();
+        // Some labels carry a paragraph or two of Daniel's own explanatory copy
+        // alongside the actual question, for the person taking the assessment.
+        // He only wants the question itself in his notification email, so the
+        // real question is marked with .qa-q where the two are mixed together;
+        // fall back to the whole label when there's nothing marked.
+        const qEl = lblEl?.querySelector('.qa-q') || lblEl;
+        const q = (qEl?.textContent || '').replace(/\s+/g, ' ').trim();
         if (!q) return;
         const mine = (el) => el.closest('.deeper-field') === field;
         let a = '';

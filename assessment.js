@@ -346,15 +346,14 @@ function attachGetStartedHandler() {
     if (known && known.email && readStartId()) return begin(); // already known, don't ask twice
     if (!identityBlock) return begin();
     identityBlock.hidden = false;
-    document.getElementById("start-top")?.setAttribute("hidden", "");
-    document.getElementById("start-bottom")?.setAttribute("hidden", "");
+    document.getElementById("intro-content")?.setAttribute("hidden", "");
     identityBlock.scrollIntoView({ behavior: "smooth", block: "center" });
     (firstEl && !firstEl.value ? firstEl : emailEl)?.focus({ preventScroll: true });
   }
 
   // Re-showing the intro calls this function again, so bind once per button or a
   // second visit fires the handler twice.
-  for (const id of ["btn-get-started", "btn-get-started-bottom"]) {
+  for (const id of ["btn-get-started-bottom"]) {
     const btn = document.getElementById(id);
     if (!btn || btn.dataset.bound === "1") continue;
     btn.dataset.bound = "1";

@@ -379,13 +379,9 @@
           <div style="text-align:center;margin-bottom:1rem">
             <h2 style="margin:0 0 1rem">Daniel's Personal Self-Assessment</h2>
           </div>
-          <!-- Start sits at the TOP (Reece 2026-09-13). Anyone who already wants to
-               do this should not have to scroll past the whole introduction to begin,
-               and nothing is asked of them until they have said yes by clicking it. -->
-          <div id="start-top" style="text-align:center;margin-bottom:2.4rem">
-            <p style="font-family:var(--sc);font-size:.72rem;letter-spacing:.25em;color:var(--muted);margin-bottom:1rem">~30 minutes</p>
-            <button type="button" class="btn btn-primary" id="btn-get-started">Start the assessment →</button>
-          </div>
+          <!-- Daniel removed the top start button 2026-09-13: he wants people to read the
+               introduction before they can begin, not skip straight past it. The only
+               start button is now at the bottom, after the text. -->
           <!-- Asked only AFTER they press start, and framed as what it does for them:
                their answers are saved as they go. -->
           <div id="start-identity" style="max-width:26rem;margin:0 auto 2.4rem" hidden>
@@ -403,32 +399,34 @@
               <button type="button" class="btn btn-primary" id="btn-identity-continue">Continue →</button>
             </div>
           </div>
-          <div class="section-guide">
-            <div class="guide-video-wrap">
-              <div class="play-btn">
-                <svg width="13" height="15" viewBox="0 0 13 15"><path d="M0 0l13 7.5L0 15V0z"/></svg>
+          <div id="intro-content">
+            <div class="section-guide">
+              <div class="guide-video-wrap">
+                <div class="play-btn">
+                  <svg width="13" height="15" viewBox="0 0 13 15"><path d="M0 0l13 7.5L0 15V0z"/></svg>
+                </div>
+                <p class="guide-video-caption sc">Introduction — Daniel Tiwari</p>
               </div>
-              <p class="guide-video-caption sc">Introduction — Daniel Tiwari</p>
+              <button type="button" class="transcript-toggle" onclick="toggleTranscript(this)">Show text</button>
+              <div class="transcript-body">
+                <p>[Transcript placeholder — fill in once video is recorded.]</p>
+              </div>
             </div>
-            <button type="button" class="transcript-toggle" onclick="toggleTranscript(this)">Show text</button>
-            <div class="transcript-body">
-              <p>[Transcript placeholder — fill in once video is recorded.]</p>
+            <div class="guide-text" style="margin-top:1.2rem">
+              <p>Questions are so important and powerful, and so underrated — especially in this society. Throughout our upbringing and our education, we're constantly told what to do and who to be. Rarely are we asked questions, or reminded that this life is our own to live, and that we get to choose how we want to live it.</p>
+              <p>Finding your own answers is what makes you feel connected and engaged with your own life. That's why I created this assessment: to lay the foundation for creating the life you would love to live. I've put together the questions I believe are some of the most important ones to have answered for ourselves, if we're going to live — and therefore create — intentionally.</p>
+              <p>If we're not living according to our own vision, we're living according to someone else's. It's the difference between living intentionally and just drifting, carried along by circumstance and other people.</p>
+              <p><em>"Until we make the unconscious conscious, it will direct your life, and you will call it fate."</em> — Carl Jung. We are a far greater factor in our own lives than we realize, and we're constantly being deceived by our own mind. Reflection and self-honesty are what create clarity. Only once we become aware of how we've been creating our lives all along — even the circumstances we say we don't want — are we actually in a position to change them. If you want to know what you want, take a look at what you have.</p>
             </div>
-          </div>
-          <div class="guide-text" style="margin-top:1.2rem">
-            <p>Questions are so important and powerful, and so underrated — especially in this society. Throughout our upbringing and our education, we're constantly told what to do and who to be. Rarely are we asked questions, or reminded that this life is our own to live, and that we get to choose how we want to live it.</p>
-            <p>Finding your own answers is what makes you feel connected and engaged with your own life. That's why I created this assessment: to lay the foundation for creating the life you would love to live. I've put together the questions I believe are some of the most important ones to have answered for ourselves, if we're going to live — and therefore create — intentionally.</p>
-            <p>If we're not living according to our own vision, we're living according to someone else's. It's the difference between living intentionally and just drifting, carried along by circumstance and other people.</p>
-            <p><em>"Until we make the unconscious conscious, it will direct your life, and you will call it fate."</em> — Carl Jung. We are a far greater factor in our own lives than we realize, and we're constantly being deceived by our own mind. Reflection and self-honesty are what create clarity. Only once we become aware of how we've been creating our lives all along — even the circumstances we say we don't want — are we actually in a position to change them. If you want to know what you want, take a look at what you have.</p>
-          </div>
-          <div class="guide-text" style="margin-top:0">
-            <p>The more accurate and honest you can be with your answers, the more valuable your results will be. That said, honesty doesn't mean full disclosure. If any question touches something too personal, just click the "prefer not to answer" button above the back and next buttons. I have, however, put together these questions for a reason, and the more you can answer, the more insightful your results will be.</p>
-            <p>If you really take the time and make the effort to go through this assessment, I believe it will be life-changing — the beginning of a new chapter.</p>
-          </div>
-          <!-- The same start, for anyone who read the introduction to the end and
-               should not have to scroll back up. -->
-          <div id="start-bottom" style="text-align:center;padding-top:1.6rem">
-            <button type="button" class="btn btn-primary" id="btn-get-started-bottom">Start the assessment →</button>
+            <div class="guide-text" style="margin-top:0">
+              <p>The more accurate and honest you can be with your answers, the more valuable your results will be. That said, honesty doesn't mean full disclosure. If any question touches something too personal, just click the "prefer not to answer" button above the back and next buttons. I have, however, put together these questions for a reason, and the more you can answer, the more insightful your results will be.</p>
+              <p>If you really take the time and make the effort to go through this assessment, I believe it will be life-changing — the beginning of a new chapter.</p>
+            </div>
+            <!-- The only start button: after the introduction, not before it. -->
+            <div id="start-bottom" style="text-align:center;padding-top:1.6rem">
+              <p style="font-family:var(--sc);font-size:.72rem;letter-spacing:.25em;color:var(--muted);margin-bottom:1rem">~30 minutes</p>
+              <button type="button" class="btn btn-primary" id="btn-get-started-bottom">Start the assessment →</button>
+            </div>
           </div>
         </div>
         <div id="fulfillment-areas" hidden>
@@ -697,7 +695,7 @@
     document.addEventListener('keydown',function(e){
       if(e.key!=='Enter'||e.target.tagName==='TEXTAREA'||(e.target.tagName==='INPUT'&&e.target.type!=='checkbox'&&e.target.type!=='radio'))return;
       e.preventDefault();
-      const getStarted=document.getElementById('btn-get-started');
+      const getStarted=document.getElementById('btn-get-started-bottom');
       if(getStarted&&!getStarted.closest('[hidden]')&&getStarted.offsetParent!==null){getStarted.click();return;}
       if(!formNav.hidden){btnNext.click();}
     });

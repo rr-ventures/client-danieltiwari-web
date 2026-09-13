@@ -103,6 +103,9 @@ function friendlyName(raw) {
   if (/(reece|rainer)/.test(s)) return "Reece";
   if (/(daniel|tiwari)/.test(s)) return "Daniel";
   if (/(claude|agent|\bbot\b|github-?actions|noreply)/.test(s)) return "an agent on Reece's behalf";
+  // Netlify reports the committer as the GitHub org, so Daniel was reading
+  // "Change by rr-ventures", which means nothing to him.
+  if (/(rr-?ventures|spareday)/.test(s)) return "Reece's team";
   return raw; // unknown — show as-is rather than guess
 }
 

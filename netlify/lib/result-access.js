@@ -13,7 +13,11 @@
 const crypto = require("node:crypto");
 
 const VIEWER_DAYS = 30;
-const AUTHOR_HOURS = 12;
+// 30 days, the same as a reader's pass. It was 12 HOURS, which meant Daniel and
+// Reece had to fetch a code from their inbox almost every time they sat down to
+// write a result, and is why Reece said he had been locked out of his own
+// workspace (13 September 2026). Signing in should be something you do once.
+const AUTHOR_HOURS = 24 * 30;
 const CODE_TTL_MIN = 15;
 const MAX_CODE_ATTEMPTS = 6;
 

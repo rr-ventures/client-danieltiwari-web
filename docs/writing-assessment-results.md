@@ -7,9 +7,7 @@ do the writing for him.
 ## The flow
 
 1. Someone finishes the assessment.
-2. They get one email: thank you, the two things their answers already point at,
-   and "Daniel will write yours and email you when it's ready." No link yet —
-   there is nothing to open.
+2. They get no email at all (Daniel's call, 2026-09-13) — they hear nothing yet.
 3. Daniel gets an email with their full answers and a link to his workspace.
 4. He writes their result and hits **Publish to them**.
 5. They open their page, type the email they used, get a 6-digit code, and read

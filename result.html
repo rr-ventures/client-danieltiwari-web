@@ -32,7 +32,7 @@
   .gate label{display:block;text-align:left;font-family:var(--sc);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 .4rem}
   .gate input{display:block;width:100%;box-sizing:border-box;font-family:var(--body);font-size:1rem;color:var(--ink);background:#fff;border:1px solid var(--hair);border-radius:4px;padding:.75rem .8rem;margin-bottom:1rem}
   .gate input.code{font-family:monospace;font-size:1.6rem;letter-spacing:.45em;text-align:center}
-  .gate button{width:100%;padding:.8rem 1.4rem;font-size:.72rem}
+  .gate button{width:100%;padding:.8rem 1.4rem;font-size:.72rem;justify-content:center}
   .gate .note{font-size:.82rem;color:var(--muted);margin-top:1rem}
   .gate .msg{font-size:.9rem;margin:0 0 1rem;min-height:1.2rem}
   .gate .msg.bad{color:#b3261e}
@@ -52,7 +52,6 @@
 
 <header class="bar" id="bar">
   <a class="name sc" href="/">Daniel Tiwari</a>
-  <a class="cta mini sc" href="/assessment.html">Take the assessment</a>
 </header>
 
 <main class="result-page">
@@ -150,7 +149,7 @@
     hide("result-loading"); hide("gate"); hide("not-ready");
     const intro = $("result-intro");
     intro.innerHTML = `
-      <span class="eyebrow"><span class="dot"></span>Your assessment</span>
+      <span class="eyebrow">Your assessment</span>
       <h1>${data.firstName ? `${data.firstName}, here is your assessment.` : "Here is your assessment."}</h1>
       <p>Written for you, not generated. Take it in slowly. Nothing here needs fixing today.</p>`;
     show("result-intro");

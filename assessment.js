@@ -200,6 +200,11 @@ function renderFulfillmentCard(index, savedVal = null) {
       // nothing, which is what happened here before this fix.
       document.getElementById("fulfillment-areas").hidden = true;
       document.getElementById("fulfillment-intro").hidden = false;
+      // Land on the plain welcome text, not a still-open identity form —
+      // askForIdentity only shows this by hiding intro-content, it never
+      // gets reset elsewhere.
+      document.getElementById("start-identity")?.setAttribute("hidden", "");
+      document.getElementById("intro-content")?.removeAttribute("hidden");
       window.scrollTo({ top: 0, behavior: "smooth" });
       if (!window._historyNav) history.pushState({ step: 0, sub: -1 }, '');
       attachGetStartedHandler();
@@ -239,6 +244,13 @@ function initFulfillmentStep() {
     document.getElementById("fulfillment-intro").hidden = false;
     document.getElementById("fulfillment-areas").hidden = true;
     attachGetStartedHandler();
+    // Set by assessment.html's bootstrap when a refresh's kept history state
+    // shows the person was on the identity sub-view — reopen it instead of
+    // leaving them at the top of the intro with nothing filled in.
+    if (window._restoreIdentityOnLoad) {
+      window._restoreIdentityOnLoad = false;
+      window._askForIdentity && window._askForIdentity();
+    }
   }
 }
 
@@ -349,7 +361,18 @@ function attachGetStartedHandler() {
     document.getElementById("intro-content")?.setAttribute("hidden", "");
     identityBlock.scrollIntoView({ behavior: "smooth", block: "center" });
     (firstEl && !firstEl.value ? firstEl : emailEl)?.focus({ preventScroll: true });
+    // Marks this sub-view in browser history so a plain page refresh (which
+    // keeps the current history entry and its state, unlike a fresh visit)
+    // can bring the person back here instead of dropping them at the very
+    // top of the intro with nothing typed yet. sub:-2 is a dedicated
+    // sentinel, distinct from -1 (intro) and >=0 (a fulfillment card).
+    const _atIdentity = history.state && history.state.step === 0 && history.state.sub === -2;
+    if (!window._historyNav && !_atIdentity) history.pushState({ step: 0, sub: -2 }, '');
   }
+  // Exposed so assessment.html's reload bootstrap can call back into this
+  // same closure (which knows about firstEl/emailEl/identityBlock) when
+  // restoring the identity view.
+  window._askForIdentity = askForIdentity;
 
   // Re-showing the intro calls this function again, so bind once per button or a
   // second visit fires the handler twice.
@@ -4316,7 +4339,10 @@ window.submitAssessment = async function submitAssessment(form, submitButton) {
   if (window.stopStopwatch) window.stopStopwatch();
   form.hidden = true;
   renderTestingThankYou();
-  document.getElementById("assessment-result")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  // Hiding the form just above collapses the page height right as this
+  // runs — scrollIntoView on the result section was landing mid-page
+  // because of that shift. Scrolling the window itself to 0 is unambiguous.
+  window.scrollTo({ top: 0, behavior: "smooth" });
   submitButton.disabled = true;
   submitButton.classList.add("is-loading");
   try {

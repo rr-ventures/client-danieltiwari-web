@@ -385,7 +385,7 @@
           <!-- Asked only AFTER they press start, and framed as what it does for them:
                their answers are saved as they go. -->
           <div id="start-identity" style="max-width:26rem;margin:0 auto 2.4rem" hidden>
-            <p style="text-align:center;margin:0 0 1.2rem">Input your email so you can save your answers as you go.</p>
+            <p style="text-align:center;margin:0 0 1.2rem">Enter your first name and email so we can save your answers as you go. Your final results will be sent to your email after completion.</p>
             <div class="field">
               <label for="start_first_name">First name</label>
               <input id="start_first_name" type="text" required autocomplete="given-name" placeholder="First name">
@@ -418,14 +418,16 @@
             </div>
             -->
             <div class="guide-text" style="margin-top:1.2rem">
-              <p>Questions are so important and powerful, and so underrated — especially in this society. Throughout our upbringing and our education, we're constantly told what to do and who to be. Rarely are we asked questions, or reminded that this life is our own to live, and that we get to choose how we want to live it.</p>
-              <p>Finding your own answers is what makes you feel connected and engaged with your own life. That's why I created this assessment: to lay the foundation for creating the life you would love to live. I've put together the questions I believe are some of the most important ones to have answered for ourselves, if we're going to live — and therefore create — intentionally.</p>
+              <p>Questions are so important and powerful, and so underrated, especially in this society. Throughout our upbringing and our education, we're constantly told what to do and who to be. Rarely are we asked questions, or reminded that this life is our own to live, and that we get to choose how we want to live it.</p>
+              <p>Finding your own answers is what makes you feel connected and engaged with your own life. That's why I created this assessment: to lay the foundation for creating the life you would love to live. I've put together the questions I believe are some of the most important ones to have answered for ourselves, if we're going to live, and therefore create, intentionally.</p>
               <p>If we're not living according to our own vision, we're living according to someone else's. It's the difference between living intentionally and just drifting, carried along by circumstance and other people.</p>
-              <p><em>"Until we make the unconscious conscious, it will direct your life, and you will call it fate."</em> — Carl Jung. We are a far greater factor in our own lives than we realize, and we're constantly being deceived by our own mind. Reflection and self-honesty are what create clarity. Only once we become aware of how we've been creating our lives all along — even the circumstances we say we don't want — are we actually in a position to change them. If you want to know what you want, take a look at what you have.</p>
+              <p style="margin-top:1.8rem"><em>"Until we make the unconscious conscious, it will direct your life, and you will call it fate."</em></p>
+              <p style="margin-top:.4rem">Carl Jung</p>
+              <p style="margin-top:1.8rem">We are a far greater factor in our own lives than we realize, and we're constantly being deceived by our own mind. Reflection and self-honesty are what create clarity. Only once we become aware of how we've been creating our lives all along, even the circumstances we say we don't want, are we actually in a position to change them. If you want to know what you want, take a look at what you have.</p>
             </div>
             <div class="guide-text" style="margin-top:0">
               <p>The more accurate and honest you can be with your answers, the more valuable your results will be. That said, honesty doesn't mean full disclosure. If any question touches something too personal, just click the "prefer not to answer" button above the back and next buttons. I have, however, put together these questions for a reason, and the more you can answer, the more insightful your results will be.</p>
-              <p>If you really take the time and make the effort to go through this assessment, I believe it will be life-changing — the beginning of a new chapter.</p>
+              <p>If you really take the time and make the effort to go through this assessment, I believe it will be life-changing and the beginning of a new chapter.</p>
             </div>
             <!-- Shown instead of the start button when this browser already has progress
                  saved from a previous visit (Daniel, 2026-09-13) — resuming used to happen
@@ -717,9 +719,26 @@
     });
     const _p=new URLSearchParams(location.search);
     const _s=parseInt(_p.get('step'));
+    // Read history.state BEFORE showStep() runs — showStep() does its own
+    // history.pushState for step 0, which would otherwise clobber the
+    // state a plain page refresh kept from before the reload.
+    const _existing=history.state;
     current=isNaN(_s)?0:_s;
     showStep(current);
-    history.replaceState({step:current,sub:-1},'');
+    // A plain page refresh reloads the same history entry and keeps its
+    // state (unlike opening the page fresh, where history.state is null).
+    // If that state shows the person was on the "enter your first name and
+    // email" sub-view (assessment.js askForIdentity, sub:-2), flag it so
+    // assessment.js's initFulfillmentStep — which runs once its own
+    // functions exist — can re-open that view instead of leaving them at
+    // the very top of the intro. Doing the re-open here directly would be
+    // too early: assessment.js hasn't loaded yet at this point.
+    if(current===0&&_existing&&_existing.step===0&&_existing.sub===-2){
+      window._restoreIdentityOnLoad=true;
+      history.replaceState({step:0,sub:-2},'');
+    } else {
+      history.replaceState({step:current,sub:-1},'');
+    }
     // Applies a {step, sub} nav target — shared by browser back/forward (popstate)
     // and by window.gotoStep (used to jump straight to a saved spot on reload,
     // e.g. after restoring autosaved progress). For steps 3/4, if this is the
@@ -756,7 +775,20 @@
         showStep(0);
         document.getElementById('fulfillment-areas').hidden=true;
         document.getElementById('fulfillment-intro').hidden=false;
+        // Land on the plain welcome text, not a still-open identity form.
+        document.getElementById('start-identity')?.setAttribute('hidden','');
+        document.getElementById('intro-content')?.removeAttribute('hidden');
         window.attachGetStartedHandler&&window.attachGetStartedHandler();
+      } else if(st.step===0&&st.sub===-2){
+        // The "enter your first name and email" sub-view of the intro (see
+        // assessment.js askForIdentity). Rebuild the handler first so it
+        // exists, then re-open the identity view within it.
+        current=0;
+        showStep(0);
+        document.getElementById('fulfillment-areas').hidden=true;
+        document.getElementById('fulfillment-intro').hidden=false;
+        window.attachGetStartedHandler&&window.attachGetStartedHandler();
+        window._askForIdentity&&window._askForIdentity();
       } else {
         current=st.step;
         showStep(st.step);

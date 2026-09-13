@@ -4116,10 +4116,9 @@ function renderTestingThankYou() {
   if (!el) return;
   el.hidden = false;
   el.innerHTML = `
-    <div class="result-panel">
-      <span class="eyebrow"><span class="dot"></span>Thank you</span>
-      <h2>Thank you.</h2>
-      <p class="lede">Your answers are in. These get read properly, so yours will take a little time. Check your email, there's a note waiting.</p>
+    <div style="text-align:center;max-width:34rem;margin:0 auto">
+      <h2 style="margin:0 0 1rem">Thanks for helping me test the self-assessment.</h2>
+      <p class="lede">I've received your answers. You'll be hearing from me soon.<br>Daniel</p>
     </div>`;
 }
 

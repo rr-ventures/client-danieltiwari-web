@@ -43,14 +43,19 @@ either way, which is exactly why it went unnoticed. **Any check on whether a pag
 it in a browser, not fetch it.** `GZUIboj2tu6Y` (makadun617@yahoo.de) is Daniel's own
 address, confirmed by Reece on 13 September, so it is not a lead waiting on a reply.
 
+## The assessment is gated again — by Daniel's choice, not a bug (13 September, later)
+
+Daniel asked for the coming-soon/password gate back on after it had been fixed open earlier
+the same day (see above). **This is intentional, do not "fix" it again.** `assessment.html`
+once again checks for a `preview_access` cookie and, if missing, sends the visitor to
+`assessment-coming-soon.html`. That page takes a password (kept as it was before) or a
+one-click `?key=` link, sets the cookie, and forwards them into `/assessment`. Someone
+without the password or link cannot reach the assessment.
+
 ## Known and not fixed
 
-- (fixed 2026-09-13, live) THE ASSESSMENT IS OPEN TO EVERYONE. It is not behind a cookie,
-  there is no tester key, and `danieltiwari.com/assessment` is the link to send anybody. Two
-  separate gates used to hold it shut: redirects in `netlify.toml` (removed 12 Sep) and a
-  script inside `assessment.html` itself (removed 13 Sep). If you are answering a question
-  about who can take the assessment, the answer is anyone with the link. The page keeps its
-  own noindex, so it does not turn up in search.
+- The assessment is deliberately closed to anyone without the password/link (see above) —
+  this is current, wanted behaviour, not the earlier accidental-lockout bug.
 - (fixed 2026-09-13, live) `/api/assessment-notify` is gone from `netlify.toml`.
 - (fixed 2026-09-13, live) Name and email are asked BEFORE the first question, and finishing
   completes that same record. Someone who stops halfway shows in the workspace as

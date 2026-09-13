@@ -339,12 +339,14 @@
 </style>
 </head>
 <body>
-<!-- The assessment is OPEN (Reece 2026-09-12). A second gate used to live right here
-     in the page: without a preview_access cookie it replaced the page with the
-     coming-soon one. Removing the redirects in netlify.toml did not touch it, so the
-     assessment stayed shut for everyone Daniel sent it to while every check said it
-     was open. A fetch of this page returns 200 either way, which is exactly why that
-     went unnoticed. Any future check has to LOAD the page, not just fetch it. -->
+<!-- Daniel restored this gate 2026-09-13: the assessment is closed again unless the
+     visitor already has a preview_access cookie, in which case they are sent to
+     assessment-coming-soon.html to enter the password (or use the ?key= link). -->
+<script>
+  if (!document.cookie.split(';').some(function(c){return c.trim()==='preview_access=true';})) {
+    window.location.replace('/assessment-coming-soon.html');
+  }
+</script>
 <a class="skip" href="#main">Skip to content</a>
 
 <header id="bar">

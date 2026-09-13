@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>The assessment — Daniel Tiwari</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta name="description" content="The personal self-assessment is coming soon.">
+<meta name="theme-color" content="#f2ede4">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral+SC:wght@300;400;500;600&family=Spectral:ital,wght@0,300;0,400;1,300;1,400&family=Alegreya+SC:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/site.css">
+<style>
+  :root{
+    --bg:#f2ede4;
+    --bg2:#ebe5da;
+    --ink:#1c1a14;
+    --muted:#7a7268;
+    --hair:#d6cfc0;
+    --accent:#6f685a;
+    --display:"Spectral SC",Georgia,serif;
+    --body:"Spectral",Georgia,serif;
+    --sc:"Alegreya SC",serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--body);font-weight:300;line-height:1.75;-webkit-font-smoothing:antialiased}
+  a{color:inherit;text-decoration:none}
+  h1{font-family:var(--display);font-weight:400;line-height:1.1;letter-spacing:.01em;font-size:clamp(1.9rem,3vw,2.8rem)}
+  .sc{font-family:var(--sc);font-weight:500;letter-spacing:.1em}
+  .lede{font-size:clamp(1.05rem,1.7vw,1.2rem);line-height:1.8;color:var(--accent)}
+
+  header{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;justify-content:space-between;align-items:center;padding:1.4rem 2.4rem;transition:background .3s ease}
+  header.scrolled{background:rgba(242,237,228,.92);border-bottom:1px solid var(--hair)}
+  .header-name{font-family:var(--sc);font-size:.88rem;letter-spacing:.18em;color:var(--ink)}
+  .header-back{font-family:var(--sc);font-size:.72rem;letter-spacing:.18em;color:var(--ink);border:1px solid rgba(28,26,20,.2);padding:.55rem 1.2rem;border-radius:2px;transition:border-color .2s}
+  .header-back:hover{border-color:var(--ink)}
+
+  .page-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:8rem 2rem 6rem}
+  .inner{max-width:30rem;text-align:center}
+  .eyebrow{font-family:var(--sc);font-size:.72rem;letter-spacing:.3em;color:var(--muted);margin-bottom:1.6rem}
+  .inner h1{margin-bottom:1.4rem}
+  .inner .lede{margin-bottom:3rem}
+
+  .notify-form{display:flex;flex-direction:column;gap:1rem}
+  .field-row{display:flex;gap:1rem}
+  .field-row .field{flex:1}
+  .field{display:flex;flex-direction:column;gap:.5rem;text-align:left}
+  .field label{font-family:var(--sc);font-size:.68rem;letter-spacing:.2em;color:var(--accent)}
+  .field input{background:transparent;border:1px solid var(--hair);color:var(--ink);padding:.85rem 1.2rem;font-family:var(--body);font-size:.95rem;font-weight:300;border-radius:2px;outline:none;transition:border-color .2s;width:100%}
+  .field input:focus{border-color:var(--accent)}
+  .field input::placeholder{color:var(--muted)}
+
+  .btn{display:inline-block;font-family:var(--sc);font-size:.8rem;font-weight:500;letter-spacing:.18em;padding:1.1rem 2.6rem;border:1px solid;border-radius:2px;transition:background .2s,color .2s,border-color .2s;cursor:pointer;width:100%}
+  .btn-primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+  .btn-primary:hover{background:#000;border-color:#000}
+  .btn-primary:disabled{opacity:.5;cursor:not-allowed}
+
+  .success{display:none;text-align:center;padding:2rem;border:1px solid var(--hair);border-radius:2px}
+  .success.visible{display:block}
+  .success .check{font-family:var(--sc);font-size:.72rem;letter-spacing:.25em;color:var(--muted);margin-bottom:.8rem}
+  .success p{color:var(--accent);font-size:.95rem}
+
+  footer{padding:3rem 2rem;text-align:center;border-top:1px solid var(--hair)}
+  footer .sc{font-size:.78rem;letter-spacing:.2em;color:var(--accent);margin-bottom:.8rem}
+  footer a{color:var(--muted);font-size:.85rem;transition:color .2s}
+  footer a:hover{color:var(--ink)}
+  footer .links{margin-top:1rem;display:flex;justify-content:center;gap:2rem;font-family:var(--sc);font-size:.68rem;letter-spacing:.15em;color:var(--muted)}
+  footer .hairline{height:1px;background:var(--hair);max-width:3rem;margin:0 auto 1.6rem}
+
+  .tester-gate{margin-top:3rem;text-align:center}
+  .tester-toggle{background:none;border:none;font-family:var(--sc);font-size:.65rem;letter-spacing:.2em;color:var(--hair);cursor:pointer;padding:.4rem;transition:color .2s}
+  .tester-toggle:hover{color:var(--muted)}
+  .tester-form{margin-top:.8rem;display:flex;flex-direction:column;align-items:center;gap:.5rem;opacity:0;max-height:0;overflow:hidden;transition:opacity .3s ease,max-height .3s ease}
+  .tester-form.open{opacity:1;max-height:6rem}
+  .tester-input-row{display:flex;gap:.5rem;align-items:center}
+  .tester-form input{background:transparent;border:1px solid var(--hair);color:var(--ink);padding:.6rem 1rem;font-family:var(--body);font-size:.9rem;font-weight:300;border-radius:2px;outline:none;width:12rem;text-align:center;transition:border-color .2s}
+  .tester-form input:focus{border-color:var(--accent)}
+  .tester-form input::placeholder{color:var(--hair)}
+  .tester-submit{background:none;border:1px solid var(--hair);font-family:var(--sc);font-size:.65rem;letter-spacing:.15em;color:var(--muted);cursor:pointer;padding:.6rem .9rem;border-radius:2px;transition:border-color .2s,color .2s}
+  .tester-submit:hover{border-color:var(--accent);color:var(--ink)}
+  .tester-error{font-family:var(--sc);font-size:.65rem;letter-spacing:.15em;color:#a05050}
+</style>
+</head>
+<body>
+
+<header id="bar">
+  <a class="header-name sc" href="/">Daniel Tiwari</a>
+  <a class="header-back sc" href="/">Back to site</a>
+</header>
+
+<main>
+  <div class="page-wrap">
+    <div class="inner">
+      <p class="eyebrow sc">Personal self-assessment</p>
+      <h1>Being built right now.</h1>
+      <p class="lede">Sign up to my newsletter to receive a notification the moment it's available.</p>
+
+      <form class="notify-form" id="notify-form" novalidate>
+        <div class="field-row">
+          <div class="field">
+            <label for="first-name">First name</label>
+            <input id="first-name" name="first-name" type="text" autocomplete="given-name" placeholder="First">
+          </div>
+          <div class="field">
+            <label for="last-name">Last name</label>
+            <input id="last-name" name="last-name" type="text" autocomplete="family-name" placeholder="Last">
+          </div>
+        </div>
+        <div class="field">
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" required autocomplete="email" placeholder="you@example.com">
+        </div>
+        <button type="submit" class="btn btn-primary" id="submit-btn">Join the newsletter →</button>
+      </form>
+
+      <div class="tester-gate">
+        <button class="tester-toggle" id="tester-toggle" type="button">Preview access</button>
+        <div class="tester-form" id="tester-form">
+          <div class="tester-input-row">
+            <input type="password" id="tester-pw" placeholder="Password" autocomplete="off">
+            <button type="button" class="tester-submit" id="tester-submit">Enter →</button>
+          </div>
+          <p class="tester-error" id="tester-error" hidden>Incorrect password.</p>
+        </div>
+      </div>
+
+      <div class="success" id="success">
+        <p class="check sc">Almost there</p>
+        <p>Check your inbox and confirm your e-mail address to get on the list.</p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="foot">
+  <div class="hairline"></div>
+  <div class="sc">Daniel Tiwari</div>
+  <div style="margin-top:.8rem;font-family:'Spectral',serif;letter-spacing:0"><a href="mailto:email@danieltiwari.com">email@danieltiwari.com</a></div>
+  <div class="links"><a class="sc" href="/">Home</a><a class="sc" href="/privacy.html" target="_blank" rel="noopener noreferrer">Privacy</a></div>
+</footer>
+
+<script>
+  const PREVIEW_PASSWORD = 'danielpreview';
+
+  const testerToggle = document.getElementById('tester-toggle');
+  const testerForm   = document.getElementById('tester-form');
+  const testerPw     = document.getElementById('tester-pw');
+  const testerSubmit = document.getElementById('tester-submit');
+  const testerError  = document.getElementById('tester-error');
+
+  testerToggle.addEventListener('click', () => {
+    testerForm.classList.toggle('open');
+    if (testerForm.classList.contains('open')) testerPw.focus();
+  });
+
+  function attemptAccess() {
+    if (testerPw.value === PREVIEW_PASSWORD) {
+      document.cookie = 'preview_access=true; path=/; max-age=604800; SameSite=Lax';
+      window.location.href = '/assessment';
+    } else {
+      testerError.hidden = false;
+      testerPw.value = '';
+      testerPw.focus();
+    }
+  }
+
+  testerSubmit.addEventListener('click', attemptAccess);
+  testerPw.addEventListener('keydown', (e) => { if (e.key === 'Enter') attemptAccess(); });
+
+  // A one-click tester link, so Daniel can send someone straight in instead of
+  // asking them to find a hidden box and type a password (Reece 2026-09-12).
+  // Netlify keeps the query string when it bounces /assessment to this page, so
+  // danieltiwari.com/assessment?key=danielpreview lands here and passes through.
+  // This is an unlisted door, not a locked one: the key sits in this page's code
+  // and always has. It keeps the assessment off the open web, nothing more.
+  (function letTesterStraightIn() {
+    const key = new URLSearchParams(location.search).get('key');
+    if (key && key === PREVIEW_PASSWORD) {
+      document.cookie = 'preview_access=true; path=/; max-age=604800; SameSite=Lax';
+      location.replace('/assessment');
+    }
+  })();
+
+  const bar = document.getElementById('bar');
+  window.addEventListener('scroll', () => bar.classList.toggle('scrolled', scrollY > 8), { passive: true });
+
+  const form = document.getElementById('notify-form');
+  const btn = document.getElementById('submit-btn');
+  const success = document.getElementById('success');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = form.email.value.trim();
+    if (!email) { form.email.focus(); return; }
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+    try {
+      const res = await fetch('/api/newsletter-submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, first_name: form['first-name'].value.trim(), last_name: form['last-name'].value.trim(), source: 'assessment-coming-soon' }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.ok) {
+        form.style.display = 'none';
+        success.classList.add('visible');
+      } else {
+        throw new Error(data.error || '');
+      }
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = 'Notify me →';
+      alert(err.message || 'Something went wrong. Please try again.');
+    }
+  });
+</script>
+</body>
+</html>

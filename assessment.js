@@ -247,15 +247,75 @@ function initFulfillmentStep() {
 // function, the first fulfillment card's back button, and the browser
 // back/forward handler in assessment.html — must call this again, or a
 // second visit to the intro page leaves the button dead.
+// Who they are, taken before the first question rather than after the last
+// (Reece 2026-09-13). Kept in one place so the value written down at the start and
+// the value submitted at the end can never drift apart.
+const IDENTITY_KEY = "assessmentIdentity";
+
+function readIdentity() {
+  try { return JSON.parse(localStorage.getItem(IDENTITY_KEY) || "null"); } catch { return null; }
+}
+function rememberIdentity(identity) {
+  try { localStorage.setItem(IDENTITY_KEY, JSON.stringify(identity)); } catch { /* not fatal */ }
+}
+
+// Carry what they typed at the start into the contact fields at the end, so they
+// never type it twice and the two can never disagree.
+function applyIdentityToForm() {
+  const identity = readIdentity();
+  if (!identity) return;
+  const first = document.getElementById("first_name");
+  const email = document.getElementById("email");
+  if (first && !first.value) first.value = identity.first_name || "";
+  if (email && !email.value) email.value = identity.email || "";
+}
+
 function attachGetStartedHandler() {
+  const firstEl = document.getElementById("start_first_name");
+  const emailEl = document.getElementById("start_email");
+  const errEl = document.getElementById("start-identity-error");
+
+  // Someone coming back to a half-finished assessment should not be asked again.
+  const known = readIdentity();
+  if (known && firstEl && emailEl) {
+    firstEl.value = known.first_name || "";
+    emailEl.value = known.email || "";
+  }
+
+  const fail = (msg, field) => {
+    if (errEl) errEl.textContent = msg;
+    if (field) field.focus();
+    return false;
+  };
+
+  function identityOk() {
+    if (errEl) errEl.textContent = "";
+    if (!firstEl || !emailEl) return true; // the fields are gone: never block them
+    const first = firstEl.value.trim();
+    const email = emailEl.value.trim();
+    if (!first) return fail("Please add your first name so your answers are saved to you.", firstEl);
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return fail("Please add a real email address.", emailEl);
+    rememberIdentity({ first_name: first, email });
+    // Write them down now, so a person who stops halfway is not lost. Fire and
+    // forget: a slow or failing network must never stop someone starting.
+    fetch("/api/assessment-start", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ first_name: first, email }),
+    }).catch(() => {});
+    return true;
+  }
+
   document.getElementById("btn-get-started").addEventListener("click", () => {
+    if (!identityOk()) return;
+    applyIdentityToForm();
     document.getElementById("fulfillment-intro").hidden = true;
     document.getElementById("fulfillment-areas").hidden = false;
     window.scrollTo({ top: 0, behavior: "smooth" });
     if (!window._historyNav) history.pushState({ step: 0, sub: 0 }, '');
     if (window.startStopwatch) window.startStopwatch();
     renderFulfillmentCard(0);
-  }, { once: true });
+  });
 }
 
 /* ---- Step 3: Spillover ---- */
@@ -4131,6 +4191,17 @@ window.submitAssessment = async function submitAssessment(form, submitButton) {
 
   // Readable question-by-question capture for the notify email (never fatal).
   try { answers.qa_summary = buildQaSummary(answers); } catch (_e) { /* summary is best-effort */ }
+
+  // Belt and braces: if the contact fields at the end were somehow left empty,
+  // fall back to what they gave before they started. A submission must never be
+  // anonymous again.
+  try {
+    const identity = readIdentity();
+    if (identity) {
+      if (!String(answers.first_name || "").trim()) answers.first_name = identity.first_name;
+      if (!String(answers.email || "").trim()) answers.email = identity.email;
+    }
+  } catch (_e) { /* not fatal */ }
 
   try { localStorage.removeItem(ASSESSMENT_SAVE_KEY); } catch (_e) { /* not fatal */ }
   if (window.stopStopwatch) window.stopStopwatch();

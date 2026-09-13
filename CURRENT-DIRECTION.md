@@ -24,18 +24,21 @@ Netlify bakes SECRET env values in at BUILD time, so `RESULTS_AUTHOR_TOKEN` only
 functions once a build made after the rotation is published. Until then the workspace API
 answers 401 to that token.
 
-## The next real piece of work
+## Who takes the assessment is known from the first click (13 September)
 
-**Somebody can finish the whole assessment without ever saying who they are.** Name and email
-are asked in the LAST section, so an abandoned run leaves nothing at all, and a finished one
-can still carry a throwaway name. `GZUIboj2tu6Y` (12 September) came in as "D" with a
-yahoo.de address and may well be Daniel testing.
+First name and email are asked **before** the first question, not after the last. The person is
+written down the moment they give them (`netlify/functions/assessment-start.js`), so somebody who
+stops halfway is no longer invisible: their row shows in Daniel's workspace marked "didn't finish".
+What they type is carried into the contact fields at the end, and a returning visitor is not asked
+again. 8 browser checks cover it.
 
-Reece's call, 13 September: **first name and email are asked BEFORE the assessment starts**,
-so the person is known from the first click and their progress can be saved against them
-rather than only in their own browser. That means a new opening section, the contact fields
-moving out of section 07, and a record written as soon as the email is given rather than only
-on submit. Not started.
+**A second gate was found and removed the same day.** `assessment.html` carried its own script that
+replaced the page with the coming-soon one unless the visitor had a `preview_access` cookie.
+Deleting the redirects in `netlify.toml` never touched it, so the assessment stayed shut for
+everyone Daniel sent it to while every check reported it open. A fetch of the page returns 200
+either way, which is exactly why it went unnoticed. **Any check on whether a page works has to LOAD
+it in a browser, not fetch it.** That is also why `GZUIboj2tu6Y` is almost certainly Daniel: only
+someone already holding the cookie could have got through.
 
 ## Known and not fixed
 

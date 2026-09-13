@@ -26,6 +26,11 @@
   status = 200
 
 [[redirects]]
+  from = "/api/assessment-start"
+  to = "/.netlify/functions/assessment-start"
+  status = 200
+
+[[redirects]]
   from = "/api/result-login"
   to = "/.netlify/functions/result-login"
   status = 200

@@ -339,11 +339,12 @@
 </style>
 </head>
 <body>
-<script>
-  if (!document.cookie.split(';').some(function(c){return c.trim()==='preview_access=true';})) {
-    window.location.replace('/assessment-coming-soon.html');
-  }
-</script>
+<!-- The assessment is OPEN (Reece 2026-09-12). A second gate used to live right here
+     in the page: without a preview_access cookie it replaced the page with the
+     coming-soon one. Removing the redirects in netlify.toml did not touch it, so the
+     assessment stayed shut for everyone Daniel sent it to while every check said it
+     was open. A fetch of this page returns 200 either way, which is exactly why that
+     went unnoticed. Any future check has to LOAD the page, not just fetch it. -->
 <a class="skip" href="#main">Skip to content</a>
 
 <header id="bar">
@@ -397,6 +398,22 @@
           <div class="guide-text" style="margin-top:0">
             <p>The more accurate and honest you can be with your answers, the more valuable your results will be. That said, honesty doesn't mean full disclosure. If any question touches something too personal, just click the "prefer not to answer" button above the back and next buttons. I have, however, put together these questions for a reason, and the more you can answer, the more insightful your results will be.</p>
             <p>If you really take the time and make the effort to go through this assessment, I believe it will be life-changing — the beginning of a new chapter.</p>
+          </div>
+          <!-- Who they are, asked BEFORE a single question (Reece 2026-09-13). It used
+               to be the LAST thing asked, so anyone who stopped partway left nothing at
+               all and Daniel could not tell who had even started. -->
+          <div id="start-identity" style="max-width:26rem;margin:2.4rem auto 0">
+            <p style="font-family:var(--sc);font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);text-align:center;margin-bottom:1.2rem">First, so your answers are saved to you</p>
+            <div class="field">
+              <label for="start_first_name">First name</label>
+              <input id="start_first_name" type="text" required autocomplete="given-name" placeholder="First name">
+            </div>
+            <div class="field" style="margin-top:.9rem">
+              <label for="start_email">Email</label>
+              <input id="start_email" type="email" required autocomplete="email" placeholder="you@example.com">
+            </div>
+            <p id="start-identity-error" style="color:#b3261e;font-size:.88rem;margin-top:.7rem;min-height:1.2rem" role="status" aria-live="polite"></p>
+            <p style="font-size:.82rem;color:var(--muted);margin-top:.2rem">Your progress is saved as you go, so you can stop and come back. Nothing is shared with anyone.</p>
           </div>
           <div style="text-align:center;padding-top:1.6rem">
             <p style="font-family:var(--sc);font-size:.72rem;letter-spacing:.25em;color:var(--muted);margin-bottom:1rem">~30 minutes</p>

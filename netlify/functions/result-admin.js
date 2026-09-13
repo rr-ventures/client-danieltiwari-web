@@ -75,6 +75,9 @@ function summarise(id, record, page) {
     // set when the email telling Daniel about this submission never sent, so a
     // submission he was never told about is visible rather than just missing
     notifyFailed: Boolean(record && record.notifyFailed),
+    // they gave their name and email and then stopped partway. Worth seeing:
+    // before this existed they left no trace at all.
+    started: Boolean(record && record.started),
   };
 }
 

@@ -41,15 +41,16 @@ function cleanHtml(input) {
 // silent: they were promised they would hear, and nothing would ever arrive.
 // Found in the red team of Daniel's own list, 2026-09-12.
 function readyEmail({ firstName, url, accessKey }) {
-  const hi = firstName ? `${escapeText(firstName)}, your` : "Your";
+  const hi = firstName ? `Hey ${escapeText(firstName)},` : "Hey,";
   return `<div style="font-family:Georgia,serif;color:#15140f;line-height:1.7;max-width:32rem">
-    <p style="margin:0 0 1rem">${hi} assessment is ready.</p>
-    <p style="margin:0 0 1.4rem">It's here, and it's private to you:</p>
+    <p style="margin:0 0 1rem">${hi}</p>
+    <p style="margin:0 0 1rem">The results for your assessment are available.</p>
+    <p style="margin:0 0 1.4rem">You can view them through the following link:</p>
     <p style="margin:0 0 1.4rem"><a href="${escapeText(url)}" style="color:#15140f">${escapeText(url)}</a></p>
-    <p style="margin:0 0 1rem">It asks for a password. Yours is:</p>
+    <p style="margin:0 0 1rem">Opening it will ask you for a password. Yours is:</p>
     <p style="font-family:monospace;font-size:1.5rem;letter-spacing:.12em;margin:0 0 1.4rem;color:#15140f">${escapeText(accessKey)}</p>
-    <p style="margin:0 0 1rem">Keep this email and you can come back to your assessment whenever you want. The password does not expire.</p>
-    <p style="margin:0 0 1rem">Take it slowly.</p>
+    <p style="margin:0 0 1rem">This password doesn't expire, so keep this email and you can come back to your results whenever you want.</p>
+    <p style="margin:0 0 1rem">If you'd like to contact me, you're welcome to get in touch.</p>
     <p style="margin:0 0 1rem">Daniel</p>
   </div>`;
 }

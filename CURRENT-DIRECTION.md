@@ -19,14 +19,16 @@ Proven against the published site, not assumed:
   code accepted, page opened, an unwritten result says "not ready", the pass will not open
   anyone else's result, and the code cannot be reused.
 
-**Still waiting on one approval click:** the newest build carries the thank-you wording fix, and
-Netlify bakes SECRET env values in at BUILD time, so `RESULTS_AUTHOR_TOKEN` only reaches the
-functions once a build made after the rotation is published. Until then the workspace API
-answers 401 to that token.
+**Nothing is waiting on an approval click.** Everything described here is published and serving.
+Note that Netlify bakes SECRET env values in at BUILD time, so changing one only reaches the
+functions once a build made AFTER the change is published.
 
 ## Who takes the assessment is known from the first click (13 September)
 
-First name and email are asked **before** the first question, not after the last. The person is
+The start button sits at the TOP of the page, and nothing is asked of anyone until they press it
+(Reece, 13 September). Pressing it reveals one short step: "Input your email so you can save your
+answers as you go", first name and email, then Continue. So first name and email are still taken
+before the first question and after the person has said yes, rather than after the last question. The person is
 written down the moment they give them (`netlify/functions/assessment-start.js`), so somebody who
 stops halfway is no longer invisible: their row shows in Daniel's workspace marked "didn't finish".
 What they type is carried into the contact fields at the end, and a returning visitor is not asked
@@ -37,19 +39,26 @@ replaced the page with the coming-soon one unless the visitor had a `preview_acc
 Deleting the redirects in `netlify.toml` never touched it, so the assessment stayed shut for
 everyone Daniel sent it to while every check reported it open. A fetch of the page returns 200
 either way, which is exactly why it went unnoticed. **Any check on whether a page works has to LOAD
-it in a browser, not fetch it.** That is also why `GZUIboj2tu6Y` is almost certainly Daniel: only
-someone already holding the cookie could have got through.
+it in a browser, not fetch it.** `GZUIboj2tu6Y` (makadun617@yahoo.de) is Daniel's own
+address, confirmed by Reece on 13 September, so it is not a lead waiting on a reply.
 
 ## Known and not fixed
 
-- The assessment is behind a `preview_access=true` cookie gate in `netlify.toml`.
-  Testers get in with **`danieltiwari.com/assessment?key=danielpreview`**, which sets the
-  cookie and passes them straight through (built 2026-09-12). The key sits in
-  `assessment-coming-soon.html` in plain sight and always has: this keeps the assessment
-  off the open web, it is not security. Opening it to everyone means deleting the two
-  coming-soon redirects in `netlify.toml`.
-- `netlify.toml` routes `/api/assessment-notify` to a function that does not exist.
-  Dead route, safe to delete.
+- (fixed 2026-09-13, live) THE ASSESSMENT IS OPEN TO EVERYONE. It is not behind a cookie,
+  there is no tester key, and `danieltiwari.com/assessment` is the link to send anybody. Two
+  separate gates used to hold it shut: redirects in `netlify.toml` (removed 12 Sep) and a
+  script inside `assessment.html` itself (removed 13 Sep). If you are answering a question
+  about who can take the assessment, the answer is anyone with the link. The page keeps its
+  own noindex, so it does not turn up in search.
+- (fixed 2026-09-13, live) `/api/assessment-notify` is gone from `netlify.toml`.
+- (fixed 2026-09-13, live) Name and email are asked BEFORE the first question, and finishing
+  completes that same record. Someone who stops halfway shows in the workspace as
+  "didn't finish"; someone who finishes appears once, not twice.
+- (fixed 2026-09-13) An approval email can no longer roll the site backwards. Approving a
+  change the live site already contains says so and publishes nothing.
+- (fixed 2026-09-13) The newsletter form rate-limits signups per person and per network and
+  refuses SMS gateways and throwaway domains. `scripts/clean-subscriber-spam.mjs` clears
+  bot signups that were never confirmed.
 - (fixed 2026-09-12, live) the thank-you after submitting used to say "Thanks for testing this
   with me". It now matches the confirmation email's words. Verified by fetching the live
   assessment.js, not by trusting the commit.

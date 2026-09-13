@@ -326,8 +326,13 @@ function attachGetStartedHandler() {
     return true;
   }
 
-  document.getElementById("btn-get-started").addEventListener("click", () => {
-    if (!identityOk()) return;
+  // Pressing start does not ask for anything yet: it reveals the one small step
+  // that does (Reece 2026-09-13). Someone already part-way through has given their
+  // details before, so start takes them straight in rather than asking twice.
+  const identityBlock = document.getElementById("start-identity");
+  const continueBtn = document.getElementById("btn-identity-continue");
+
+  function begin() {
     applyIdentityToForm();
     document.getElementById("fulfillment-intro").hidden = true;
     document.getElementById("fulfillment-areas").hidden = false;
@@ -335,7 +340,43 @@ function attachGetStartedHandler() {
     if (!window._historyNav) history.pushState({ step: 0, sub: 0 }, '');
     if (window.startStopwatch) window.startStopwatch();
     renderFulfillmentCard(0);
-  });
+  }
+
+  function askForIdentity() {
+    if (known && known.email && readStartId()) return begin(); // already known, don't ask twice
+    if (!identityBlock) return begin();
+    identityBlock.hidden = false;
+    document.getElementById("start-top")?.setAttribute("hidden", "");
+    document.getElementById("start-bottom")?.setAttribute("hidden", "");
+    identityBlock.scrollIntoView({ behavior: "smooth", block: "center" });
+    (firstEl && !firstEl.value ? firstEl : emailEl)?.focus({ preventScroll: true });
+  }
+
+  // Re-showing the intro calls this function again, so bind once per button or a
+  // second visit fires the handler twice.
+  for (const id of ["btn-get-started", "btn-get-started-bottom"]) {
+    const btn = document.getElementById(id);
+    if (!btn || btn.dataset.bound === "1") continue;
+    btn.dataset.bound = "1";
+    btn.addEventListener("click", askForIdentity);
+  }
+
+  if (continueBtn && continueBtn.dataset.bound !== "1") {
+    continueBtn.dataset.bound = "1";
+    continueBtn.addEventListener("click", () => {
+      if (!identityOk()) return;
+      begin();
+    });
+  }
+
+  // Enter in either field behaves like pressing Continue.
+  for (const field of [firstEl, emailEl]) {
+    if (!field || field.dataset.bound === "1") continue;
+    field.dataset.bound = "1";
+    field.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); continueBtn?.click(); }
+    });
+  }
 }
 
 /* ---- Step 3: Spillover ---- */

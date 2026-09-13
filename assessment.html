@@ -377,6 +377,30 @@
           <div style="text-align:center;margin-bottom:1rem">
             <h2 style="margin:0 0 1rem">Daniel's Personal Self-Assessment</h2>
           </div>
+          <!-- Start sits at the TOP (Reece 2026-09-13). Anyone who already wants to
+               do this should not have to scroll past the whole introduction to begin,
+               and nothing is asked of them until they have said yes by clicking it. -->
+          <div id="start-top" style="text-align:center;margin-bottom:2.4rem">
+            <p style="font-family:var(--sc);font-size:.72rem;letter-spacing:.25em;color:var(--muted);margin-bottom:1rem">~30 minutes</p>
+            <button type="button" class="btn btn-primary" id="btn-get-started">Start the assessment →</button>
+          </div>
+          <!-- Asked only AFTER they press start, and framed as what it does for them:
+               their answers are saved as they go. -->
+          <div id="start-identity" style="max-width:26rem;margin:0 auto 2.4rem" hidden>
+            <p style="text-align:center;margin:0 0 1.2rem">Input your email so you can save your answers as you go.</p>
+            <div class="field">
+              <label for="start_first_name">First name</label>
+              <input id="start_first_name" type="text" required autocomplete="given-name" placeholder="First name">
+            </div>
+            <div class="field" style="margin-top:.9rem">
+              <label for="start_email">Email</label>
+              <input id="start_email" type="email" required autocomplete="email" placeholder="you@example.com">
+            </div>
+            <p id="start-identity-error" style="color:#b3261e;font-size:.88rem;margin-top:.7rem;min-height:1.2rem" role="status" aria-live="polite"></p>
+            <div style="text-align:center;padding-top:.4rem">
+              <button type="button" class="btn btn-primary" id="btn-identity-continue">Continue →</button>
+            </div>
+          </div>
           <div class="section-guide">
             <div class="guide-video-wrap">
               <div class="play-btn">
@@ -399,25 +423,10 @@
             <p>The more accurate and honest you can be with your answers, the more valuable your results will be. That said, honesty doesn't mean full disclosure. If any question touches something too personal, just click the "prefer not to answer" button above the back and next buttons. I have, however, put together these questions for a reason, and the more you can answer, the more insightful your results will be.</p>
             <p>If you really take the time and make the effort to go through this assessment, I believe it will be life-changing — the beginning of a new chapter.</p>
           </div>
-          <!-- Who they are, asked BEFORE a single question (Reece 2026-09-13). It used
-               to be the LAST thing asked, so anyone who stopped partway left nothing at
-               all and Daniel could not tell who had even started. -->
-          <div id="start-identity" style="max-width:26rem;margin:2.4rem auto 0">
-            <p style="font-family:var(--sc);font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);text-align:center;margin-bottom:1.2rem">First, so your answers are saved to you</p>
-            <div class="field">
-              <label for="start_first_name">First name</label>
-              <input id="start_first_name" type="text" required autocomplete="given-name" placeholder="First name">
-            </div>
-            <div class="field" style="margin-top:.9rem">
-              <label for="start_email">Email</label>
-              <input id="start_email" type="email" required autocomplete="email" placeholder="you@example.com">
-            </div>
-            <p id="start-identity-error" style="color:#b3261e;font-size:.88rem;margin-top:.7rem;min-height:1.2rem" role="status" aria-live="polite"></p>
-            <p style="font-size:.82rem;color:var(--muted);margin-top:.2rem">Your progress is saved as you go, so you can stop and come back. Nothing is shared with anyone.</p>
-          </div>
-          <div style="text-align:center;padding-top:1.6rem">
-            <p style="font-family:var(--sc);font-size:.72rem;letter-spacing:.25em;color:var(--muted);margin-bottom:1rem">~30 minutes</p>
-            <button type="button" class="btn btn-primary" id="btn-get-started">Get started →</button>
+          <!-- The same start, for anyone who read the introduction to the end and
+               should not have to scroll back up. -->
+          <div id="start-bottom" style="text-align:center;padding-top:1.6rem">
+            <button type="button" class="btn btn-primary" id="btn-get-started-bottom">Start the assessment →</button>
           </div>
         </div>
         <div id="fulfillment-areas" hidden>

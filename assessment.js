@@ -4264,6 +4264,7 @@ window.submitAssessment = async function submitAssessment(form, submitButton) {
 
   try { localStorage.removeItem(ASSESSMENT_SAVE_KEY); } catch (_e) { /* not fatal */ }
   if (window.stopStopwatch) window.stopStopwatch();
+  form.hidden = true;
   renderTestingThankYou();
   document.getElementById("assessment-result")?.scrollIntoView({ behavior: "smooth", block: "start" });
   submitButton.disabled = true;

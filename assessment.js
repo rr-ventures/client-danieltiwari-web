@@ -3825,7 +3825,10 @@ function showResumeChoice(saved) {
   document.getElementById('btn-start-over')?.addEventListener('click', () => {
     clearSavedProgress();
     block.hidden = true;
-    document.getElementById('start-bottom')?.removeAttribute('hidden');
+    // Straight into the assessment, same as clicking Start — having just
+    // chosen "start from scratch" IS their answer, they shouldn't have to
+    // see the intro a second time and press Start again (Daniel, 2026-09-13).
+    document.getElementById('btn-get-started-bottom')?.click();
   }, { once: true });
 }
 

@@ -60,20 +60,20 @@
     <p>One moment…</p>
   </div>
 
-  <!-- Step 1: the key from their email. Reece 2026-09-13: the six-digit code was
-       a bad experience and locked him out of his own result, so a result now has
-       one key that does not expire. The link in the email carries it, so most
-       people never see this at all. -->
+  <!-- Step 1: the password from their email. Reece 2026-09-13: the six-digit code
+       was a bad experience, so a result has ONE password that does not expire. It
+       is always asked for, which is what people expect, and it is never carried in
+       the link: a shared or screenshotted address is then not a way in. -->
   <div id="gate" class="gate" hidden>
     <h1>Your assessment</h1>
-    <p id="gate-lede">This is private to you. Paste the key from the email your assessment came in.</p>
+    <p id="gate-lede">This is private to you. Enter the password from the email your assessment came in.</p>
     <p id="gate-msg" class="msg" role="status" aria-live="polite"></p>
 
     <form id="key-form">
-      <label for="gate-key">Your key</label>
+      <label for="gate-key">Your password</label>
       <input id="gate-key" class="code" autocomplete="off" autocapitalize="off" spellcheck="false" required placeholder="abcd-efgh-jkmn">
       <button class="cta sc" type="submit">Open my assessment</button>
-      <p class="note">It is in the email titled "Your assessment is ready". It does not expire.</p>
+      <p class="note">It is in the email titled "Your assessment is ready", and it does not expire.</p>
     </form>
   </div>
 
@@ -167,11 +167,11 @@
   }
 
   // Try a key: the one typed in the box, or the one the email's link carried.
-  async function tryKey(value, quiet) {
-    if (!quiet) say("Opening\u2026");
+  async function tryKey(value) {
+    say("Opening\u2026");
     const { data } = await post({ action: "key", key: value });
     if (!data.ok || !data.pass) {
-      if (!quiet) say(data.error || "That didn't work.", true);
+      say(data.error || "That didn't work.", true);
       return false;
     }
     setPass(data.pass);
@@ -191,21 +191,8 @@
 
   (async function start() {
     if (!ID) { hide("result-loading"); show("result-error"); return; }
-    let state = await loadResult();
-    if (state === "needs-login") {
-      // The link in their email carries the key, so the normal case is that they
-      // click it and the page simply opens with nothing typed. Take the key out
-      // of the address bar afterwards so a shared screenshot of the URL does not
-      // hand it to somebody else.
-      const fromLink = new URLSearchParams(location.search).get("k");
-      if (fromLink && await tryKey(fromLink, true)) {
-        history.replaceState({}, "", location.pathname);
-        return;
-      }
-      if (fromLink) history.replaceState({}, "", location.pathname);
-      openGate();
-      return;
-    }
+    const state = await loadResult();
+    if (state === "needs-login") { openGate(); return; }
     if (state === "error") { hide("result-loading"); show("result-error"); }
   })();
 

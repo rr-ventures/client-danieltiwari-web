@@ -7,7 +7,7 @@
 // Mirrors the Telegram bot's gate, but for EVERY change from any source.
 const crypto = require("node:crypto");
 const { changeGateStore } = require("./blobs");
-const { headlineFrom } = require("./release-headline");
+const { headlineFrom, plainEnglishFor } = require("./release-headline");
 const { sendResendEmail, mailConfig } = require("./send");
 const { escapeHtml } = require("./telegram");
 
@@ -59,7 +59,7 @@ async function github(path) {
 // `subjects` is every commit in the range, so the email can show the whole batch
 // rather than leaning on one line being the right one.
 async function commitDetails(sha, base) {
-  let message = "", files = [], subjects = [];
+  let message = "", files = [], subjects = [], plain = null;
   try {
     if (base && base !== sha) {
       const cmp = await github(`/repos/${REPO}/compare/${base}...${sha}`);
@@ -67,17 +67,19 @@ async function commitDetails(sha, base) {
       const picked = headlineFrom(cmp.commits);
       message = picked.headline;
       subjects = picked.subjects;
+      plain = plainEnglishFor(cmp.commits);
     } else {
       const c = await github(`/repos/${REPO}/commits/${sha}`);
       message = c.commit ? c.commit.message : "";
       files = c.files || [];
       subjects = [String(message).split("\n")[0]].filter(Boolean);
+      plain = plainEnglishFor([c]);
     }
   } catch { /* best effort — email still goes out with whatever we have */ }
   const diff = files
     .map((f) => `diff --git ${f.filename}\n@@ ${f.status} ${f.filename} @@\n${f.patch || "(binary or too large to show)"}`)
     .join("\n").slice(0, 60000);
-  return { message, diff, subjects, fileCount: files.length };
+  return { message, diff, subjects, fileCount: files.length, plain };
 }
 
 // ---- Email ----------------------------------------------------------------
@@ -143,28 +145,44 @@ function resolvedMessage(done) {
   return "This change was already handled.";
 }
 
-function approvalEmail({ subject, who, sha, diff, approve, reject, subjects, fileCount }) {
+function approvalEmail({ subject, who, sha, diff, approve, reject, subjects, fileCount, plain }) {
   // When a deploy carries several commits, list every one. Picking a headline is a
   // guess; showing the whole batch is not.
   const rest = (subjects || []).filter((t) => t && t !== String(subject || "").split("\n")[0]);
   const alsoHtml = rest.length
-    ? `<p style="margin:14px 0 4px;font-size:13px;color:#444;text-transform:uppercase;letter-spacing:.05em">Everything in this release (${(subjects || []).length} changes${fileCount ? `, ${fileCount} files` : ""})</p>
+    ? `<p style="margin:14px 0 4px;font-size:13px;color:#444;text-transform:uppercase;letter-spacing:.05em">Everything in this release (${(subjects || []).length} change${(subjects || []).length === 1 ? "" : "s"}${fileCount ? `, ${fileCount} file${fileCount === 1 ? "" : "s"}` : ""})</p>
        <ul style="margin:0;padding-left:20px;font-size:14px;color:#333">${rest.map((t) => `<li style="margin:2px 0">${escapeHtml(t)}</li>`).join("")}</ul>`
     : "";
+  // Written for Daniel, who is not a developer. He should be able to read the top
+  // of this email and know what it does for him and what it risks, without opening
+  // the diff (Reece, 13 September 2026: "the error messages are so vague and
+  // unuseful that he has no idea what the changes are and I'm approving them").
+  const plainHtml = plain
+    ? `<div style="background:#f2f7f3;border:1px solid #cfe3d4;border-radius:8px;padding:16px 18px;margin:0 0 18px">
+         <p style="margin:0 0 10px;font-size:16px"><b>What changes:</b> ${escapeHtml(plain.what)}</p>
+         ${plain.why ? `<p style="margin:0 0 10px;font-size:15px"><b>Why it helps you:</b> ${escapeHtml(plain.why)}</p>` : ""}
+         ${plain.risk ? `<p style="margin:0;font-size:15px;color:#444"><b>Risk:</b> ${escapeHtml(plain.risk)}</p>` : ""}
+       </div>`
+    : `<div style="background:#fdf5ec;border:1px solid #e6d3ba;border-radius:8px;padding:16px 18px;margin:0 0 18px">
+         <p style="margin:0;font-size:15px">Nobody wrote a plain explanation of this one, so all there is to go on is the technical note below. If it is not obvious what it does for you, reply and ask before approving it.</p>
+       </div>`;
+
   return `
   <div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#15140f;line-height:1.55;max-width:46rem">
-    <h2 style="font-weight:600;font-size:19px;margin-bottom:6px">Approve this change to danieltiwari.com?</h2>
-    <p style="margin:0 0 8px"><span style="display:inline-block;background:#eef1f4;border-radius:999px;padding:3px 13px;font-size:13px;font-weight:600;color:#15140f">Change by ${escapeHtml(who || "an agent on Reece's behalf")}</span></p>
-    <p style="color:#666;margin-top:0">It has been built, but <b>will not go live</b> until it is approved.</p>
-    <div style="background:#f6f8fa;border-left:3px solid #15140f;padding:12px 16px;border-radius:6px;font-size:15px">${escapeHtml((subject || "(no commit message)").split("\n")[0])}</div>
-    ${alsoHtml}
-    <p style="margin:30px 0 6px">
-      <a href="${approve}" style="background:#137333;color:#fff;padding:13px 26px;text-decoration:none;border-radius:6px;font-weight:600;font-size:15px">✓ Approve &amp; publish</a>
-      &nbsp;&nbsp;&nbsp;<a href="${reject}" style="color:#888;font-size:14px">Reject</a>
+    <h2 style="font-weight:600;font-size:19px;margin-bottom:6px">A change to your website is ready. Shall it go live?</h2>
+    <p style="margin:0 0 14px;color:#666">Made by ${escapeHtml(who || "Reece's team")} for you. <b>Nothing has changed on danieltiwari.com yet.</b></p>
+    ${plainHtml}
+    <p style="margin:22px 0 6px">
+      <a href="${approve}" style="background:#137333;color:#fff;padding:13px 26px;text-decoration:none;border-radius:6px;font-weight:600;font-size:15px">✓ Yes, put it live</a>
+      &nbsp;&nbsp;&nbsp;<a href="${reject}" style="color:#888;font-size:14px">No, leave my site as it is</a>
     </p>
-    <h3 style="font-size:13px;color:#444;margin:26px 0 8px;text-transform:uppercase;letter-spacing:.05em">Exactly what changed (${escapeHtml((sha || "").slice(0, 7))})</h3>
+    <p style="margin:10px 0 0;color:#666;font-size:14px">If you do nothing at all, nothing happens. Your website stays exactly as it is today.</p>
+    <h3 style="font-size:13px;color:#444;margin:26px 0 8px;text-transform:uppercase;letter-spacing:.05em">The technical note, if you want it</h3>
+    <div style="background:#f6f8fa;border-left:3px solid #15140f;padding:12px 16px;border-radius:6px;font-size:15px">${escapeHtml((subject || "(no message)").split("\n")[0])}</div>
+    ${alsoHtml}
+    <h3 style="font-size:13px;color:#444;margin:26px 0 8px;text-transform:uppercase;letter-spacing:.05em">Exactly what changed in the files (${escapeHtml((sha || "").slice(0, 7))})</h3>
     ${diffTable(diff)}
-    <p style="color:#999;font-size:13px;margin-top:18px">Green = added, red = removed. Either Daniel or Reece can approve — whoever clicks first publishes it. If the other person already approved (or rejected) it, you'll see exactly that when you click, so there's no harm in being second. Nothing is live until someone clicks Approve; the site updates ~1 minute after.</p>
+    <p style="color:#999;font-size:13px;margin-top:18px">Green = added, red = removed. Either you or Reece can approve, whoever clicks first. If the other one already did, you will be told so when you click, so there is no harm in being second.</p>
   </div>`;
 }
 
@@ -203,7 +221,7 @@ async function onDeploySucceeded(deploy) {
   if (published && (published === sha || sha.startsWith(published) || published.startsWith(sha))) return "already-live";
   if (await store.get(`seen:${sha}`).catch(() => null)) return "already-staged";
 
-  const { message, diff, subjects, fileCount } = await commitDetails(sha, published);
+  const { message, diff, subjects, fileCount, plain } = await commitDetails(sha, published);
 
   // Telegram-approved changes already passed a human gate → publish, no email.
   if (/via Telegram/i.test(message || deploy.title || "")) {
@@ -229,8 +247,12 @@ async function onDeploySucceeded(deploy) {
       from, to: [r.email],
       // Say HOW MANY changes when it is a batch, so a release never reads as one
       // small thing because of whichever commit happened to be last.
-      subject: `Approve ${(subjects || []).length > 1 ? `${subjects.length} changes` : "a change"} to danieltiwari.com: ${subject.slice(0, 60) || sha.slice(0, 7)}`,
-      html: approvalEmail({ subject, who, sha, diff, approve, reject, subjects, fileCount }),
+      // The subject is the first thing he sees, so it is the plain-English line
+      // when someone wrote one, never the commit subject (Reece 13 Sep 2026).
+      subject: plain
+        ? `Your website: ${plain.what.slice(0, 80)}`
+        : `A change to your website needs a yes or no${(subjects || []).length > 1 ? ` (${subjects.length} changes)` : ""}`,
+      html: approvalEmail({ subject, who, sha, diff, approve, reject, subjects, fileCount, plain }),
       tags: [{ name: "source", value: "change_gate" }],
     }).catch((e) => ({ error: e.message }));
     if (mail && mail.error) lastErr = mail.error;

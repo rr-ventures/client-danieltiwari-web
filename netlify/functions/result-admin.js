@@ -46,9 +46,9 @@ function readyEmail({ firstName, url, accessKey }) {
     <p style="margin:0 0 1rem">${hi} assessment is ready.</p>
     <p style="margin:0 0 1.4rem">It's here, and it's private to you:</p>
     <p style="margin:0 0 1.4rem"><a href="${escapeText(url)}" style="color:#15140f">${escapeText(url)}</a></p>
-    <p style="margin:0 0 1rem">That link opens it. If it ever asks, the key is:</p>
+    <p style="margin:0 0 1rem">It asks for a password. Yours is:</p>
     <p style="font-family:monospace;font-size:1.5rem;letter-spacing:.12em;margin:0 0 1.4rem;color:#15140f">${escapeText(accessKey)}</p>
-    <p style="margin:0 0 1rem">Keep this email and you can come back to your assessment whenever you want. The key does not expire.</p>
+    <p style="margin:0 0 1rem">Keep this email and you can come back to your assessment whenever you want. The password does not expire.</p>
     <p style="margin:0 0 1rem">Take it slowly.</p>
     <p style="margin:0 0 1rem">Daniel</p>
   </div>`;
@@ -173,7 +173,7 @@ exports.handler = async (event) => {
           subject: "Your assessment is ready",
           html: readyEmail({
             firstName: firstNameOf(exists.answers),
-            url: `${site}/r/${id}?k=${encodeURIComponent(next.accessKey)}`,
+            url: `${site}/r/${id}`,
             accessKey: next.accessKey,
           }),
           tags: [{ name: "source", value: "assessment_result_ready" }],

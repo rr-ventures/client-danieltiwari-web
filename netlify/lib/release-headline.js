@@ -27,4 +27,44 @@ function headlineFrom(commits) {
 }
 
 
-module.exports = { headlineFrom, CHORE };
+// Daniel is not a developer, and a commit subject is written for one. Reece,
+// 13 September 2026: "the error messages are so vague and unuseful that he has no
+// idea what the changes are and I'm approving them."
+//
+// So whoever makes a change writes the plain-English version FOR HIM, in the
+// commit message, like this:
+//
+//   For Daniel:
+//   What changes: people open their results with a password now, not a code
+//   Why it helps: nobody gets locked out waiting for a code to arrive
+//   Risk: low, nothing else on the site is touched
+//
+// This pulls that block out of any commit in the release. If nobody wrote one,
+// it returns null and the email says so plainly rather than pretending a commit
+// subject is an explanation.
+function plainEnglishFor(commits) {
+  for (const c of commits || []) {
+    const message = String(c && c.commit ? c.commit.message : c || "");
+    const start = message.search(/^\s*for daniel\s*:?\s*$/im);
+    if (start === -1) continue;
+    const after = message.slice(start).split("\n").slice(1);
+    const lines = [];
+    for (const raw of after) {
+      const line = raw.trim();
+      if (!line) { if (lines.length) break; continue; }
+      if (/^(co-authored-by|signed-off-by)/i.test(line)) break;
+      if (/^for daniel\s*:?$/i.test(line)) continue;
+      lines.push(line);
+    }
+    const field = (name) => {
+      const hit = lines.find((l) => new RegExp(`^${name}\\s*:`, "i").test(l));
+      return hit ? hit.replace(new RegExp(`^${name}\\s*:\\s*`, "i"), "").trim() : "";
+    };
+    const what = field("what changes") || field("what") || lines[0] || "";
+    if (!what) continue;
+    return { what, why: field("why it helps") || field("why"), risk: field("risk"), lines };
+  }
+  return null;
+}
+
+module.exports = { headlineFrom, CHORE, plainEnglishFor };

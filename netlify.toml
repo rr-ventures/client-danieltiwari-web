@@ -61,7 +61,22 @@
 
 [[redirects]]
   from = "/apply.html"
-  to = "/#enquire"
+  to = "/"
+  status = 301
+  force = true
+
+# The pretty-URL forms of the same two old pages. Without these, /about and
+# /apply still served the retired V2 pages while /about.html and /apply.html
+# correctly went home.
+[[redirects]]
+  from = "/about"
+  to = "/"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/apply"
+  to = "/"
   status = 301
   force = true
 

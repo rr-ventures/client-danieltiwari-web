@@ -13,6 +13,8 @@ const assetEntries = [
   'assessment.js',
   'assets',
   'favicon.svg',
+  'robots.txt',
+  'sitemap.xml',
   'site.css',
   'styles.css',
 ];

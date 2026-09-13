@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+
+# Private pages carry their own noindex tag as well; these keep them out of
+# crawls entirely rather than relying on the tag alone.
+Disallow: /assessment.html
+Disallow: /assessment-coming-soon.html
+Disallow: /result.html
+Disallow: /results-admin.html
+Disallow: /nurture-preview.html
+Disallow: /site-notice.html
+Disallow: /r/
+
+Sitemap: https://danieltiwari.com/sitemap.xml

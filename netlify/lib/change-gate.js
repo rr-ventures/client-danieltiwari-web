@@ -157,32 +157,35 @@ function approvalEmail({ subject, who, sha, diff, approve, reject, subjects, fil
   // of this email and know what it does for him and what it risks, without opening
   // the diff (Reece, 13 September 2026: "the error messages are so vague and
   // unuseful that he has no idea what the changes are and I'm approving them").
+  // Kept, but back in the plainer house style of the original email rather than the
+  // soft, over-reassuring rewrite (Reece, 14 September 2026: "make the approval
+  // email sound a bit more like it did before").
   const plainHtml = plain
-    ? `<div style="background:#f2f7f3;border:1px solid #cfe3d4;border-radius:8px;padding:16px 18px;margin:0 0 18px">
-         <p style="margin:0 0 10px;font-size:16px"><b>What changes:</b> ${escapeHtml(plain.what)}</p>
-         ${plain.why ? `<p style="margin:0 0 10px;font-size:15px"><b>Why it helps you:</b> ${escapeHtml(plain.why)}</p>` : ""}
+    ? `<div style="background:#f6f8fa;border-left:3px solid #137333;padding:12px 16px;border-radius:6px;margin:0 0 4px">
+         <p style="margin:0 0 8px;font-size:15px"><b>What changes:</b> ${escapeHtml(plain.what)}</p>
+         ${plain.why ? `<p style="margin:0 0 8px;font-size:15px"><b>Why it helps:</b> ${escapeHtml(plain.why)}</p>` : ""}
          ${plain.risk ? `<p style="margin:0;font-size:15px;color:#444"><b>Risk:</b> ${escapeHtml(plain.risk)}</p>` : ""}
        </div>`
-    : `<div style="background:#fdf5ec;border:1px solid #e6d3ba;border-radius:8px;padding:16px 18px;margin:0 0 18px">
-         <p style="margin:0;font-size:15px">Nobody wrote a plain explanation of this one, so all there is to go on is the technical note below. If it is not obvious what it does for you, reply and ask before approving it.</p>
+    : `<div style="background:#f6f8fa;border-left:3px solid #c9a227;padding:12px 16px;border-radius:6px;margin:0 0 4px">
+         <p style="margin:0;font-size:15px">Nobody wrote a plain explanation of this one, so the technical note below is all there is to go on. Reply and ask before approving it if it is not clear.</p>
        </div>`;
 
   return `
   <div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#15140f;line-height:1.55;max-width:46rem">
-    <h2 style="font-weight:600;font-size:19px;margin-bottom:6px">A change to your website is ready. Shall it go live?</h2>
-    <p style="margin:0 0 14px;color:#666">Made by ${escapeHtml(who || "Reece's team")} for you. <b>Nothing has changed on danieltiwari.com yet.</b></p>
+    <h2 style="font-weight:600;font-size:19px;margin-bottom:6px">Approve this change to danieltiwari.com?</h2>
+    <p style="margin:0 0 8px"><span style="display:inline-block;background:#eef1f4;border-radius:999px;padding:3px 13px;font-size:13px;font-weight:600;color:#15140f">Change by ${escapeHtml(who || "an agent on Reece's behalf")}</span></p>
+    <p style="color:#666;margin-top:0">It has been built, but <b>will not go live</b> until it is approved.</p>
     ${plainHtml}
-    <p style="margin:22px 0 6px">
-      <a href="${approve}" style="background:#137333;color:#fff;padding:13px 26px;text-decoration:none;border-radius:6px;font-weight:600;font-size:15px">✓ Yes, put it live</a>
-      &nbsp;&nbsp;&nbsp;<a href="${reject}" style="color:#888;font-size:14px">No, leave my site as it is</a>
+    <p style="margin:30px 0 6px">
+      <a href="${approve}" style="background:#137333;color:#fff;padding:13px 26px;text-decoration:none;border-radius:6px;font-weight:600;font-size:15px">✓ Approve &amp; publish</a>
+      &nbsp;&nbsp;&nbsp;<a href="${reject}" style="color:#888;font-size:14px">Reject</a>
     </p>
-    <p style="margin:10px 0 0;color:#666;font-size:14px">If you do nothing at all, nothing happens. Your website stays exactly as it is today.</p>
-    <h3 style="font-size:13px;color:#444;margin:26px 0 8px;text-transform:uppercase;letter-spacing:.05em">The technical note, if you want it</h3>
-    <div style="background:#f6f8fa;border-left:3px solid #15140f;padding:12px 16px;border-radius:6px;font-size:15px">${escapeHtml((subject || "(no message)").split("\n")[0])}</div>
+    <h3 style="font-size:13px;color:#444;margin:26px 0 8px;text-transform:uppercase;letter-spacing:.05em">The technical note</h3>
+    <div style="background:#f6f8fa;border-left:3px solid #15140f;padding:12px 16px;border-radius:6px;font-size:15px">${escapeHtml((subject || "(no commit message)").split("\n")[0])}</div>
     ${alsoHtml}
-    <h3 style="font-size:13px;color:#444;margin:26px 0 8px;text-transform:uppercase;letter-spacing:.05em">Exactly what changed in the files (${escapeHtml((sha || "").slice(0, 7))})</h3>
+    <h3 style="font-size:13px;color:#444;margin:26px 0 8px;text-transform:uppercase;letter-spacing:.05em">Exactly what changed (${escapeHtml((sha || "").slice(0, 7))})</h3>
     ${diffTable(diff)}
-    <p style="color:#999;font-size:13px;margin-top:18px">Green = added, red = removed. Either you or Reece can approve, whoever clicks first. If the other one already did, you will be told so when you click, so there is no harm in being second.</p>
+    <p style="color:#999;font-size:13px;margin-top:18px">Green = added, red = removed. Either Daniel or Reece can approve, whoever clicks first publishes it. If the other person already approved or rejected it, you will see exactly that when you click, so there is no harm in being second. Nothing is live until someone clicks Approve; the site updates about a minute after.</p>
   </div>`;
 }
 
@@ -249,9 +252,10 @@ async function onDeploySucceeded(deploy) {
       // small thing because of whichever commit happened to be last.
       // The subject is the first thing he sees, so it is the plain-English line
       // when someone wrote one, never the commit subject (Reece 13 Sep 2026).
-      subject: plain
-        ? `Your website: ${plain.what.slice(0, 80)}`
-        : `A change to your website needs a yes or no${(subjects || []).length > 1 ? ` (${subjects.length} changes)` : ""}`,
+      // The original shape ("Approve a change to danieltiwari.com: ..."), but the
+      // tail is the plain-English line when someone wrote one, so it is still
+      // readable rather than a commit subject.
+      subject: `Approve ${(subjects || []).length > 1 ? `${subjects.length} changes` : "a change"} to danieltiwari.com: ${((plain && plain.what) || subject || sha).slice(0, 60)}`,
       html: approvalEmail({ subject, who, sha, diff, approve, reject, subjects, fileCount, plain }),
       tags: [{ name: "source", value: "change_gate" }],
     }).catch((e) => ({ error: e.message }));

@@ -40,6 +40,26 @@ function siteBaseUrl(event) {
 
 // Persist the raw answers so the hosted result page can recompute the full
 // Assessment result with the SAME core logic the live quiz uses.
+// The id assessment-start handed this person when they typed their name and
+// email, if it is safe to finish that record instead of opening a new one. Safe
+// means: it looks like one of our ids, the record exists, it is still only a
+// "started" row (never a finished submission or a written result), and it was
+// opened by the same email address. Anything else falls back to a fresh id.
+async function reusableStartId(claimed, email) {
+  const id = String(claimed || "").trim();
+  if (!/^[A-Za-z0-9_-]{8,24}$/.test(id)) return null;
+  try {
+    const record = await resultsStore().get(id, { type: "json" });
+    if (!record || record.started !== true) return null;
+    if (record.result || record.draft || record.publishedAt) return null;
+    const storedEmail = String(record.answers?.email || "").trim().toLowerCase();
+    if (!storedEmail || storedEmail !== String(email || "").trim().toLowerCase()) return null;
+    return id;
+  } catch {
+    return null;
+  }
+}
+
 async function storeResult(id, answers) {
   const store = resultsStore();
   await store.setJSON(id, {
@@ -255,7 +275,15 @@ exports.handler = async (event) => {
   const result = calculateResult(answers);
 
   // Persist the result and mint its shareable link (the email carries this).
-  const id = shortId();
+  //
+  // If this person was already written down when they started, finish THAT
+  // record rather than opening a second one. Without this they show up twice
+  // in Daniel's workspace, once as a real submission and once as a ghost still
+  // marked "didn't finish" (found live 2026-09-13). The claimed id is only
+  // honoured when the stored record is genuinely an unfinished start for the
+  // same email, so nobody can overwrite someone else's submission with it.
+  const id = (await reusableStartId(answers.startId, answers.email)) || shortId();
+  delete answers.startId;
   const resultUrl = `${siteBaseUrl(event)}/r/${id}`;
   const adminUrl = `${siteBaseUrl(event)}/results`;
   let storeWarning;

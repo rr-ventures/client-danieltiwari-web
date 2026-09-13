@@ -5,6 +5,7 @@
 const crypto = require("node:crypto");
 const { subscribersStore } = require("../lib/blobs");
 const { sendResendEmail, mailConfig, leadActionEmail } = require("../lib/send");
+const { shouldDrop } = require("../lib/signup-guard");
 
 function escapeHtml(value) {
   return String(value || "")
@@ -140,6 +141,15 @@ exports.handler = async (event) => {
 
   if (!email || !email.includes("@")) {
     return { statusCode: 400, body: JSON.stringify({ error: "A valid email is required." }) };
+  }
+
+  // Bots POST straight at this function and never see the honeypot field, so
+  // they filled the list with ~1,020 junk signups and made the site email a
+  // stranger for every one of them. Look like one of those and the request is
+  // accepted and thrown away: no record, and above all no email sent.
+  const drop = await shouldDrop(event, email);
+  if (drop) {
+    return { statusCode: 200, body: JSON.stringify({ ok: true, needsConfirmation: true }) };
   }
 
   // ---- persist the pending subscriber (idempotent by email) ----

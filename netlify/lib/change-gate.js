@@ -138,6 +138,8 @@ function resolvedMessage(done) {
     return `${by} already approved this change${when}. It is live on danieltiwari.com — nothing else is needed.${tail}`;
   if (done.outcome === "rejected")
     return `${by} already rejected this change${when}. Nothing was published and the site is unchanged.${tail}`;
+  if (done.outcome === "already-live")
+    return `This one is already on the site, along with everything that came after it. Nothing was changed.${tail}`;
   return "This change was already handled.";
 }
 
@@ -236,6 +238,29 @@ async function onDeploySucceeded(deploy) {
   return lastErr ? `email-failed:${lastErr}` : "staged";
 }
 
+// Is `sha` already contained in what is live? An approval email sits in an inbox
+// forever, and clicking an old one used to publish that old commit and roll the
+// site BACKWARDS — the newest work silently disappearing off the live site
+// (found 2026-09-13: six unclicked emails were each a loaded gun). Anything the
+// live site already contains is a no-op now, not a rollback.
+async function alreadyLive(sha) {
+  let published = "";
+  try {
+    published = (await netlify(`/sites/${SITE}`)).published_deploy?.commit_ref || "";
+  } catch {
+    return false; // can't tell → behave as before rather than block a real approval
+  }
+  if (!published) return false;
+  if (published === sha || sha.startsWith(published) || published.startsWith(sha)) return true;
+  try {
+    const cmp = await github(`/repos/${REPO}/compare/${sha}...${published}`);
+    // "ahead" = live is in front of this commit, so this change is already in.
+    return cmp.status === "ahead" || cmp.status === "identical";
+  } catch {
+    return false;
+  }
+}
+
 async function approve(token, by) {
   const store = changeGateStore();
   const rec = await store.get(token, { type: "json" }).catch(() => null);
@@ -244,6 +269,12 @@ async function approve(token, by) {
     const done = await store.get(`resolved:${token}`, { type: "json" }).catch(() => null);
     if (done) return { ok: true, msg: resolvedMessage(done) };
     return { ok: false, msg: "This change has expired or was already handled. Nothing else is needed." };
+  }
+  if (await alreadyLive(rec.sha)) {
+    await store.delete(token);
+    await store.delete(`seen:${rec.sha}`).catch(() => {});
+    await store.setJSON(`resolved:${token}`, { outcome: "already-live", by: by || "", subject: rec.subject || "", at: new Date().toISOString() }).catch(() => {});
+    return { ok: true, msg: `This one is already on the site, along with everything that came after it. Nothing was changed.<br><br><b>${escapeHtml((rec.subject || "").slice(0, 120))}</b>` };
   }
   const d = await publishCommit(rec.sha); // may throw STILL_BUILDING / NO_DEPLOY
   await store.delete(token);

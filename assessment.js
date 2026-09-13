@@ -259,6 +259,17 @@ function rememberIdentity(identity) {
   try { localStorage.setItem(IDENTITY_KEY, JSON.stringify(identity)); } catch { /* not fatal */ }
 }
 
+// The id assessment-start gave this person. The submit sends it back so their
+// finished answers land on the SAME record, instead of leaving the "started"
+// row behind reading "didn't finish" forever next to their real submission.
+const START_ID_KEY = "assessmentStartId";
+function readStartId() {
+  try { return localStorage.getItem(START_ID_KEY) || null; } catch { return null; }
+}
+function rememberStartId(id) {
+  try { if (id) localStorage.setItem(START_ID_KEY, id); } catch { /* not fatal */ }
+}
+
 // Carry what they typed at the start into the contact fields at the end, so they
 // never type it twice and the two can never disagree.
 function applyIdentityToForm() {
@@ -295,14 +306,23 @@ function attachGetStartedHandler() {
     const email = emailEl.value.trim();
     if (!first) return fail("Please add your first name so your answers are saved to you.", firstEl);
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return fail("Please add a real email address.", emailEl);
+    const previous = readIdentity();
     rememberIdentity({ first_name: first, email });
     // Write them down now, so a person who stops halfway is not lost. Fire and
     // forget: a slow or failing network must never stop someone starting.
-    fetch("/api/assessment-start", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ first_name: first, email }),
-    }).catch(() => {});
+    // Someone coming back to finish already has a row, so don't open a second
+    // one unless they changed who they are.
+    const alreadyWrittenDown = Boolean(previous && previous.email === email && readStartId());
+    if (!alreadyWrittenDown) {
+      fetch("/api/assessment-start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ first_name: first, email }),
+      })
+        .then((r) => r.json())
+        .then((d) => rememberStartId(d && d.id))
+        .catch(() => {});
+    }
     return true;
   }
 
@@ -4211,8 +4231,11 @@ window.submitAssessment = async function submitAssessment(form, submitButton) {
   submitButton.classList.add("is-loading");
   try {
     await fetch("/api/assessment-submit", {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(answers),
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...answers, startId: readStartId() || undefined }),
     });
+    try { localStorage.removeItem(START_ID_KEY); } catch (_e) { /* not fatal */ }
   } catch {
     /* thank-you page doesn't depend on the response; the submission itself still went out */
   } finally {

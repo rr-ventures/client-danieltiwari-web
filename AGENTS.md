@@ -63,18 +63,21 @@ This repo is Daniel's public coaching website plus its Netlify Functions. Change
     repo file proves that. The current newsletter welcome email is in this repo.
 
 - Assessment and result nurture:
-  - THE ASSESSMENT IS OPEN TO EVERYONE (13 Sep 2026). No cookie, no tester key, no
-    coming-soon page. `danieltiwari.com/assessment` opens the first question for anybody
-    with the link. It keeps its own noindex so it does not show up in search. If asked who
-    can take it, the answer is anyone. `assessment-coming-soon.html` has been DELETED so
-    nothing in this repo can suggest otherwise.
+  - THE ASSESSMENT IS GATED AGAIN (13 Sep 2026, Daniel's choice, not a bug). It was
+    briefly opened to everyone earlier the same day, then Daniel asked for the
+    password gate back. `assessment.html` checks for a `preview_access` cookie and,
+    if missing, sends the visitor to `assessment-coming-soon.html`, which takes a
+    password (or a one-click `?key=` link) and lets them through. Do not remove this
+    gate again without Daniel's say-so.
   - The person gives their first name and email after pressing Start and before the first
     question, framed as saving their answers as they go.
   - Quiz UI: `assessment.html`, `assessment.js`, and `assessment-core.js`.
   - Submit handler: `netlify/functions/assessment-submit.js`.
-  - On submit, it stores the answers in Netlify Blobs and sends ONE email: a
-    confirmation plus a two-line teaser (`confirmationEmail()` in the submit
-    handler). It deliberately does NOT send a result link — see below.
+  - On submit, it stores the answers in Netlify Blobs and sends NO email to the
+    person at all (Daniel's call, 2026-09-13 — the old confirmation-plus-teaser
+    email is gone). The only email that fires on submit is Daniel's own internal
+    "new submission" notice. The person hears nothing until he actually publishes
+    their result — see below.
   - THE AUTOMATIC RESULT IS OFF (Reece 2026-09-12). Daniel reads each person's
     answers and writes their result by hand at `/results`; `assessment-core.js`
     still scores the quiz for the teaser and his internal notification, but no

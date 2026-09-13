@@ -222,36 +222,6 @@ function qaSummaryHtml(qa) {
     </div>`;
 }
 
-// The confirmation the person gets on submit: it arrived, here are the two things
-// their answers already point at, and the rest is written by hand.
-// Deliberately short, and deliberately not written from the outside — it reads as
-// his own note, with the first person used once rather than in every sentence
-// (Reece 2026-09-12). The teaser is the two merge fields the assessment is most
-// confident about — never a full reading, which is his job and his voice.
-function confirmationEmail(fields) {
-  const name = String(fields.first_name || "").trim();
-  const teaser = [
-    fields.top_focus_area ? ["What your answers point at most", fields.top_focus_area] : null,
-    fields.authenticity_stage ? ["Where you're sitting right now", fields.authenticity_stage] : null,
-  ].filter(Boolean);
-
-  const teaserHtml = teaser.length
-    ? `<table style="border-collapse:collapse;margin:1.4rem 0;font-size:.95rem">${teaser
-        .map(([label, value]) =>
-          `<tr><td style="padding:6px 14px 6px 0;color:#8a857a;white-space:nowrap;vertical-align:top">${escapeHtml(label)}</td>
-           <td style="padding:6px 0;color:#15140f"><strong>${escapeHtml(value)}</strong></td></tr>`)
-        .join("")}</table>`
-    : "";
-
-  return `<div style="font-family:Georgia,serif;color:#15140f;line-height:1.7;max-width:32rem">
-    <p style="margin:0 0 1rem">${name ? `${escapeHtml(name)}, thank you` : "Thank you"}. Your assessment is in.</p>
-    <p style="margin:0 0 1rem">These get read properly. Nothing automatic hands you a verdict here, so what comes back is written rather than assembled. This is what your answers already point at:</p>
-    ${teaserHtml}
-    <p style="margin:0 0 1rem">The rest takes a little longer. I'll send it the moment it's ready, with a link and a code to open it.</p>
-    <p style="margin:0 0 1rem">Daniel</p>
-  </div>`;
-}
-
 exports.handler = async (event) => {
   if (event.httpMethod === "OPTIONS") {
     return { statusCode: 204, headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "Content-Type" } };
@@ -320,24 +290,11 @@ exports.handler = async (event) => {
   };
 
   // ---- What the person gets the moment they submit ----
-  // Reece 2026-09-12: a thank-you PLUS a short teaser, not the full automatic
-  // result. Daniel reads their answers himself and writes their real assessment;
-  // this email's whole job is to confirm it arrived and say what happens next.
-  // The result link is deliberately NOT in here: the page is empty until he
-  // publishes, and a link to an empty page reads as a broken promise.
+  // Daniel's call (2026-09-13): nothing. No confirmation, no teaser — the person
+  // hears from him for the first time when he actually publishes their result.
+  // Only his own internal notification below fires on submit.
   const sequence = buildBranch(result.route, mergeFields);
   const dayZero = sequence.find((e) => e.day === 0) || sequence[0];
-
-  const confirmSend = NURTURE_PAUSED
-    ? Promise.resolve({ skipped: true, reason: "nurture paused" })
-    : sendResendEmail({
-        from,
-        to: [leadTo],
-        reply_to: replyTo,
-        subject: "Your assessment is in",
-        html: confirmationEmail(mergeFields),
-        tags: [{ name: "source", value: "assessment_confirmation" }],
-      }).catch((err) => ({ error: err.message, subject: "Your assessment is in" }));
 
   // persist drip progress (day 0 marked sent). The drip store holds the lead's
   // real email so subsequent emails reach them; in TEST_MODE we store TEST_EMAIL.
@@ -382,7 +339,7 @@ exports.handler = async (event) => {
     tags: [{ name: "source", value: "assessment_notify" }],
   }).catch((err) => ({ error: err.message }));
 
-  const [confirmResult, notifyResult] = await Promise.all([confirmSend, notifyEmail, writeDrip]);
+  const [notifyResult] = await Promise.all([notifyEmail, writeDrip]);
 
   // If Daniel's copy of the submission failed to send, the whole point of the
   // form has silently died: the answers are stored and nobody knows they arrived.
@@ -412,9 +369,8 @@ exports.handler = async (event) => {
       }).catch(() => null);
     }
   }
-  const emailResults = [confirmResult, notifyResult];
-  const emailWarning = emailResults.find((r) => r && r.error)?.error;
-  const emailSkipped = emailResults.every((r) => r && r.skipped);
+  const emailWarning = notifyResult && notifyResult.error;
+  const emailSkipped = false;
   return {
     statusCode: 200,
     body: JSON.stringify({

@@ -331,12 +331,20 @@
   // when it happens right inside a click; open it after an await and most
   // browsers silently block it since it no longer looks user-triggered. Once the
   // save is done, that already-open tab is pointed at the real preview link.
+  //
+  // "noopener" on THIS first call was the actual bug: passing it makes
+  // window.open() hand back null on purpose (the whole point of noopener is
+  // that nothing keeps a reference to the new tab) — so there was nothing left
+  // to point at the preview once the save finished, and the blank tab just sat
+  // there empty. Dropping it here (and instead nulling the new tab's own
+  // `.opener` once we have it) keeps the same protection without losing the
+  // reference we need.
   async function previewResult() {
-    const win = window.open("", "_blank", "noopener");
+    const win = window.open("", "_blank");
     await write("save");
     const id = currentId;
     const url = `${location.origin}/r/${encodeURIComponent(id)}?preview=${encodeURIComponent(getPass())}`;
-    if (win) win.location = url; else window.open(url, "_blank", "noopener");
+    if (win) { win.opener = null; win.location = url; } else window.open(url, "_blank", "noopener");
   }
 
   function paintStatus(status) {

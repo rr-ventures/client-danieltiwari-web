@@ -260,7 +260,7 @@
           <button class="rowbtn delete" type="button" title="Delete">&#10005;</button>
         </span>
       </div>`).join("");
-    list.querySelectorAll(".rowmain").forEach((b) => b.addEventListener("click", () => open(b.closest(".row").dataset.id)));
+    list.querySelectorAll(".rowmain").forEach((b) => b.addEventListener("click", () => openSubmission(b.closest(".row").dataset.id)));
     list.querySelectorAll(".rowbtn.rename").forEach((b) => b.addEventListener("click", (e) => { e.stopPropagation(); renameRow(b.closest(".row").dataset.id); }));
     list.querySelectorAll(".rowbtn.delete").forEach((b) => b.addEventListener("click", (e) => { e.stopPropagation(); deleteRow(b.closest(".row").dataset.id); }));
   }
@@ -287,7 +287,10 @@
   }
 
   // ---- one person ----
-  async function open(id) {
+  // Named openSubmission, not open: a top-level function literally named "open"
+  // silently overwrites the browser's real window.open, which is exactly what
+  // broke the preview button opening a new tab (Daniel, 2026-09-15).
+  async function openSubmission(id) {
     currentId = id;
     renderList();
     const { ok, data } = await api(`/api/result-admin?action=get&id=${encodeURIComponent(id)}`);
@@ -315,18 +318,25 @@
     $("save").addEventListener("click", () => write("save"));
     $("publish").addEventListener("click", () => write("publish"));
     $("unpublish").addEventListener("click", () => write("unpublish"));
-    $("preview").addEventListener("click", () => preview());
+    $("preview").addEventListener("click", () => previewResult());
   }
 
   // Saves whatever is in the box as a draft (so the preview always matches what's
   // on screen, not the last-saved version), then opens their page in a new tab.
   // Carries the author pass in the link so it opens straight to the draft — no
   // password, and nothing is sent to them. Mirrors keyFromLink() below.
-  async function preview() {
+  //
+  // The tab is opened FIRST, synchronously, still inside the click — not after
+  // the save finishes. A browser only allows window.open() to make a new tab
+  // when it happens right inside a click; open it after an await and most
+  // browsers silently block it since it no longer looks user-triggered. Once the
+  // save is done, that already-open tab is pointed at the real preview link.
+  async function previewResult() {
+    const win = window.open("", "_blank", "noopener");
     await write("save");
     const id = currentId;
     const url = `${location.origin}/r/${encodeURIComponent(id)}?preview=${encodeURIComponent(getPass())}`;
-    window.open(url, "_blank", "noopener");
+    if (win) win.location = url; else window.open(url, "_blank", "noopener");
   }
 
   function paintStatus(status) {

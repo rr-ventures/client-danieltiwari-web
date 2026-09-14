@@ -25,7 +25,7 @@
   input,textarea,button{font-family:var(--body)}
   .gate input{display:block;width:100%;box-sizing:border-box;font-size:1rem;padding:.75rem .8rem;border:1px solid var(--hair);border-radius:4px;background:#fff;margin-bottom:1rem}
   .gate input.code{font-family:monospace;font-size:1.5rem;letter-spacing:.4em;text-align:center}
-  .gate button{width:100%}
+  .gate button{width:100%;justify-content:center}
   .msg{font-size:.9rem;min-height:1.2rem;margin-bottom:.8rem}
   .msg.bad{color:#b3261e}
   .msg.good{color:#137333}
@@ -34,12 +34,17 @@
   @media (max-width:900px){.cols{grid-template-columns:1fr}}
   .panel{background:#fff;border:1px solid var(--hair);border-radius:8px}
   .list{max-height:76vh;overflow:auto}
-  .row{display:block;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--hair);padding:.8rem .9rem;cursor:pointer;font-size:.9rem;color:var(--ink)}
+  .row{display:flex;align-items:flex-start;gap:.2rem;border-bottom:1px solid var(--hair)}
   .row:last-child{border-bottom:0}
   .row:hover{background:#faf8f4}
   .row[aria-current="true"]{background:#f2ede3}
+  .row .rowmain{flex:1;min-width:0;display:block;text-align:left;background:none;border:0;padding:.8rem .9rem;cursor:pointer;font-size:.9rem;color:var(--ink)}
   .row .nm{display:block;font-weight:600}
   .row .em{display:block;color:var(--muted);font-size:.8rem;word-break:break-all}
+  .row .rowbtns{display:flex;gap:.1rem;padding:.6rem .5rem 0 0}
+  .row .rowbtn{background:none;border:0;padding:.25rem .4rem;font-size:.85rem;color:var(--muted);cursor:pointer;border-radius:4px;line-height:1}
+  .row .rowbtn:hover{background:#eee;color:var(--ink)}
+  .row .rowbtn.delete:hover{background:#ffe8e6;color:#b3261e}
   .pill{display:inline-block;font-family:var(--sc);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;padding:.12rem .45rem;border-radius:999px;margin-top:.35rem}
   .pill.none{background:#f1efea;color:#8a857a}
   .pill.draft{background:#fff6e0;color:#8a6d13}
@@ -209,12 +214,41 @@
     const list = $("list");
     if (!rows.length) { list.innerHTML = '<div class="empty">Nothing has come in yet.</div>'; return; }
     list.innerHTML = rows.map((r) => `
-      <button class="row" data-id="${esc(r.id)}" aria-current="${r.id === currentId}">
-        <span class="nm">${esc(r.name || "(no name)")}</span>
-        <span class="em">${esc(r.email || "")}</span>
-        <span class="pill ${esc(r.status)}">${r.status === "none" ? "not started" : esc(r.status)}</span>${r.started ? '<span class="pill started">didn\'t finish</span>' : ""}${r.notifyFailed ? '<span class="pill warn">you were not emailed</span>' : ""}
-      </button>`).join("");
-    list.querySelectorAll(".row").forEach((b) => b.addEventListener("click", () => open(b.dataset.id)));
+      <div class="row" data-id="${esc(r.id)}" aria-current="${r.id === currentId}">
+        <button class="rowmain" type="button">
+          <span class="nm">${esc(r.name || "(no name)")}</span>
+          <span class="em">${esc(r.email || "")}</span>
+          <span class="pill ${esc(r.status)}">${r.status === "none" ? "not started" : esc(r.status)}</span>${r.started ? '<span class="pill started">didn\'t finish</span>' : ""}${r.notifyFailed ? '<span class="pill warn">you were not emailed</span>' : ""}
+        </button>
+        <span class="rowbtns">
+          <button class="rowbtn rename" type="button" title="Edit name">&#9998;</button>
+          <button class="rowbtn delete" type="button" title="Delete">&#10005;</button>
+        </span>
+      </div>`).join("");
+    list.querySelectorAll(".rowmain").forEach((b) => b.addEventListener("click", () => open(b.closest(".row").dataset.id)));
+    list.querySelectorAll(".rowbtn.rename").forEach((b) => b.addEventListener("click", (e) => { e.stopPropagation(); renameRow(b.closest(".row").dataset.id); }));
+    list.querySelectorAll(".rowbtn.delete").forEach((b) => b.addEventListener("click", (e) => { e.stopPropagation(); deleteRow(b.closest(".row").dataset.id); }));
+  }
+
+  // ---- rename / delete from the list ----
+  async function renameRow(id) {
+    const row = rows.find((r) => r.id === id);
+    const name = prompt("Name for this person:", row ? row.name || "" : "");
+    if (name === null) return;
+    const { ok, data } = await api("/api/result-admin", { method: "POST", body: JSON.stringify({ action: "rename", id, name: name.trim() }) });
+    if (!ok) { alert(data.error || "Could not save that name."); return; }
+    if (row) row.name = data.name;
+    renderList();
+  }
+
+  async function deleteRow(id) {
+    const row = rows.find((r) => r.id === id);
+    if (!confirm(`Delete ${row && row.name ? row.name : "this"}'s submission? This cannot be undone.`)) return;
+    const { ok, data } = await api("/api/result-admin", { method: "POST", body: JSON.stringify({ action: "delete", id }) });
+    if (!ok) { alert(data.error || "Could not delete that."); return; }
+    rows = rows.filter((r) => r.id !== id);
+    if (currentId === id) { currentId = null; $("stage").innerHTML = '<div class="empty">Pick someone on the left to write their assessment.</div>'; }
+    renderList();
   }
 
   // ---- one person ----

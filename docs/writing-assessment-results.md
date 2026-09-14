@@ -22,6 +22,10 @@ their answers, writes in the box on the right, and publishes. **Insert blank
 template** drops in the empty shape to write into. A draft is invisible to them;
 only Publish lets them read it.
 
+Each row on the left also has a pencil (rename how they show up in the list — a
+typo, or filling in a blank name) and an ✕ (permanently delete that submission and
+whatever was written for them; asks to confirm first, and cannot be undone).
+
 Formatting is plain HTML: `<h2>` for a section heading, `<p>` for a paragraph,
 `<ul><li>` for a list, `<blockquote>` to quote their own words back to them.
 
@@ -57,6 +61,8 @@ POST https://danieltiwari.com/api/result-admin
 {"action":"save","id":"<id>","html":"<h2>Where you are</h2><p>…</p>"}
 {"action":"publish","id":"<id>"}
 {"action":"unpublish","id":"<id>"}
+{"action":"rename","id":"<id>","name":"<display name>"}
+{"action":"delete","id":"<id>"}
 ```
 
 `publish` with no `html` publishes whatever draft is already saved, so the

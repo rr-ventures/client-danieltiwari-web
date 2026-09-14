@@ -10,6 +10,8 @@
 //   POST {action:"save",   id, html}  -> save a draft (nobody sees it)
 //   POST {action:"publish",id, html?} -> publish it; the person can now read it
 //   POST {action:"unpublish", id}     -> take it back to a draft
+//   POST {action:"rename", id, name}  -> change how they show up in the list
+//   POST {action:"delete", id}        -> permanently remove that submission
 //
 // Auth: an author pass (code emailed to DAN_NOTIFY_EMAIL) or
 // `Authorization: Bearer <RESULTS_AUTHOR_TOKEN>` for his assistant.
@@ -134,6 +136,24 @@ exports.handler = async (event) => {
 
   const exists = await results.get(id, { type: "json" }).catch(() => null);
   if (!exists) return json(404, { error: "No submission with that id" });
+
+  // Daniel correcting how someone shows up in his list (a typo, a blank name).
+  // Only touches the display name — never the email a viewer signs in with.
+  if (body.action === "rename") {
+    const name = String(body.name || "").trim().slice(0, 120);
+    await results.setJSON(id, { ...exists, answers: { ...exists.answers, name } });
+    return json(200, { ok: true, id, name: name || null });
+  }
+
+  // Permanent: removes the raw answers AND whatever Daniel had written for them.
+  // There is no undo, so the page in front of him asks first.
+  if (body.action === "delete") {
+    await Promise.all([
+      results.delete(id).catch(() => {}),
+      pages.delete(id).catch(() => {}),
+    ]);
+    return json(200, { ok: true, id, deleted: true });
+  }
 
   const current = await pages.get(id, { type: "json" }).catch(() => null);
   const now = new Date().toISOString();

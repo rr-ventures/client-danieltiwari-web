@@ -150,8 +150,7 @@
     const intro = $("result-intro");
     intro.innerHTML = `
       <span class="eyebrow">Your assessment</span>
-      <h1>${data.firstName ? `${data.firstName}, here is your assessment.` : "Here is your assessment."}</h1>
-      <p>Written for you, not generated. Take it in slowly. Nothing here needs fixing today.</p>`;
+      <h1>${data.firstName ? `${data.firstName}, here is your assessment.` : "Here is your assessment."}</h1>`;
     show("result-intro");
     const body = $("assessment-result");
     body.innerHTML = (data.draft ? '<div class="draft-flag">Draft. Only you can see this. It is not published yet.</div>' : "") + (data.html || "");

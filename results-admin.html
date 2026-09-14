@@ -59,6 +59,13 @@
   .answers{max-height:64vh;overflow:auto;font-size:.9rem;line-height:1.6}
   .answers dt{font-family:var(--sc);font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:.9rem}
   .answers dd{margin:.2rem 0 0;white-space:pre-wrap}
+  .answers .qa-heading{font-family:var(--sc);font-size:.66rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:1.1rem 0 .5rem}
+  .answers .qa-heading:first-child{margin-top:0}
+  .answers .qa-row{margin:0 0 1rem;padding:0 0 .9rem;border-bottom:1px solid var(--hair)}
+  .answers .qa-row:last-child{border-bottom:0}
+  .answers .qa-q{font-weight:600;color:var(--ink)}
+  .answers .qa-ans{margin-top:.3rem;color:#0E4182;white-space:pre-wrap}
+  .answers .qa-list{margin:.3rem 0 0;padding-left:1.2rem}
   textarea{width:100%;box-sizing:border-box;min-height:58vh;font-size:.92rem;line-height:1.6;padding:.8rem;border:1px solid var(--hair);border-radius:4px;background:#fff;resize:vertical}
   .actions{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;margin-top:.8rem}
   .btn{padding:.6rem 1.2rem;font-family:var(--sc);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;border:1px solid var(--ink);background:var(--ink);color:var(--bg);border-radius:999px;cursor:pointer}
@@ -103,7 +110,7 @@
   <div class="editor">
     <div>
       <h2>What they answered</h2>
-      <dl class="answers" id="answers"></dl>
+      <div class="answers" id="answers"></div>
     </div>
     <div>
       <h2>Their assessment <span id="status-pill"></span></h2>
@@ -138,6 +145,33 @@
     history.replaceState({}, "", location.pathname);
   })();
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  // Same sentinel swap as the internal notification email, so a skipped question
+  // reads the same way here as it does there.
+  function humanizePreferNot(val) {
+    if (Array.isArray(val)) return val.map(humanizePreferNot);
+    return typeof val === "string" ? val.replaceAll("prefer_not_to_answer", "(prefer not to answer)") : val;
+  }
+
+  // Mirrors qaSummaryHtml() in assessment-submit.js — the question shown in full,
+  // directly above the person's answer, same as the email Daniel gets on submission.
+  function qaSummaryHtml(qa) {
+    if (!Array.isArray(qa) || !qa.length) return "";
+    let n = 0;
+    return qa.map((g) => {
+      const parentNum = g.subNumbered ? (n += 1) : null;
+      const items = (g.rows || []).map(([q, rawA], i) => {
+        const num = parentNum !== null ? `${parentNum}.${i + 1}` : (n += 1);
+        const a = humanizePreferNot(rawA);
+        const answerHtml = Array.isArray(a)
+          ? `<ul class="qa-list">${a.map((item) => `<li>${esc(item)}</li>`).join("")}</ul>`
+          : `<div class="qa-ans">${esc(a)}</div>`;
+        return `<div class="qa-row"><div class="qa-q">${num}. ${esc(q)}</div>${answerHtml}</div>`;
+      }).join("");
+      const heading = g.title ? `<div class="qa-heading">${esc(g.title)}</div>` : "";
+      return heading + items;
+    }).join("");
+  }
 
   // The blank template Daniel starts from — his shape, empty of content.
   const TEMPLATE = [
@@ -263,7 +297,9 @@
     stage.appendChild($("editor-tpl").content.cloneNode(true));
 
     const answers = data.answers || {};
-    $("answers").innerHTML = Object.keys(answers)
+    // Newer submissions carry qa_summary (question + answer, in order) — show that,
+    // same as the email. Older ones without it fall back to the raw field list.
+    $("answers").innerHTML = qaSummaryHtml(answers.qa_summary) || Object.keys(answers)
       .filter((k) => answers[k] !== "" && answers[k] != null && k !== "qa_summary")
       .map((k) => `<dt>${esc(k.replace(/_/g, " "))}</dt><dd>${esc(typeof answers[k] === "object" ? JSON.stringify(answers[k], null, 2) : answers[k])}</dd>`)
       .join("");

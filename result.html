@@ -111,6 +111,17 @@
   const getPass = () => { try { return localStorage.getItem(PASS_KEY) || ""; } catch { return ""; } };
   const setPass = (p) => { try { localStorage.setItem(PASS_KEY, p); } catch {} };
 
+  // Daniel previewing a draft from his workspace carries his author pass in the
+  // link, so this opens straight to the draft with no password prompt. Taken
+  // straight back out of the address bar once read, same as results-admin.html's
+  // own ?k= bookmark link, so it's not left sitting in a screenshot.
+  (function passFromPreviewLink() {
+    const p = new URLSearchParams(location.search).get("preview");
+    if (!p) return;
+    setPass(p);
+    history.replaceState({}, "", location.pathname);
+  })();
+
   function say(text, bad) {
     const el = $("gate-msg");
     el.textContent = text || "";

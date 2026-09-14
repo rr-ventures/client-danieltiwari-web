@@ -120,9 +120,10 @@
         <button class="btn" id="publish" type="button">Publish to them</button>
         <button class="btn ghost" id="unpublish" type="button" hidden>Unpublish</button>
         <button class="btn ghost" id="template" type="button">Insert blank template</button>
+        <button class="btn ghost" id="preview" type="button">Preview their page</button>
         <span class="msg" id="edit-msg" role="status" aria-live="polite"></span>
       </div>
-      <p class="hint">Write in plain paragraphs. &lt;h2&gt; for a section heading, &lt;p&gt; for a paragraph, &lt;ul&gt;&lt;li&gt; for a list, &lt;blockquote&gt; to quote their own words back to them.<br><strong>Publish emails them the link</strong> and lets them open it with a code. Editing an already-published one does not email them again.</p>
+      <p class="hint">Write in plain paragraphs. &lt;h2&gt; for a section heading, &lt;p&gt; for a paragraph, &lt;ul&gt;&lt;li&gt; for a list, &lt;blockquote&gt; to quote their own words back to them.<br><strong>Publish emails them the link</strong> and lets them open it with a code. Editing an already-published one does not email them again.<br><strong>Preview</strong> saves your draft and opens their page in a new tab, marked as a draft only you can see — nothing is sent to them.</p>
     </div>
   </div>
 </template>
@@ -314,6 +315,18 @@
     $("save").addEventListener("click", () => write("save"));
     $("publish").addEventListener("click", () => write("publish"));
     $("unpublish").addEventListener("click", () => write("unpublish"));
+    $("preview").addEventListener("click", () => preview());
+  }
+
+  // Saves whatever is in the box as a draft (so the preview always matches what's
+  // on screen, not the last-saved version), then opens their page in a new tab.
+  // Carries the author pass in the link so it opens straight to the draft — no
+  // password, and nothing is sent to them. Mirrors keyFromLink() below.
+  async function preview() {
+    await write("save");
+    const id = currentId;
+    const url = `${location.origin}/r/${encodeURIComponent(id)}?preview=${encodeURIComponent(getPass())}`;
+    window.open(url, "_blank", "noopener");
   }
 
   function paintStatus(status) {

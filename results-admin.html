@@ -32,7 +32,7 @@
   .gate{max-width:24rem;margin:12vh auto;padding-inline:1.25rem;text-align:center}
   .gate h1{font-family:var(--display);font-weight:500;font-size:1.9rem;margin-bottom:.8rem}
   .gate p{color:var(--muted);margin-bottom:1.4rem}
-  input,textarea,button{font-family:var(--body)}
+  input,button{font-family:var(--body)}
   .gate input{display:block;width:100%;box-sizing:border-box;font-size:1rem;padding:.75rem .8rem;border:1px solid var(--hair);border-radius:4px;background:var(--panel);color:var(--ink);margin-bottom:1rem}
   .gate input.code{font-family:monospace;font-size:1.5rem;letter-spacing:.4em;text-align:center}
   .gate button{width:100%;justify-content:center}
@@ -76,7 +76,18 @@
   .answers .qa-q{font-weight:600;color:var(--ink)}
   .answers .qa-ans{margin-top:.3rem;color:#7dabe0;white-space:pre-wrap}
   .answers .qa-list{margin:.3rem 0 0;padding-left:1.2rem}
-  textarea{width:100%;box-sizing:border-box;min-height:58vh;font-size:.92rem;line-height:1.6;padding:.8rem;border:1px solid var(--hair);border-radius:4px;background:var(--panel);color:var(--ink);resize:vertical}
+  .toolbar{display:flex;gap:.35rem;flex-wrap:wrap;margin-bottom:.5rem}
+  .tbtn{background:var(--panel);border:1px solid var(--hair);border-radius:4px;color:var(--ink);font-size:.78rem;padding:.4rem .65rem;cursor:pointer;line-height:1}
+  .tbtn:hover{background:rgba(255,255,255,.06)}
+  .tbtn.active{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+  .editor-box{width:100%;box-sizing:border-box;min-height:58vh;font-size:.92rem;line-height:1.6;padding:.8rem;border:1px solid var(--hair);border-radius:4px;background:var(--panel);color:var(--ink);overflow:auto}
+  .editor-box:focus{outline:none;border-color:var(--ink)}
+  .editor-box h2{font-family:var(--display);font-weight:500;font-size:1.25rem;margin:1rem 0 .5rem}
+  .editor-box h2:first-child{margin-top:0}
+  .editor-box p{margin:0 0 .8rem}
+  .editor-box ul,.editor-box ol{margin:0 0 .8rem 1.2rem}
+  .editor-box blockquote{margin:.8rem 0;padding-left:1rem;border-left:2px solid var(--hair);color:var(--muted);font-style:italic}
+  .editor-box blockquote cite{display:block;margin-top:.4rem;font-style:normal;font-family:var(--sc);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
   .actions{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;margin-top:.8rem}
   .btn{padding:.6rem 1.2rem;font-family:var(--sc);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;border:1px solid var(--ink);background:var(--ink);color:var(--bg);border-radius:999px;cursor:pointer}
   .btn.ghost{background:none;color:var(--ink)}
@@ -124,7 +135,16 @@
     </div>
     <div>
       <h2>Their assessment <span id="status-pill"></span></h2>
-      <textarea id="html" spellcheck="true"></textarea>
+      <div class="toolbar" id="toolbar">
+        <button class="tbtn" type="button" data-cmd="bold" title="Bold"><b>Bold</b></button>
+        <button class="tbtn" type="button" data-cmd="italic" title="Italic"><i>Italic</i></button>
+        <button class="tbtn" type="button" data-cmd="underline" title="Underline"><u>Underline</u></button>
+        <button class="tbtn" type="button" data-cmd="h2" title="Headline">Headline</button>
+        <button class="tbtn" type="button" data-cmd="blockquote" title="Quote their own words back to them">Quote</button>
+        <button class="tbtn" type="button" data-cmd="external-quote" title="Quote someone else, with their name shown underneath">Quote + source</button>
+        <button class="tbtn" type="button" data-cmd="ul" title="Bulleted list">List</button>
+      </div>
+      <div class="editor-box" id="html" contenteditable="true" spellcheck="true"></div>
       <div class="actions">
         <button class="btn ghost" id="save" type="button">Save draft</button>
         <button class="btn" id="publish" type="button">Publish to them</button>
@@ -133,7 +153,7 @@
         <button class="btn ghost" id="preview" type="button">Preview their page</button>
         <span class="msg" id="edit-msg" role="status" aria-live="polite"></span>
       </div>
-      <p class="hint">Write in plain paragraphs. &lt;h2&gt; for a section heading, &lt;p&gt; for a paragraph, &lt;ul&gt;&lt;li&gt; for a list, &lt;blockquote&gt; to quote their own words back to them.<br><strong>Publish emails them the link</strong> and lets them open it with a code. Editing an already-published one does not email them again.<br><strong>Preview</strong> saves your draft and opens their page in a new tab, marked as a draft only you can see — nothing is sent to them.</p>
+      <p class="hint">Highlight text and use the buttons above to format it — no need to type HTML.<br><strong>Publish emails them the link</strong> and lets them open it with a code. Editing an already-published one does not email them again.<br><strong>Preview</strong> saves your draft and opens their page in a new tab, marked as a draft only you can see — nothing is sent to them.</p>
     </div>
   </div>
 </template>
@@ -188,18 +208,93 @@
   const TEMPLATE = [
     "<h2>Where you are</h2>",
     "<p></p>",
-    "",
     "<h2>What I noticed in your answers</h2>",
     "<p></p>",
-    "",
     "<blockquote></blockquote>",
-    "",
     "<h2>What I'd work on first</h2>",
     "<p></p>",
-    "",
     "<h2>What this looks like from here</h2>",
     "<p></p>",
-  ].join("\n");
+  ].join("");
+
+  // ---- rich-text toolbar ----
+  // Runs on execCommand/contentEditable rather than a library — this is an
+  // internal two-person tool, not worth a dependency. Every command writes
+  // the same plain tags (h2/p/ul/li/blockquote) Daniel used to type by hand,
+  // so the stored HTML and the public result page are unaffected.
+  document.execCommand("defaultParagraphSeparator", false, "p");
+
+  let activeToolbar = null, activeEditor = null;
+
+  function applyFormat(cmd, editor) {
+    editor.focus();
+    if (cmd === "external-quote") { insertExternalQuote(editor); return; }
+    if (cmd === "ul") { document.execCommand("insertUnorderedList"); return; }
+    if (cmd === "bold" || cmd === "italic" || cmd === "underline") { document.execCommand(cmd); return; }
+    // h2 / blockquote toggle: click again on an already-formatted line to
+    // turn it back into a plain paragraph, so there's no separate "undo" button.
+    const current = document.queryCommandValue("formatBlock").toLowerCase();
+    document.execCommand("formatBlock", false, current === cmd ? "p" : cmd);
+  }
+
+  // A quote from someone other than the person being assessed — same look as
+  // Quote, with a name underneath. Built by hand rather than execCommand
+  // because formatBlock has no way to attach the source line.
+  function insertExternalQuote(editor) {
+    const sel = window.getSelection();
+    if (!sel.rangeCount || !editor.contains(sel.anchorNode)) return;
+    const range = sel.getRangeAt(0);
+    const text = range.toString() || "Quote";
+    const source = prompt("Who said it? (shown underneath the quote)", "");
+    if (source === null) return;
+    const bq = document.createElement("blockquote");
+    bq.textContent = text;
+    if (source.trim()) {
+      const cite = document.createElement("cite");
+      cite.textContent = "— " + source.trim();
+      bq.appendChild(cite);
+    }
+    range.deleteContents();
+    range.insertNode(bq);
+    sel.removeAllRanges();
+  }
+
+  function updateToolbarState() {
+    if (!activeToolbar || !activeEditor) return;
+    const sel = window.getSelection();
+    if (!sel.rangeCount || !activeEditor.contains(sel.anchorNode)) return;
+    const block = document.queryCommandValue("formatBlock").toLowerCase();
+    activeToolbar.querySelectorAll(".tbtn").forEach((b) => {
+      const cmd = b.dataset.cmd;
+      const active = cmd === "bold" ? document.queryCommandState("bold")
+        : cmd === "italic" ? document.queryCommandState("italic")
+        : cmd === "underline" ? document.queryCommandState("underline")
+        : cmd === "ul" ? document.queryCommandState("insertUnorderedList")
+        : cmd === "h2" ? block === "h2"
+        : cmd === "blockquote" ? block === "blockquote"
+        : false;
+      b.classList.toggle("active", active);
+    });
+  }
+  document.addEventListener("selectionchange", updateToolbarState);
+
+  function wireEditor(toolbar, editor) {
+    activeToolbar = toolbar; activeEditor = editor;
+    // Keeps the highlighted text selected when a toolbar button is clicked —
+    // without this, clicking the button blurs the editor first and there's
+    // nothing left to apply the formatting to.
+    toolbar.addEventListener("mousedown", (e) => e.preventDefault());
+    toolbar.querySelectorAll(".tbtn").forEach((b) => {
+      b.addEventListener("click", () => { applyFormat(b.dataset.cmd, editor); updateToolbarState(); });
+    });
+    // Pasting brings in a clean line of text only — not the color, font, or
+    // markup of wherever it came from (an email, Word, a webpage).
+    editor.addEventListener("paste", (e) => {
+      e.preventDefault();
+      const text = (e.clipboardData || window.clipboardData).getData("text/plain");
+      document.execCommand("insertText", false, text);
+    });
+  }
 
   function say(el, text, kind) {
     el.textContent = text || "";
@@ -318,12 +413,13 @@
       .map((k) => `<dt>${esc(k.replace(/_/g, " "))}</dt><dd>${esc(typeof answers[k] === "object" ? JSON.stringify(answers[k], null, 2) : answers[k])}</dd>`)
       .join("");
 
-    $("html").value = data.html || "";
+    $("html").innerHTML = data.html || "";
+    wireEditor($("toolbar"), $("html"));
     paintStatus(data.status);
 
     $("template").addEventListener("click", () => {
-      if ($("html").value.trim() && !confirm("Replace what's in the box with the blank template?")) return;
-      $("html").value = TEMPLATE;
+      if ($("html").innerHTML.trim() && !confirm("Replace what's in the box with the blank template?")) return;
+      $("html").innerHTML = TEMPLATE;
     });
     $("save").addEventListener("click", () => write("save"));
     $("publish").addEventListener("click", () => write("publish"));
@@ -370,7 +466,7 @@
     const msg = $("edit-msg");
     say(msg, action === "publish" ? "Publishing…" : "Saving…");
     const body = { action, id: currentId };
-    if (action !== "unpublish") body.html = $("html").value;
+    if (action !== "unpublish") body.html = $("html").innerHTML;
     const { ok, data } = await api("/api/result-admin", { method: "POST", body: JSON.stringify(body) });
     if (!ok) { say(msg, data.error || "That didn't save.", "bad"); return; }
     paintStatus(data.status);

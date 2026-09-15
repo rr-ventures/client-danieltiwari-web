@@ -14,6 +14,16 @@
   /* site.css gives buttons a display, which outranks the browser's own
      [hidden] rule — without this, a hidden button still shows. */
   [hidden]{display:none !important}
+  /* Dark theme for this page only — reuses site.css's existing dark-band
+     palette (--dark / --dark-ink etc.) so it stays consistent with the rest
+     of the site, but overrides just this page rather than the whole site. */
+  :root{
+    --bg:#14130e;
+    --ink:#efe9dd;
+    --muted:#a39c8c;
+    --hair:#322f26;
+    --panel:#1c1a14;
+  }
   body{background:var(--bg)}
   .wrap{max-width:78rem;margin:0 auto;padding:2rem 1.5rem 6rem}
   .top{display:flex;align-items:baseline;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1.6rem}
@@ -23,34 +33,34 @@
   .gate h1{font-family:var(--display);font-weight:500;font-size:1.9rem;margin-bottom:.8rem}
   .gate p{color:var(--muted);margin-bottom:1.4rem}
   input,textarea,button{font-family:var(--body)}
-  .gate input{display:block;width:100%;box-sizing:border-box;font-size:1rem;padding:.75rem .8rem;border:1px solid var(--hair);border-radius:4px;background:#fff;margin-bottom:1rem}
+  .gate input{display:block;width:100%;box-sizing:border-box;font-size:1rem;padding:.75rem .8rem;border:1px solid var(--hair);border-radius:4px;background:var(--panel);color:var(--ink);margin-bottom:1rem}
   .gate input.code{font-family:monospace;font-size:1.5rem;letter-spacing:.4em;text-align:center}
   .gate button{width:100%;justify-content:center}
   .msg{font-size:.9rem;min-height:1.2rem;margin-bottom:.8rem}
-  .msg.bad{color:#b3261e}
-  .msg.good{color:#137333}
+  .msg.bad{color:#f87171}
+  .msg.good{color:#4ade80}
 
   .cols{display:grid;grid-template-columns:17rem 1fr;gap:1.4rem;align-items:start}
   @media (max-width:900px){.cols{grid-template-columns:1fr}}
-  .panel{background:#fff;border:1px solid var(--hair);border-radius:8px}
+  .panel{background:var(--panel);border:1px solid var(--hair);border-radius:8px}
   .list{max-height:76vh;overflow:auto}
   .row{display:flex;align-items:flex-start;gap:.2rem;border-bottom:1px solid var(--hair)}
   .row:last-child{border-bottom:0}
-  .row:hover{background:#faf8f4}
-  .row[aria-current="true"]{background:#f2ede3}
+  .row:hover{background:rgba(255,255,255,.04)}
+  .row[aria-current="true"]{background:rgba(255,255,255,.08)}
   .row .rowmain{flex:1;min-width:0;display:block;text-align:left;background:none;border:0;padding:.8rem .9rem;cursor:pointer;font-size:.9rem;color:var(--ink)}
   .row .nm{display:block;font-weight:600}
   .row .em{display:block;color:var(--muted);font-size:.8rem;word-break:break-all}
   .row .rowbtns{display:flex;gap:.1rem;padding:.6rem .5rem 0 0}
   .row .rowbtn{background:none;border:0;padding:.25rem .4rem;font-size:.85rem;color:var(--muted);cursor:pointer;border-radius:4px;line-height:1}
-  .row .rowbtn:hover{background:#eee;color:var(--ink)}
-  .row .rowbtn.delete:hover{background:#ffe8e6;color:#b3261e}
+  .row .rowbtn:hover{background:rgba(255,255,255,.08);color:var(--ink)}
+  .row .rowbtn.delete:hover{background:rgba(248,113,113,.15);color:#f87171}
   .pill{display:inline-block;font-family:var(--sc);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;padding:.12rem .45rem;border-radius:999px;margin-top:.35rem}
-  .pill.none{background:#f1efea;color:#8a857a}
-  .pill.draft{background:#fff6e0;color:#8a6d13}
-  .pill.published{background:#e6ffed;color:#137333}
-  .pill.warn{background:#ffe8e6;color:#b3261e;margin-left:.3rem}
-  .pill.started{background:#eef2f8;color:#0E4182;margin-left:.3rem}
+  .pill.none{background:#2a2820;color:#a39c8c}
+  .pill.draft{background:#3a2e0a;color:#e0b840}
+  .pill.published{background:#0f2f1c;color:#4ade80}
+  .pill.warn{background:#3a1210;color:#f87171;margin-left:.3rem}
+  .pill.started{background:#10243a;color:#7dabe0;margin-left:.3rem}
 
   .editor{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem}
   @media (max-width:1100px){.editor{grid-template-columns:1fr}}
@@ -64,9 +74,9 @@
   .answers .qa-row{margin:0 0 1rem;padding:0 0 .9rem;border-bottom:1px solid var(--hair)}
   .answers .qa-row:last-child{border-bottom:0}
   .answers .qa-q{font-weight:600;color:var(--ink)}
-  .answers .qa-ans{margin-top:.3rem;color:#0E4182;white-space:pre-wrap}
+  .answers .qa-ans{margin-top:.3rem;color:#7dabe0;white-space:pre-wrap}
   .answers .qa-list{margin:.3rem 0 0;padding-left:1.2rem}
-  textarea{width:100%;box-sizing:border-box;min-height:58vh;font-size:.92rem;line-height:1.6;padding:.8rem;border:1px solid var(--hair);border-radius:4px;background:#fff;resize:vertical}
+  textarea{width:100%;box-sizing:border-box;min-height:58vh;font-size:.92rem;line-height:1.6;padding:.8rem;border:1px solid var(--hair);border-radius:4px;background:var(--panel);color:var(--ink);resize:vertical}
   .actions{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;margin-top:.8rem}
   .btn{padding:.6rem 1.2rem;font-family:var(--sc);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;border:1px solid var(--ink);background:var(--ink);color:var(--bg);border-radius:999px;cursor:pointer}
   .btn.ghost{background:none;color:var(--ink)}

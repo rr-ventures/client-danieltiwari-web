@@ -204,9 +204,16 @@
     if (!Array.isArray(qa) || !qa.length) return "";
     let n = 0;
     return qa.map((g) => {
-      const parentNum = g.subNumbered ? (n += 1) : null;
-      const items = (g.rows || []).map(([q, rawA], i) => {
-        const num = parentNum !== null ? `${parentNum}.${i + 1}` : (n += 1);
+      const rows = g.rows || [];
+      // firstRowIsParent: mirrors assessment-submit.js — the contribution
+      // question keeps its own number, its "why does that matter" follow-ups
+      // number as N.1, N.2 under it.
+      const useParentChild = g.firstRowIsParent && rows.length > 1;
+      const parentNum = (g.subNumbered || useParentChild) ? (n += 1) : null;
+      const items = rows.map(([q, rawA], i) => {
+        const num = g.subNumbered ? `${parentNum}.${i + 1}`
+          : useParentChild ? (i === 0 ? String(parentNum) : `${parentNum}.${i}`)
+          : (n += 1);
         const a = humanizePreferNot(rawA);
         const answerHtml = Array.isArray(a)
           ? `<ul class="qa-list">${a.map((item) => `<li>${esc(item)}</li>`).join("")}</ul>`

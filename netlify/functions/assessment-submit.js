@@ -102,58 +102,21 @@ function topFocusAreas(answers) {
     .slice(0, 2);
 }
 
-function buyerStage(answers) {
-  const attempts = numeric(answers.previous_attempts, 1);
-  const openness = numeric(answers.help_openness, 1);
-  const urgency = numeric(answers.change_timeline, 1);
-  const investment = numeric(answers.investment_readiness, 1);
-  const score = Math.round((attempts + openness + urgency + investment) / 4);
-
-  if (score <= 1) return { stage: 1, label: "Problem aware", score };
-  if (score === 2) return { stage: 2, label: "Learning", score };
-  if (score === 3) return { stage: 3, label: "Trying to solve it yourself", score };
-  if (score === 4) return { stage: 4, label: "Considering help", score };
-  return { stage: 5, label: "Ready to invest", score };
-}
-
-function rebelFactor(answers) {
-  const vision = numeric(answers.vision_scale, 3);
-  const truth = numeric(answers.truth_directness, 3);
-  const conformity = numeric(answers.conformity_signal, 3);
-  const ambition = numeric(answers.potential_signal, 3);
-  const score = Math.round((vision + truth + conformity + ambition) / 4);
-
-  if (score <= 2) return { label: "Low", score };
-  if (score === 3) return { label: "Moderate", score };
-  if (score === 4) return { label: "Strong", score };
-  return { label: "Very strong", score };
-}
-
 function calculateResult(answers) {
   const focusAreas = topFocusAreas(answers);
-  const buyer = buyerStage(answers);
-  const rebel = rebelFactor(answers);
-
-  return { focusAreas, buyer, rebel };
+  return { focusAreas };
 }
 
-function notifyEmailHtml(answers, result) {
+function notifyEmailHtml(answers) {
   const rows = Object.entries(answers)
     .filter(([key]) => !key.startsWith("fulfillment_") && !key.startsWith("urgency_") && key !== "qa_summary")
     .map(([key, value]) => `<tr><td style="padding: 6px 10px; border-bottom: 1px solid #ddd;"><strong>${escapeHtml(key)}</strong></td><td style="padding: 6px 10px; border-bottom: 1px solid #ddd;">${escapeHtml(value)}</td></tr>`)
-    .join("");
-  const focus = result.focusAreas
-    .map((area) => `<li>${escapeHtml(area.label)}: fulfilment ${area.fulfillment}/5</li>`)
     .join("");
 
   return `
     <div style="font-family: Georgia, serif; color: #15140f; line-height: 1.6;">
       <h2>Assessment answers: ${escapeHtml(fullNameOf(answers) || "Unnamed")}</h2>
       <p><strong>Email:</strong> ${escapeHtml(answers.email)}</p>
-      <p><strong>Buyer stage:</strong> ${escapeHtml(result.buyer.label)} (${result.buyer.stage})</p>
-      <p><strong>Rebel factor:</strong> ${escapeHtml(result.rebel.label)} (${result.rebel.score})</p>
-      <p><strong>Top focus areas:</strong></p>
-      <ol>${focus}</ol>
       <h3>Answers</h3>
       <table style="border-collapse: collapse; width: 100%;">${rows}</table>
     </div>
@@ -177,14 +140,23 @@ function qaSummaryHtml(qa) {
   let n = 0;
   const blocks = qa
     .map((g) => {
-      const parentNum = g.subNumbered ? (n += 1) : null;
-      const items = (g.rows || [])
+      const rows = g.rows || [];
+      // firstRowIsParent: the "how are you contributing" question (row 0) keeps
+      // its own number, and the "why does that matter" follow-up it produced
+      // per item (row 1+) numbers as N.1, N.2 under it instead of getting its
+      // own top-level numbers — they read as one question, not two unrelated
+      // ones (Daniel, 2026-09-17).
+      const useParentChild = g.firstRowIsParent && rows.length > 1;
+      const parentNum = (g.subNumbered || useParentChild) ? (n += 1) : null;
+      const items = rows
         .map(([q, rawA], i) => {
-          const num = parentNum !== null ? `${parentNum}.${i + 1}` : (n += 1);
+          const num = g.subNumbered ? `${parentNum}.${i + 1}`
+            : useParentChild ? (i === 0 ? String(parentNum) : `${parentNum}.${i}`)
+            : (n += 1);
           const a = humanizePreferNot(rawA);
           const answerHtml = Array.isArray(a)
             ? `<ul style="margin:4px 0 0;padding-left:20px">${a.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`
-            : `<span style="color:#8a857a">Answer:</span> ${escapeHtml(a)}`;
+            : escapeHtml(a);
           return `<div style="margin:0 0 20px;padding:0 0 18px;border-bottom:1px solid #eee">
               <div style="font-size:16px;font-weight:700;color:#15140f;line-height:1.4">${num}. ${escapeHtml(q)}</div>
               <div style="font-size:16px;color:#0E4182;margin-top:7px">${answerHtml}</div>
@@ -281,7 +253,7 @@ exports.handler = async (event) => {
       ],
       extraHtml: `<p style="font-family:Georgia,serif;margin-top:1rem"><strong>Write their assessment:</strong> <a href="${escapeHtml(adminUrl)}">${escapeHtml(adminUrl)}</a><br><span style="font-size:.85rem;color:#8a857a">They cannot see anything until you publish it. Their page: ${escapeHtml(resultUrl)}</span></p>
         ${qaSummaryHtml(answers.qa_summary)}
-        <details style="margin-top:1.4rem"><summary style="cursor:pointer;color:#8a857a;font-size:.85rem">Raw data (all fields)</summary>${notifyEmailHtml(answers, result)}</details>`,
+        <details style="margin-top:1.4rem"><summary style="cursor:pointer;color:#8a857a;font-size:.85rem">Raw data (all fields)</summary>${notifyEmailHtml(answers)}</details>`,
     }),
     tags: [{ name: "source", value: "assessment_notify" }],
   }).catch((err) => ({ error: err.message }));

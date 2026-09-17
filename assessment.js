@@ -3955,6 +3955,31 @@ function captureDeeperFromDom() {
       // and produced garbled/duplicate rows in the notification email.
       if (!sp.id.startsWith('deeper-sub-')) return;
       const area = (sp.dataset.area || sp.querySelector('.deeper-area-name')?.textContent || '').trim();
+      // Tags the "Your Contribution" and "Acceptance" list rows so
+      // buildQaSummary can nest their per-item follow-ups (acts-reasons /
+      // control-attitude, tagged clusterChild below) under them as N.1, N.2
+      // instead of separate top-level questions.
+      const actsListMatch = sp.id.match(/^deeper-sub-(.+)-acts-list$/);
+
+      // Acceptance list: this field mixes a Yes/No button with the actual
+      // list of circumstances (in a nested .yn-expand), so the generic scan
+      // below would only ever capture "Yes"/"No" and silently drop the list
+      // itself — the same one-button-per-field problem described lower down.
+      // Bypasses that scan and reads the list straight from state instead.
+      const controlListMatch = sp.id.match(/^deeper-sub-(.+)-control$/);
+      if (controlListMatch) {
+        const areaKey = controlListMatch[1];
+        const q = 'Is there anything about the following that you cannot change and must therefore accept?';
+        const label = area ? `${area} — ${q}` : q;
+        const yn = _deeperState['deeper_' + areaKey + '_control_yn'];
+        if (yn === 'no') {
+          rows.push([label, 'No']);
+        } else {
+          const items = distinctNonBlank(_deeperState['deeper_' + areaKey + '_control_items']);
+          if (items.length) rows.push([label, items.length > 1 ? items : items.join('; '), { clusterParent: 'control:' + areaKey }]);
+        }
+        return;
+      }
 
       // Control-attitude: one row per circumstance they must accept, combining their
       // feeling about it and whether they want to feel that way — instead of the same
@@ -3975,10 +4000,19 @@ function captureDeeperFromDom() {
             const feeling = (f || '').trim();
             if (!feeling) return;
             const wantsToFeel = ynList[i] === 'yes' ? 'Yes' : ynList[i] === 'no' ? 'No' : '';
-            let a = wantsToFeel ? `Feels: ${feeling}. Wants to feel this way: ${wantsToFeel}.` : `Feels: ${feeling}.`;
+            // Each piece on its own line (rendered as a bullet list downstream,
+            // same as any other multi-part answer) instead of one run-on
+            // sentence — easier to scan (Daniel, 2026-09-17).
+            const parts = [`Feels: ${feeling}.`];
+            if (wantsToFeel) parts.push(`Wants to feel this way: ${wantsToFeel}.`);
             const desired = distinctNonBlank(desiredList[i]);
-            if (ynList[i] === 'no' && desired.length) a += ` Would rather feel: ${desired.join(', ')}.`;
-            rows.push([area ? `${area} — ${item}` : item, a]);
+            if (ynList[i] === 'no' && desired.length) parts.push(`Would rather feel: ${desired.join(', ')}.`);
+            const a = parts.length > 1 ? parts : parts[0];
+            // Labelled by what this row IS ("Feeling about"), not the area —
+            // same reasoning as Hidden value behind: on the acts-reasons
+            // rows, and nests the same way under the Acceptance list
+            // question (Daniel, 2026-09-17).
+            rows.push([`Feeling about: ${item}`, a, { clusterChild: 'control:' + areaKey }]);
           });
         });
         return;
@@ -4004,7 +4038,11 @@ function captureDeeperFromDom() {
             const reframe = (_deeperState['deeper_' + areaKey + '_acts_values_reframe_' + id] || '').trim();
             if (reframe) extra = ` How they'd change the action/inaction: ${reframe}`;
           }
-          rows.push([area ? `${area} — ${action}` : action, `${layers.join(' → ')} (${ans})${extra}`]);
+          // Labelled by what this row IS ("Hidden Value"), not the area — the
+          // area's already established by the contribution question this
+          // nests under (N.1, N.2), so repeating it here was just noise
+          // (Daniel, 2026-09-17).
+          rows.push([`Hidden value behind: ${action}`, `${layers.join(' → ')} (${ans})${extra}`, { clusterChild: 'acts:' + areaKey }]);
         });
         return;
       }
@@ -4042,7 +4080,7 @@ function captureDeeperFromDom() {
           const combined = [...texts, ...checks];
           a = combined.length > 1 ? combined : combined.join('; ');
         }
-        if (a) rows.push([area ? `${area} — ${q}` : q, a]);
+        if (a) rows.push(actsListMatch ? [area ? `${area} — ${q}` : q, a, { clusterParent: 'acts:' + actsListMatch[1] }] : [area ? `${area} — ${q}` : q, a]);
       });
     });
   } catch (_e) { /* best effort */ }
@@ -4061,6 +4099,44 @@ function _fmtStateVal(v) {
   }
   if (v && typeof v === 'object') return Object.values(v).filter((y) => String(y ?? '').trim()).join(' — ');
   return v == null ? '' : String(v);
+}
+
+// Splits the flat "Deeper questions" row list into groups, pulling each
+// area's "Your Contribution" row and "Acceptance" list row (tagged
+// clusterParent, see captureDeeperFromDom) together with the per-item
+// follow-ups they produced (acts-reasons / control-attitude, tagged
+// clusterChild with the same key) into their own group with
+// firstRowIsParent so qaSummaryHtml numbers them N, N.1, N.2 — one question
+// with sub-answers, not unrelated top-level ones (Daniel, 2026-09-17).
+// Everything else keeps flowing as normal top-level numbers, in the
+// original order, just split around those clusters.
+function groupDeeperRows(deeperRows) {
+  const groups = [];
+  let title = 'Deeper questions';
+  let batch = [];
+  const flush = () => {
+    if (batch.length) { groups.push({ title, rows: batch }); title = ''; batch = []; }
+  };
+  for (let i = 0; i < deeperRows.length; i += 1) {
+    const row = deeperRows[i];
+    const meta = row[2];
+    if (meta && meta.clusterParent) {
+      flush();
+      const cluster = [[row[0], row[1]]];
+      let j = i + 1;
+      while (j < deeperRows.length && deeperRows[j][2] && deeperRows[j][2].clusterChild === meta.clusterParent) {
+        cluster.push([deeperRows[j][0], deeperRows[j][1]]);
+        j += 1;
+      }
+      groups.push({ title, rows: cluster, firstRowIsParent: true });
+      title = '';
+      i = j - 1;
+    } else {
+      batch.push([row[0], row[1]]);
+    }
+  }
+  flush();
+  return groups;
 }
 
 function buildQaSummary(answers) {
@@ -4129,7 +4205,7 @@ function buildQaSummary(answers) {
     }
   });
 
-  if (deeperRows.length) groups.push({ title: 'Deeper questions', rows: deeperRows });
+  groupDeeperRows(deeperRows).forEach((g) => groups.push(g));
 
   // ---- Inner state & personality (fit signals) ----
   const fitRows = FIT_ORDER.map((id) => [FIT_LABELS[id], _fmtFitAnswer(id)]);

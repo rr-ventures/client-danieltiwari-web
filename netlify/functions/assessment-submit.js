@@ -1,6 +1,5 @@
 const crypto = require("node:crypto");
-const { buildBranch } = require("../lib/sequence");
-const { resultsStore, dripStore } = require("../lib/blobs");
+const { resultsStore } = require("../lib/blobs");
 const { sendResendEmail, mailConfig, leadActionEmail } = require("../lib/send");
 
 function firstNameOf(answers) {
@@ -45,7 +44,7 @@ function siteBaseUrl(event) {
 // means: it looks like one of our ids, the record exists, it is still only a
 // "started" row (never a finished submission or a written result), and it was
 // opened by the same email address. Anything else falls back to a fresh id.
-async function reusableStartId(claimed, email) {
+async function reusableStart(claimed, email) {
   const id = String(claimed || "").trim();
   if (!/^[A-Za-z0-9_-]{8,24}$/.test(id)) return null;
   try {
@@ -54,17 +53,27 @@ async function reusableStartId(claimed, email) {
     if (record.result || record.draft || record.publishedAt) return null;
     const storedEmail = String(record.answers?.email || "").trim().toLowerCase();
     if (!storedEmail || storedEmail !== String(email || "").trim().toLowerCase()) return null;
-    return id;
+    // Carry their original start time forward — this record is about to be
+    // overwritten with the finished answers, and it's the only place that
+    // start time lives.
+    return { id, startedAt: record.startedAt || record.createdAt || null };
   } catch {
     return null;
   }
 }
 
-async function storeResult(id, answers) {
+async function storeResult(id, answers, startedAt) {
   const store = resultsStore();
+  const now = new Date().toISOString();
   await store.setJSON(id, {
     answers,
-    createdAt: new Date().toISOString(),
+    // createdAt kept for older code/records that read it as "submitted at".
+    createdAt: now,
+    submittedAt: now,
+    // null when we never saw them start (no assessment-start call reached us,
+    // or the browser didn't carry the id forward) — honestly means "unknown",
+    // not "instant".
+    startedAt: startedAt || null,
   });
 }
 
@@ -91,19 +100,6 @@ function topFocusAreas(answers) {
   })
     .sort((a, b) => b.score - a.score)
     .slice(0, 2);
-}
-
-function authenticityStage(answers) {
-  const path = numeric(answers.path_signal, 3);
-  const decision = numeric(answers.decision_signal, 1);
-  const stage = Math.max(path, decision);
-
-  if (stage <= 1) return { stage: 1, label: "Conditioned", summary: "Part of you still expects the current path to deliver." };
-  if (stage === 2) return { stage: 2, label: "Draining", summary: "The old path is starting to cost more than it gives back." };
-  if (stage === 3) return { stage: 3, label: "Questioning", summary: "You can feel that something is off, even if the whole pattern is not yet named." };
-  if (stage === 4) return { stage: 4, label: "Breaking Point", summary: "The false path has been named. This is often where relief and discomfort arrive together." };
-  if (stage === 5) return { stage: 5, label: "Returning", summary: "You have started backing what is true, even if the new direction is still forming." };
-  return { stage: 6, label: "Building", summary: "You are already constructing life around what feels more authentic." };
 }
 
 function buyerStage(answers) {
@@ -135,23 +131,10 @@ function rebelFactor(answers) {
 
 function calculateResult(answers) {
   const focusAreas = topFocusAreas(answers);
-  const authenticity = authenticityStage(answers);
   const buyer = buyerStage(answers);
   const rebel = rebelFactor(answers);
-  // Loosened gate: any 2 of 3 high signals routes to the diagnostic conversation.
-  const signals = [authenticity.stage >= 4, buyer.stage >= 4, rebel.score >= 4].filter(Boolean).length;
-  const highFit = signals >= 2;
 
-  return {
-    focusAreas,
-    authenticity,
-    buyer,
-    rebel,
-    route: highFit ? "diagnostic" : "nurture",
-    cta: highFit
-      ? "The next step is a private diagnostic conversation, a continuation of this assessment rather than a sales call."
-      : "You can keep moving on your own from here. If you'd like a clearer reflection from the outside, the door is open.",
-  };
+  return { focusAreas, buyer, rebel };
 }
 
 function notifyEmailHtml(answers, result) {
@@ -167,8 +150,6 @@ function notifyEmailHtml(answers, result) {
     <div style="font-family: Georgia, serif; color: #15140f; line-height: 1.6;">
       <h2>Assessment answers: ${escapeHtml(fullNameOf(answers) || "Unnamed")}</h2>
       <p><strong>Email:</strong> ${escapeHtml(answers.email)}</p>
-      <p><strong>Route:</strong> ${escapeHtml(result.route)}</p>
-      <p><strong>Authenticity:</strong> ${escapeHtml(result.authenticity.label)} (${result.authenticity.stage})</p>
       <p><strong>Buyer stage:</strong> ${escapeHtml(result.buyer.label)} (${result.buyer.stage})</p>
       <p><strong>Rebel factor:</strong> ${escapeHtml(result.rebel.label)} (${result.rebel.score})</p>
       <p><strong>Top focus areas:</strong></p>
@@ -252,72 +233,39 @@ exports.handler = async (event) => {
   // marked "didn't finish" (found live 2026-09-13). The claimed id is only
   // honoured when the stored record is genuinely an unfinished start for the
   // same email, so nobody can overwrite someone else's submission with it.
-  const id = (await reusableStartId(answers.startId, answers.email)) || shortId();
+  const reused = await reusableStart(answers.startId, answers.email);
+  const id = reused?.id || shortId();
   delete answers.startId;
   const resultUrl = `${siteBaseUrl(event)}/r/${id}`;
   const adminUrl = `${siteBaseUrl(event)}/results`;
   let storeWarning;
   try {
-    await storeResult(id, answers);
+    await storeResult(id, answers, reused?.startedAt || null);
   } catch (error) {
     storeWarning = `result store failed: ${error.message}`;
   }
 
   // ---- recipients (TEST_MODE overrides the lead recipient to one inbox) ----
   const TEST_MODE = /^(1|true|yes)$/i.test(String(process.env.TEST_MODE || ""));
-  // NURTURE_PAUSED: set true in Netlify env to stop the day-0 email + drip
-  // enrollment while the sequence copy is being rewritten. The assessment
-  // result itself (result page + Daniel's internal notification) still fires.
-  const NURTURE_PAUSED = /^(1|true|yes)$/i.test(String(process.env.NURTURE_PAUSED || ""));
-  // Daniel wants ONLY the day-0 email going out right now (2026-09-11) — the
-  // rest of the multi-day follow-up sequence hasn't had his voice pass yet.
-  // Day-0 still sends normally; nobody gets enrolled in the later drip, so
-  // no day-1-onward email can ever fire for them. Flip to false (or remove)
-  // once he's ready to turn the rest of the sequence back on.
-  const ONLY_DAY_ZERO_FOR_NOW = true;
   const TEST_EMAIL = process.env.TEST_EMAIL || "reece.j.rainer@gmail.com";
-  const { from, replyTo, bookUrl } = mailConfig();
+  const { from, replyTo } = mailConfig();
   const notifyTo = TEST_MODE ? TEST_EMAIL : (process.env.NOTIFY_TO || process.env.DAN_NOTIFY_EMAIL || "email@danieltiwari.com");
-  const leadTo = TEST_MODE ? TEST_EMAIL : answers.email;
 
-  // ---- merge fields carried through the whole sequence ----
+  // ---- merge fields used in Daniel's own notification below ----
   const mergeFields = {
     first_name: firstNameOf(answers),
     top_focus_area: result.focusAreas[0]?.label || "",
-    authenticity_stage: result.authenticity.label,
-    map_url: resultUrl,
-    book_url: bookUrl,
   };
 
   // ---- What the person gets the moment they submit ----
   // Daniel's call (2026-09-13): nothing. No confirmation, no teaser — the person
   // hears from him for the first time when he actually publishes their result.
   // Only his own internal notification below fires on submit.
-  const sequence = buildBranch(result.route, mergeFields);
-  const dayZero = sequence.find((e) => e.day === 0) || sequence[0];
-
-  // persist drip progress (day 0 marked sent). The drip store holds the lead's
-  // real email so subsequent emails reach them; in TEST_MODE we store TEST_EMAIL.
-  // While paused (or while ONLY_DAY_ZERO_FOR_NOW), skip enrollment entirely so
-  // nobody is queued up for a rush of catch-up sends once the sequence resumes.
-  let dripWarning;
-  const writeDrip = (NURTURE_PAUSED || ONLY_DAY_ZERO_FOR_NOW)
-    ? Promise.resolve()
-    : (async () => {
-        try {
-          await dripStore().setJSON(id, {
-            email: leadTo,
-            branch: result.route,
-            name: fullNameOf(answers),
-            mergeFields,
-            startedAt: new Date().toISOString(),
-            sentDays: [dayZero.day],
-            done: sequence.length === 1,
-          });
-        } catch (error) {
-          dripWarning = `drip store failed: ${error.message}`;
-        }
-      })();
+  //
+  // The automatic follow-up sequence is off entirely (Daniel, 2026-09-17) —
+  // content/emails/* was cleared out and nurture-drip.js is disabled while he
+  // rebuilds it from scratch. The only email a lead gets right now is the
+  // "your results are ready" email result-admin.js sends when Daniel publishes.
 
   const notifyEmail = sendResendEmail({
     from,
@@ -330,7 +278,6 @@ exports.handler = async (event) => {
         ["Name", escapeHtml(fullNameOf(answers) || "(not given)")],
         ["Email", escapeHtml(answers.email)],
         ["Top focus", escapeHtml(mergeFields.top_focus_area || "not given")],
-        ["Stage", escapeHtml(mergeFields.authenticity_stage || "not given")],
       ],
       extraHtml: `<p style="font-family:Georgia,serif;margin-top:1rem"><strong>Write their assessment:</strong> <a href="${escapeHtml(adminUrl)}">${escapeHtml(adminUrl)}</a><br><span style="font-size:.85rem;color:#8a857a">They cannot see anything until you publish it. Their page: ${escapeHtml(resultUrl)}</span></p>
         ${qaSummaryHtml(answers.qa_summary)}
@@ -339,7 +286,7 @@ exports.handler = async (event) => {
     tags: [{ name: "source", value: "assessment_notify" }],
   }).catch((err) => ({ error: err.message }));
 
-  const [notifyResult] = await Promise.all([notifyEmail, writeDrip]);
+  const notifyResult = await notifyEmail;
 
   // If Daniel's copy of the submission failed to send, the whole point of the
   // form has silently died: the answers are stored and nobody knows they arrived.
@@ -370,14 +317,11 @@ exports.handler = async (event) => {
     }
   }
   const emailWarning = notifyResult && notifyResult.error;
-  const emailSkipped = false;
   return {
     statusCode: 200,
     body: JSON.stringify({
-      ok: true, id, resultUrl, result, storeWarning, dripWarning,
-      testMode: TEST_MODE, branch: result.route,
-      enrolled: (NURTURE_PAUSED || ONLY_DAY_ZERO_FOR_NOW) ? 0 : sequence.length,
-      emailWarning, emailSkipped,
+      ok: true, id, resultUrl, result, storeWarning,
+      testMode: TEST_MODE, emailWarning,
     }),
   };
 };

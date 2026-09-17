@@ -23,6 +23,10 @@
     --muted:#a39c8c;
     --hair:#322f26;
     --panel:#1c1a14;
+    /* Shared height for the answers pane and the writing box, so Daniel can
+       always see one while scrolling inside the other instead of the page
+       scrolling them out of sync (Daniel, 2026-09-17). */
+    --pane-h:66vh;
   }
   body{background:var(--bg)}
   .wrap{max-width:78rem;margin:0 auto;padding:2rem 1.5rem 6rem}
@@ -51,6 +55,7 @@
   .row .rowmain{flex:1;min-width:0;display:block;text-align:left;background:none;border:0;padding:.8rem .9rem;cursor:pointer;font-size:.9rem;color:var(--ink)}
   .row .nm{display:block;font-weight:600}
   .row .em{display:block;color:var(--muted);font-size:.8rem;word-break:break-all}
+  .row .when{display:block;color:var(--muted);font-size:.72rem;margin-top:.15rem}
   .row .rowbtns{display:flex;gap:.1rem;padding:.6rem .5rem 0 0}
   .row .rowbtn{background:none;border:0;padding:.25rem .4rem;font-size:.85rem;color:var(--muted);cursor:pointer;border-radius:4px;line-height:1}
   .row .rowbtn:hover{background:rgba(255,255,255,.08);color:var(--ink)}
@@ -66,7 +71,8 @@
   @media (max-width:1100px){.editor{grid-template-columns:1fr}}
   .box{padding:1rem 1.1rem}
   .box h2{font-family:var(--sc);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 .8rem}
-  .answers{max-height:64vh;overflow:auto;font-size:.9rem;line-height:1.6}
+  #when{font-size:.8rem;color:var(--muted);margin:-.5rem 0 .9rem}
+  .answers{height:var(--pane-h);overflow:auto;font-size:.9rem;line-height:1.6}
   .answers dt{font-family:var(--sc);font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:.9rem}
   .answers dd{margin:.2rem 0 0;white-space:pre-wrap}
   .answers .qa-heading{font-family:var(--sc);font-size:.66rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:1.1rem 0 .5rem}
@@ -80,7 +86,7 @@
   .tbtn{background:var(--panel);border:1px solid var(--hair);border-radius:4px;color:var(--ink);font-size:.78rem;padding:.4rem .65rem;cursor:pointer;line-height:1}
   .tbtn:hover{background:rgba(255,255,255,.06)}
   .tbtn.active{background:var(--ink);color:var(--bg);border-color:var(--ink)}
-  .editor-box{width:100%;box-sizing:border-box;min-height:58vh;font-size:.92rem;line-height:1.6;padding:.8rem;border:1px solid var(--hair);border-radius:4px;background:var(--panel);color:var(--ink);overflow:auto}
+  .editor-box{width:100%;box-sizing:border-box;height:var(--pane-h);font-size:.92rem;line-height:1.6;padding:.8rem;border:1px solid var(--hair);border-radius:4px;background:var(--panel);color:var(--ink);overflow:auto}
   .editor-box:focus{outline:none;border-color:var(--ink)}
   .editor-box h2{font-family:var(--display);font-weight:500;font-size:1.25rem;margin:1rem 0 .5rem}
   .editor-box h2:first-child{margin-top:0}
@@ -131,6 +137,7 @@
   <div class="editor">
     <div>
       <h2>What they answered</h2>
+      <div class="when" id="when"></div>
       <div class="answers" id="answers"></div>
     </div>
     <div>
@@ -160,6 +167,13 @@
 
 <script defer>
   const $ = (id) => document.getElementById(id);
+  // Local to whoever's looking at the screen, not UTC or Daniel's server.
+  const fmtWhen = (iso) => {
+    if (!iso) return "";
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return "";
+    return d.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+  };
   const PASS_KEY = "dt_author_pass";
   const getPass = () => { try { return localStorage.getItem(PASS_KEY) || ""; } catch { return ""; } };
   const setPass = (p) => { try { localStorage.setItem(PASS_KEY, p); } catch {} };
@@ -353,18 +367,24 @@
     $("count").textContent = rows.length === 1 ? "1 submission" : `${rows.length} submissions`;
     const list = $("list");
     if (!rows.length) { list.innerHTML = '<div class="empty">Nothing has come in yet.</div>'; return; }
-    list.innerHTML = rows.map((r) => `
+    list.innerHTML = rows.map((r) => {
+      const whenLine = r.submittedAt
+        ? `Submitted ${esc(fmtWhen(r.submittedAt))}`
+        : r.startedAt ? `Started ${esc(fmtWhen(r.startedAt))}` : "";
+      return `
       <div class="row" data-id="${esc(r.id)}" aria-current="${r.id === currentId}">
         <button class="rowmain" type="button">
           <span class="nm">${esc(r.name || "(no name)")}</span>
           <span class="em">${esc(r.email || "")}</span>
+          ${whenLine ? `<span class="when">${whenLine}</span>` : ""}
           <span class="pill ${esc(r.status)}">${r.status === "none" ? "not started" : esc(r.status)}</span>${r.started ? '<span class="pill started">didn\'t finish</span>' : ""}${r.notifyFailed ? '<span class="pill warn">you were not emailed</span>' : ""}
         </button>
         <span class="rowbtns">
           <button class="rowbtn rename" type="button" title="Edit name">&#9998;</button>
           <button class="rowbtn delete" type="button" title="Delete">&#10005;</button>
         </span>
-      </div>`).join("");
+      </div>`;
+    }).join("");
     list.querySelectorAll(".rowmain").forEach((b) => b.addEventListener("click", () => openSubmission(b.closest(".row").dataset.id)));
     list.querySelectorAll(".rowbtn.rename").forEach((b) => b.addEventListener("click", (e) => { e.stopPropagation(); renameRow(b.closest(".row").dataset.id); }));
     list.querySelectorAll(".rowbtn.delete").forEach((b) => b.addEventListener("click", (e) => { e.stopPropagation(); deleteRow(b.closest(".row").dataset.id); }));
@@ -404,6 +424,11 @@
 
     stage.innerHTML = "";
     stage.appendChild($("editor-tpl").content.cloneNode(true));
+
+    const whenParts = [];
+    if (data.startedAt) whenParts.push(`Started ${fmtWhen(data.startedAt)}`);
+    if (data.submittedAt) whenParts.push(`Submitted ${fmtWhen(data.submittedAt)}`);
+    $("when").textContent = whenParts.join("  ·  ");
 
     const answers = data.answers || {};
     // Newer submissions carry qa_summary (question + answer, in order) — show that,

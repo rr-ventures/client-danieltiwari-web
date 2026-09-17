@@ -17,7 +17,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const CONTENT = join(root, "content/emails");
 const OUT = join(root, "netlify/lib/emails.generated.json");
 
-const ALLOWED_FIELDS = new Set(["{{first_name}}", "{{top_focus_area}}", "{{authenticity_stage}}"]);
+const ALLOWED_FIELDS = new Set(["{{first_name}}", "{{top_focus_area}}"]);
 const ALLOWED_TOKENS = new Set(["[MAP]", "[BOOK]"]);
 
 const errors = [];

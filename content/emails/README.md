@@ -1,5 +1,14 @@
 # Daniel's nurture emails — how to edit them
 
+**Cleared out 2026-09-17 (Daniel's call) — both branches are empty on purpose.** The old
+copy was never voice-passed and the "stage" it leaned on was broken (see git history for
+the last version). The automatic follow-up sequence is off entirely — `nurture-drip.js`
+won't send anything until content exists again. The only email a lead gets right now is
+the "your results are ready" email, sent by hand when Daniel publishes their result.
+
+To turn the sequence back on: add `.md` files here following the format below, then
+remove the early return in `netlify/functions/nurture-drip.js`.
+
 These Markdown files **are** the live email funnel. Edit a file here, save/commit it, and the
 change goes out to the funnel automatically. You never touch code.
 
@@ -27,7 +36,6 @@ Below the second `---` is the email body. **One blank line between paragraphs.**
 ## The few special bits
 - `{{first_name}}` — becomes the person's first name.
 - `{{top_focus_area}}` — the life area their quiz flagged (e.g. "Career").
-- `{{authenticity_stage}}` — where they landed on the assessment (e.g. "Questioning").
 - `**bold**` — makes text bold.
 - A line that is just `[MAP]` — inserts the "Open your Assessment" link.
 - A line that is just `[BOOK]` — inserts the "Book a private conversation" link.

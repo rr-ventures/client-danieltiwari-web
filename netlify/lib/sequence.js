@@ -4,7 +4,7 @@
    vault .../dan-resend-nurture-build/dan-nurture-sequence-copy.md
      Branch A, diagnostic / high-fit · 6 emails / 12 days
      Branch B, nurture / everyone else · 7 emails / 21 days
-   Merge fields: {{first_name}} {{top_focus_area}} {{authenticity_stage}}
+   Merge fields: {{first_name}} {{top_focus_area}}
    Tokens:  [MAP]  -> link to the hosted Assessment result (A1/B1 only)
             [BOOK] -> booking link (Calendly placeholder for now)
    Email 1 (A1/B1, day 0) is the result-link email, sent instantly.
@@ -30,8 +30,7 @@ function inlineFormat(text) {
 function fillMerge(text, fields) {
   return text
     .replaceAll("{{first_name}}", fields.first_name || "there")
-    .replaceAll("{{top_focus_area}}", fields.top_focus_area || "the area you flagged")
-    .replaceAll("{{authenticity_stage}}", fields.authenticity_stage || "where you are");
+    .replaceAll("{{top_focus_area}}", fields.top_focus_area || "the area you flagged");
 }
 
 // Render one email's body paragraphs into light, text-forward HTML.

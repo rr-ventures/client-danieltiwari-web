@@ -69,11 +69,17 @@ function firstNameOf(answers) {
 
 function summarise(id, record, page) {
   const a = (record && record.answers) || {};
+  const stillStarted = Boolean(record && record.started);
   return {
     id,
     name: String(a.name || a.first_name || "").trim() || null,
     email: a.email || null,
-    submittedAt: record && record.createdAt,
+    // Unfinished rows: this is when they began. Finished rows: only set when
+    // we actually saw them start (older submissions, or ones that skipped the
+    // start step, honestly have no start time — left null rather than guessed).
+    startedAt: record && (record.startedAt || (stillStarted ? record.createdAt : null)) || null,
+    // Only meaningful once they've actually finished.
+    submittedAt: record && !stillStarted ? (record.submittedAt || record.createdAt) : null,
     status: (page && page.status) || "none",
     updatedAt: page && page.updatedAt,
     hasDraft: Boolean(page && page.html),
@@ -82,7 +88,7 @@ function summarise(id, record, page) {
     notifyFailed: Boolean(record && record.notifyFailed),
     // they gave their name and email and then stopped partway. Worth seeing:
     // before this existed they left no trace at all.
-    started: Boolean(record && record.started),
+    started: stillStarted,
   };
 }
 
@@ -104,7 +110,10 @@ exports.handler = async (event) => {
         ]);
         return summarise(id, record, page);
       }));
-      rows.sort((x, y) => String(y.submittedAt || "").localeCompare(String(x.submittedAt || "")));
+      // Most recent activity first, whether that activity was starting or
+      // finishing — an unfinished row must not sink to the bottom just
+      // because it has no submittedAt.
+      rows.sort((x, y) => String(y.submittedAt || y.startedAt || "").localeCompare(String(x.submittedAt || x.startedAt || "")));
       return json(200, { rows });
     }
 
@@ -114,10 +123,12 @@ exports.handler = async (event) => {
       const record = await results.get(id, { type: "json" }).catch(() => null);
       if (!record) return json(404, { error: "Not found" });
       const page = await pages.get(id, { type: "json" }).catch(() => null);
+      const stillStarted = Boolean(record.started);
       return json(200, {
         id,
         answers: record.answers,
-        submittedAt: record.createdAt,
+        startedAt: record.startedAt || (stillStarted ? record.createdAt : null) || null,
+        submittedAt: stillStarted ? null : (record.submittedAt || record.createdAt),
         html: (page && page.html) || "",
         status: (page && page.status) || "none",
         updatedAt: page && page.updatedAt,

@@ -34,10 +34,12 @@ exports.handler = async (event) => {
   if (!email.includes("@") || !email.includes(".")) return json(400, { error: "Please give a real email address." });
 
   const id = shortId();
+  const startedAt = new Date().toISOString();
   try {
     await resultsStore().setJSON(id, {
       answers: { first_name: firstName, name: firstName, email },
-      createdAt: new Date().toISOString(),
+      createdAt: startedAt,
+      startedAt,
       // the tell that they have not finished. assessment-submit overwrites this
       // whole record when they do, so it can never be left behind wrongly.
       started: true,

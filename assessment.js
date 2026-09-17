@@ -565,6 +565,16 @@ function initFocusStep() {
   renderFocus();
 }
 
+// Grows a free-text answer box downward as the person's answer wraps past
+// one line, instead of scrolling sideways and hiding the start of what they
+// typed once it's too long to fit (a client's complaint about the assessment,
+// Daniel 2026-09-17). Called on every keystroke and once at creation so a
+// pre-filled value (e.g. after Back/Next) starts at the right height too.
+function autoGrowTextarea(el) {
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+}
+
 /* ---- Bullet cause list ---- */
 function renderCauseList(key) {
   const container = document.getElementById('cause-list-' + key);
@@ -590,8 +600,8 @@ function renderCauseList(key) {
       const bullet = document.createElement('span');
       bullet.className = 'cause-bullet';
       bullet.textContent = '•';
-      const inp = document.createElement('input');
-      inp.type = 'text';
+      const inp = document.createElement('textarea');
+      inp.rows = 1;
       inp.className = 'cause-input';
       inp.value = val;
       inp.placeholder = 'Add a reason…';
@@ -600,7 +610,9 @@ function renderCauseList(key) {
         _deeperState['deeper_' + key + '_causes'] = causes;
         syncAndUpdate();
         container.querySelectorAll('.cause-remove').forEach(b => { b.hidden = causes.length === 1; });
+        autoGrowTextarea(inp);
       });
+      requestAnimationFrame(() => autoGrowTextarea(inp));
       inp.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
           e.preventDefault();
@@ -955,8 +967,8 @@ function renderActsWhyLadders(key) {
       const bullet = document.createElement('span');
       bullet.className = 'cause-bullet';
       bullet.textContent = '•';
-      const inp = document.createElement('input');
-      inp.type = 'text';
+      const inp = document.createElement('textarea');
+      inp.rows = 1;
       inp.className = 'cause-input';
       inp.dataset.nodeId = node.id;
       inp.value = node.text;
@@ -966,7 +978,9 @@ function renderActsWhyLadders(key) {
         if (!node.children.length) node.terminal = false;
         syncThreadsHidden();
         refreshTail();
+        autoGrowTextarea(inp);
       });
+      requestAnimationFrame(() => autoGrowTextarea(inp));
       row.appendChild(bullet); row.appendChild(inp);
 
       if (!isRoot && !node.children.length) {
@@ -1296,8 +1310,8 @@ function renderSimpleBulletList(containerId, stateKey, placeholder, nothingState
       const bullet = document.createElement('span');
       bullet.className = 'cause-bullet';
       bullet.textContent = '•';
-      const inp = document.createElement('input');
-      inp.type = 'text';
+      const inp = document.createElement('textarea');
+      inp.rows = 1;
       inp.className = 'cause-input';
       inp.value = val;
       inp.placeholder = placeholder;
@@ -1307,7 +1321,9 @@ function renderSimpleBulletList(containerId, stateKey, placeholder, nothingState
         syncHidden();
         if (window.clearFormError) window.clearFormError();
         container.querySelectorAll('.cause-remove').forEach(b => { b.hidden = items.length === 1; });
+        autoGrowTextarea(inp);
       });
+      requestAnimationFrame(() => autoGrowTextarea(inp));
       inp.addEventListener('keydown', e => {
         if (e.key === 'Enter') {
           e.preventDefault(); e.stopPropagation();
@@ -1427,12 +1443,14 @@ function renderTrackRecordList(containerId) {
       const bullet = document.createElement('span');
       bullet.className = 'cause-bullet';
       bullet.textContent = '•';
-      const whatInp = document.createElement('input');
-      whatInp.type = 'text';
+      const whatInp = document.createElement('textarea');
+      whatInp.rows = 1;
       whatInp.className = 'cause-input';
       whatInp.style.flex = '1';
       whatInp.value = item.what;
       whatInp.placeholder = 'Describe what you tried…';
+      whatInp.addEventListener('input', () => autoGrowTextarea(whatInp));
+      requestAnimationFrame(() => autoGrowTextarea(whatInp));
       const rm = document.createElement('button');
       rm.type = 'button';
       rm.className = 'cause-remove';
@@ -1662,8 +1680,8 @@ function renderVisionList(key) {
       const bullet = document.createElement('span');
       bullet.className = 'cause-bullet';
       bullet.textContent = '•';
-      const inp = document.createElement('input');
-      inp.type = 'text';
+      const inp = document.createElement('textarea');
+      inp.rows = 1;
       inp.className = 'cause-input';
       inp.value = val;
       inp.placeholder = placeholder;
@@ -1674,7 +1692,9 @@ function renderVisionList(key) {
         updateReveal();
         uncheck();
         container.querySelectorAll('.cause-remove').forEach(b => { b.hidden = items.length === 1; });
+        autoGrowTextarea(inp);
       });
+      requestAnimationFrame(() => autoGrowTextarea(inp));
       inp.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
           e.preventDefault();
@@ -1768,8 +1788,8 @@ function renderControlList(key) {
       const bullet = document.createElement('span');
       bullet.className = 'cause-bullet';
       bullet.textContent = '•';
-      const inp = document.createElement('input');
-      inp.type = 'text';
+      const inp = document.createElement('textarea');
+      inp.rows = 1;
       inp.className = 'cause-input';
       inp.value = val;
       inp.placeholder = 'Something not in your control…';
@@ -1777,7 +1797,9 @@ function renderControlList(key) {
         items[i] = inp.value;
         syncAndUpdate();
         container.querySelectorAll('.cause-remove').forEach(b => { b.hidden = items.length === 1; });
+        autoGrowTextarea(inp);
       });
+      requestAnimationFrame(() => autoGrowTextarea(inp));
       inp.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
           e.preventDefault();
@@ -1954,11 +1976,12 @@ function renderControlAttitude(key) {
         const bullet = document.createElement('span');
         bullet.className = 'cause-bullet';
         bullet.textContent = '•';
-        const inp = document.createElement('input');
-        inp.type = 'text';
+        const inp = document.createElement('textarea');
+        inp.rows = 1;
         inp.className = 'cause-input';
         inp.value = val;
         inp.placeholder = 'e.g. Resigned, angry, at peace with it, bitter, numb, frustrated…';
+        requestAnimationFrame(() => autoGrowTextarea(inp));
 
         const rm = document.createElement('button');
         rm.type = 'button';
@@ -2058,11 +2081,12 @@ function renderControlAttitude(key) {
             const dBullet = document.createElement('span');
             dBullet.className = 'cause-bullet';
             dBullet.textContent = '•';
-            const dInp = document.createElement('input');
-            dInp.type = 'text';
+            const dInp = document.createElement('textarea');
+            dInp.rows = 1;
             dInp.className = 'desired-input';
             dInp.value = dval;
             dInp.placeholder = 'e.g. At peace with it, accepting, calm, hopeful…';
+            requestAnimationFrame(() => autoGrowTextarea(dInp));
             const dRm = document.createElement('button');
             dRm.type = 'button';
             dRm.className = 'desired-remove';
@@ -2083,6 +2107,7 @@ function renderControlAttitude(key) {
               syncHidden(feelingDesiredKey, feelingDesired);
               if (window.clearFormError) window.clearFormError();
               desiredListEl.querySelectorAll('.desired-remove').forEach(b => { b.hidden = desiredList.length === 1; });
+              autoGrowTextarea(dInp);
             });
             dInp.addEventListener('keydown', (e) => {
               if (e.key === 'Enter') {
@@ -2165,6 +2190,7 @@ function renderControlAttitude(key) {
           feelingListEl.querySelectorAll('.cause-remove').forEach(b => { b.hidden = feelingList.length === 1; });
           ynRow.hidden = !inp.value.trim();
           if (!inp.value.trim()) { confirmWrap.hidden = true; desiredWrap.hidden = true; }
+          autoGrowTextarea(inp);
         });
         inp.addEventListener('blur', () => { refreshAllFeelingSuggestions(); });
         inp.addEventListener('keydown', (e) => {
@@ -2386,6 +2412,20 @@ function renderVisionAchievableCheck(key) {
 
   container.innerHTML = '';
 
+  // Explanatory text/question first, then their vision items being referred
+  // to, then the answer options — same order as every other deeper question
+  // (Daniel, 2026-09-17).
+  const allNotAchievable = vItems.length > 0 && notAchievable.length === vItems.length;
+
+  const qWrap = document.createElement('div');
+  qWrap.className = 'deeper-field yn-field vision-achievable-check-field';
+
+  const qLbl = document.createElement('label');
+  qLbl.textContent = allNotAchievable
+    ? 'None of your vision points are achievable as stated — what would you like to do?'
+    : 'Given the fact that you have deemed part of your vision as unachievable, I wanted to check in with you and make sure that what has remained is still the vision worth achieving for you, or whether you would like to add to or revise it?';
+  qWrap.appendChild(qLbl);
+
   if (notAchievable.length) {
     const notAchBlock = document.createElement('div');
     notAchBlock.className = 'recap-block';
@@ -2398,7 +2438,7 @@ function renderVisionAchievableCheck(key) {
     notAchList.className = 'recap-list';
     notAchievable.forEach(item => { const li = document.createElement('li'); li.textContent = item; notAchList.appendChild(li); });
     notAchBlock.appendChild(notAchList);
-    container.appendChild(notAchBlock);
+    qWrap.appendChild(notAchBlock);
   }
 
   if (stillAchievable.length) {
@@ -2413,19 +2453,8 @@ function renderVisionAchievableCheck(key) {
     achList.className = 'recap-list';
     stillAchievable.forEach(item => { const li = document.createElement('li'); li.textContent = item; achList.appendChild(li); });
     achBlock.appendChild(achList);
-    container.appendChild(achBlock);
+    qWrap.appendChild(achBlock);
   }
-
-  const allNotAchievable = vItems.length > 0 && notAchievable.length === vItems.length;
-
-  const qWrap = document.createElement('div');
-  qWrap.className = 'deeper-field yn-field vision-achievable-check-field';
-
-  const qLbl = document.createElement('label');
-  qLbl.textContent = allNotAchievable
-    ? 'None of your vision points are achievable as stated — what would you like to do?'
-    : 'Given the fact that you have deemed part of your vision as unachievable, I wanted to check in with you and make sure that what has remained is still the vision worth achieving for you, or whether you would like to add to or revise it?';
-  qWrap.appendChild(qLbl);
 
   const btns = document.createElement('div');
   btns.className = 'yn-btns';
@@ -2679,9 +2708,9 @@ function initDeeperStep() {
       </div>`,
       `<div class="deeper-subpage" id="deeper-sub-${key}-vision-commitment" data-area="${label}" hidden>
         <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Conviction</h3>
-        <div id="vision-commitment-recap-${key}" class="recap-block" style="margin-bottom:1.6rem" hidden></div>
         <div class="deeper-field yn-field" data-key="${key}" data-role="commitment">
           <label><span class="qa-q"><strong>WILL</strong> you achieve this?</span><br><br>Be honest with yourself here. This isn't a test you need to pass, and there are no right or wrong answers. The best answer you can give is the honest one. If your reaction to this question is not a clear yes, it's a no.</label>
+          <div id="vision-commitment-recap-${key}" class="recap-block" style="margin-bottom:1.6rem" hidden></div>
           <div class="yn-btns">
             <button type="button" class="yn-btn${commitmentYn === 'certain'  ? ' selected' : ''}" data-val="certain">There is no other way</button>
             <button type="button" class="yn-btn${commitmentYn === 'doubtful' ? ' selected' : ''}" data-val="doubtful">I have doubts</button>
@@ -2691,18 +2720,18 @@ function initDeeperStep() {
       </div>`,
       `<div class="deeper-subpage" id="deeper-sub-${key}-acts-list" data-area="${label}" hidden>
         <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Your Contribution</h3>
-        <div id="recap-causes-${key}-acts-list" data-label="Why ${label} only feels like a ${data.fulfillment}/5:" class="recap-block" hidden></div>
         <div class="deeper-field">
-          <label>We are the common denominator of all areas of our lives, and we also have the biggest impact on our life circumstances. Therefore, we want to make sure that we are playing our part in achieving the life circumstances and life experiences that we want and not getting in our own way.<br><br>One of the most important things we can look at when we find ourselves dissatisfied with something are the ways in which we are contributing to the circumstances we say we don't want. It doesn't matter whether that contribution consists of taking a certain action (activity) or NOT taking a certain action (passivity).<br><br><span class="qa-q">So, how are you actively or passively contributing to the above? What are the things that you are actively doing that are playing into the above? What are the things you are NOT doing but COULD be doing to change or improve the above?</span></label>
+          <label>We are the common denominator of all areas of our lives, and we also have the biggest impact on our life circumstances. Therefore, we want to make sure that we are playing our part in achieving the life circumstances and life experiences that we want and not getting in our own way.<br><br>One of the most important things we can look at when we find ourselves dissatisfied with something are the ways in which we are contributing to the circumstances we say we don't want. It doesn't matter whether that contribution consists of taking a certain action (activity) or NOT taking a certain action (passivity).<br><br><span class="qa-q">So, how are you actively or passively contributing to the below? What are the things that you are actively doing that are playing into the below? What are the things you are NOT doing but COULD be doing to change or improve the below?</span></label>
+          <div id="recap-causes-${key}-acts-list" data-label="Why ${label} only feels like a ${data.fulfillment}/5:" class="recap-block" hidden></div>
           <div id="acts-items-${key}" style="margin-top:.5rem"></div>
         </div>
         <div id="acts-confirm-${key}" style="margin-top:1.2rem" hidden></div>
       </div>`,
       `<div class="deeper-subpage" id="deeper-sub-${key}-acts-reasons" data-area="${label}" hidden>
         <h3 class="deeper-page-title" style="font-size:clamp(1.3rem,2.4vw,1.7rem);margin:.2rem 0 .7rem">Hidden Values</h3>
-        <div id="recap-acts-${key}-acts-reasons" data-label="How you are contributing to this" class="recap-block" hidden></div>
         <div class="deeper-field">
-          <label>Now we're getting deeper to the core of what might be the cause of you feeling stuck or limited. As Carl Jung said, "Until you make the unconscious conscious, it will direct your life and you will call it fate." What we're doing now is making the unconscious conscious. We are shining a light on the drivers of the actions/inactions that have in a certain sense been "self-sabotaging" (secretly-serving?) you.<br><br><span class="qa-q">For each action above, why do you do it? Or in the case of an inaction, why do you not do it? Keep asking yourself why?...why?...why?...until you eventually land on the real, possibly uncomfortable value of yours that this action or inaction is serving!</span></label>
+          <label>Now we're getting deeper to the core of what might be the cause of you feeling stuck or limited. As Carl Jung said, "Until you make the unconscious conscious, it will direct your life and you will call it fate." What we're doing now is making the unconscious conscious. We are shining a light on the drivers of the actions/inactions that have in a certain sense been "self-sabotaging" (secretly-serving?) you.<br><br><span class="qa-q">For each action below, why do you do it? Or in the case of an inaction, why do you not do it? Keep asking yourself why?...why?...why?...until you eventually land on the real, possibly uncomfortable value of yours that this action or inaction is serving!</span></label>
+          <div id="recap-acts-${key}-acts-reasons" data-label="How you are contributing to this" class="recap-block" hidden></div>
           <div id="acts-why-groups-${key}" style="margin-top:.9rem"></div>
         </div>
       </div>`,

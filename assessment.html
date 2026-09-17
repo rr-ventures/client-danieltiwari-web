@@ -230,11 +230,18 @@
   /* These were single-line <input>s; now <textarea>s (rows=1) that grow downward
      instead of scrolling sideways once an answer wraps past one line, so the start
      of a long answer doesn't disappear off-screen (a client's complaint, Daniel
-     2026-09-17). resize:none + overflow:hidden + line-height match the old input's
-     look at rest; JS (autoGrowTextarea) drives the height as they type. */
-  .cause-input,.desired-input{flex:1;background:#fff;border:1px solid var(--hair);color:var(--ink);padding:.4rem 1rem;font-family:var(--body);font-size:.92rem;font-weight:300;line-height:1.5;border-radius:2px;outline:none;transition:border-color .2s;resize:none;overflow:hidden;display:block}
-  .cause-input:focus,.desired-input:focus{border-color:var(--accent)}
-  .cause-input::placeholder,.desired-input::placeholder{color:var(--muted)}
+     2026-09-17). resize:none + overflow:hidden + min-height:0 + line-height match
+     the old input's compact look at rest; JS (autoGrowTextarea) drives the height
+     as they type. Selector is qualified with the "textarea" element (not just the
+     class) to match the specificity of ".deeper-field textarea" above and win on
+     source order — some of these boxes sit inside a .deeper-field (which rule would
+     otherwise force min-height:5.5rem + padding:.85rem 1.2rem onto them) and some
+     don't, so the fix can't rely on .deeper-field being present either way. Without
+     this these were rendering several lines tall even when empty wherever they did
+     have that ancestor (Daniel, 2026-09-17, caught on first live test). */
+  textarea.cause-input,textarea.desired-input{flex:1;background:#fff;border:1px solid var(--hair);color:var(--ink);padding:.4rem 1rem;font-family:var(--body);font-size:.92rem;font-weight:300;line-height:1.5;border-radius:2px;outline:none;transition:border-color .2s;resize:none;overflow:hidden;display:block;width:auto;min-height:0}
+  textarea.cause-input:focus,textarea.desired-input:focus{border-color:var(--accent)}
+  textarea.cause-input::placeholder,textarea.desired-input::placeholder{color:var(--muted)}
   .cause-remove,.desired-remove{background:none;border:none;color:var(--hair);cursor:pointer;font-size:1.1rem;padding:.2rem .3rem;transition:color .2s;line-height:1;flex-shrink:0}
   .cause-remove:hover,.desired-remove:hover{color:var(--ink)}
   .list-add-btn{background:none;border:none;font-family:var(--sc);font-size:.68rem;letter-spacing:.15em;color:var(--muted);cursor:pointer;padding:.1rem 0;transition:color .2s;display:block;text-align:left;align-self:flex-start}

@@ -1,6 +1,36 @@
 const { resultsStore, resultPagesStore } = require("../lib/blobs");
 const { viewerOf, isAuthor, passFromRequest } = require("../lib/result-access");
 
+// Same 10 areas assessment-submit.js scores against — kept local here too since
+// nothing in this codebase shares it across functions yet.
+const AREAS = [
+  ["career", "Career"],
+  ["relationships", "Relationships"],
+  ["friendships", "Friendships"],
+  ["family", "Family"],
+  ["health", "Health"],
+  ["attractiveness", "Attractiveness"],
+  ["money", "Money / Finances"],
+  ["lifestyle", "Lifestyle"],
+  ["environment", "Environment"],
+  ["fun_adventure", "Fun & Adventure"],
+];
+
+function numeric(value, fallback = 0) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+// The wheel chart on their page reads scores only — never the open-text answers
+// underneath a score, those stay out of this response same as everything else here.
+function wheelOf(answers) {
+  return AREAS.map(([key, label]) => ({
+    key,
+    label,
+    score: numeric((answers && answers[`fulfillment_${key}`]), 0),
+  }));
+}
+
 // GET /api/result-data?id=<id>
 // Returns the result page Daniel WROTE for this person — never a machine-written
 // one (Reece 2026-09-12: the automatic version is off; his words are the product).
@@ -48,6 +78,7 @@ exports.handler = async (event) => {
         draft: !ready,
         firstName: firstNameOf(record.answers),
         html: (page && page.html) || "",
+        wheel: wheelOf(record.answers),
         updatedAt: page && page.updatedAt,
         createdAt: record.createdAt,
       }),

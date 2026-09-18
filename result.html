@@ -46,6 +46,21 @@
   .written blockquote{margin:1.4rem 0;padding-left:1.2rem;border-left:2px solid var(--hair);color:var(--muted);font-style:italic}
   .written blockquote cite{display:block;margin-top:.5rem;font-style:normal;font-family:var(--sc);font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
   .draft-flag{background:#fff6e0;border:1px solid #e8d48a;border-radius:6px;padding:.7rem 1rem;font-size:.85rem;margin-bottom:1.6rem}
+  .life-wheel{margin:1.6rem 0 .1rem}
+  .life-wheel-subtitle{font-family:var(--display);font-weight:500;font-size:1.7rem;color:var(--ink);text-align:left;margin:2.4rem 0 .8rem}
+  .life-wheel-grid{display:grid;grid-template-columns:1fr minmax(300px,400px);gap:2.2rem;align-items:center}
+  .life-wheel-svg svg{width:100%;height:auto;display:block}
+  .life-wheel-list{display:grid;gap:.65rem}
+  .life-wheel-row{display:grid;grid-template-columns:7.5rem 1fr 2.2rem;align-items:center;gap:.7rem;font-size:.9rem}
+  .life-wheel-row .name{color:var(--muted)}
+  .life-wheel-row .track{position:relative;height:6px;background:var(--hair);border-radius:3px;overflow:hidden}
+  .life-wheel-row .track span{position:absolute;inset:0 auto 0 0;height:100%;background:#0E4182;border-radius:3px}
+  .life-wheel-row .val{color:var(--ink);font-variant-numeric:tabular-nums;text-align:right}
+  @media (max-width:640px){
+    .life-wheel-grid{grid-template-columns:1fr}
+    .life-wheel-svg{max-width:340px;margin:0 auto}
+    .life-wheel-row{grid-template-columns:5.6rem 1fr 2rem;font-size:.84rem}
+  }
 </style>
 </head>
 <body>
@@ -90,6 +105,7 @@
 
   <!-- Step 2b: his words. -->
   <div id="result-intro" class="result-intro" hidden></div>
+  <div id="life-wheel" class="life-wheel" hidden></div>
   <section id="assessment-result" class="written" hidden aria-live="polite"></section>
 </main>
 
@@ -161,12 +177,101 @@
     hide("result-loading"); hide("gate"); hide("not-ready");
     const intro = $("result-intro");
     intro.innerHTML = `
-      <span class="eyebrow">Your assessment</span>
-      <h1>${data.firstName ? `${data.firstName}, here is your assessment.` : "Here is your assessment."}</h1>`;
+      <h1>${data.firstName ? `${escapeHtml(data.firstName)}'s Assessment` : "Your Assessment"}</h1>
+      <p>Thank you for trusting me with this, and for taking the time to actually go through it. And thank you for wanting to live a fulfilling life for yourself in the first place.</p>`;
     show("result-intro");
+    renderWheel(data.wheel);
     const body = $("assessment-result");
     body.innerHTML = (data.draft ? '<div class="draft-flag">Draft. Only you can see this. It is not published yet.</div>' : "") + (data.html || "");
     show("assessment-result");
+  }
+
+  function escapeHtml(value) {
+    return String(value == null ? "" : value)
+      .replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
+  }
+
+  // The wheel: one wedge per life area, filled from the centre out to how
+  // fulfilled they rated it (1/5 = a sliver, 5/5 = the full wedge). The list
+  // beside it carries the exact numbers — the wheel is the shape, the list is
+  // the table-view twin so nothing depends on reading radius by eye alone.
+  function renderWheel(wheel) {
+    if (!Array.isArray(wheel) || !wheel.length) { hide("life-wheel"); return; }
+    const cx = 200, cy = 200, outerR = 130, gapDeg = 3, step = 360 / wheel.length;
+    const toRad = (d) => (d * Math.PI) / 180;
+    const point = (r, deg) => ({ x: cx + r * Math.sin(toRad(deg)), y: cy - r * Math.cos(toRad(deg)) });
+    const wedgePath = (r, startDeg, endDeg) => {
+      const p1 = point(r, startDeg), p2 = point(r, endDeg);
+      return `M ${cx} ${cy} L ${p1.x.toFixed(2)} ${p1.y.toFixed(2)} A ${r} ${r} 0 0 1 ${p2.x.toFixed(2)} ${p2.y.toFixed(2)} Z`;
+    };
+    const rings = [1, 2, 3, 4].map((k) =>
+      `<circle cx="${cx}" cy="${cy}" r="${((outerR * k) / 5).toFixed(2)}" fill="none" style="stroke:var(--hair)" stroke-width="1"/>`
+    ).join("");
+    const wedges = wheel.map((a, i) => {
+      const start = i * step + gapDeg / 2, end = (i + 1) * step - gapDeg / 2;
+      const scoreR = outerR * (Math.max(0, Math.min(5, Number(a.score) || 0)) / 5);
+      const track = `<path d="${wedgePath(outerR, start, end)}" style="fill:var(--hair)"/>`;
+      const fill = scoreR > 0.5 ? `<path d="${wedgePath(scoreR, start, end)}" fill="#0E4182"/>` : "";
+      return track + fill;
+    }).join("");
+    // Each label curves along its own slice's outer edge. On the bottom half
+    // of the wheel the underlying path runs in reverse (end -> start instead
+    // of start -> end) — without that flip, text there renders upside-down;
+    // reversing the path keeps the top of every letter facing the top of the
+    // screen no matter where around the wheel it sits.
+    // A label wider than its own slice's arc splits onto two lines instead of
+    // overflowing into the next slice — at a word gap if there is one, else
+    // hyphenated near the middle. ~10 characters is roughly what fits one
+    // line of this font size across one slice's share of the rim.
+    const splitLabel = (label) => {
+      if (label.length <= 15) return [label];
+      const gaps = [...label.matchAll(/\s+/g)].map((m) => m.index);
+      if (gaps.length) {
+        const mid = label.length / 2;
+        const best = gaps.reduce((a, b) => (Math.abs(b - mid) < Math.abs(a - mid) ? b : a));
+        return [label.slice(0, best).trim(), label.slice(best).trim()];
+      }
+      const cut = Math.ceil(label.length / 2);
+      return [`${label.slice(0, cut)}-`, label.slice(cut)];
+    };
+    const arcPath = (id, r, start, end, bottomHalf) => {
+      const [a1, a2] = bottomHalf ? [end, start] : [start, end];
+      const sweep = bottomHalf ? 0 : 1;
+      const p1 = point(r, a1), p2 = point(r, a2);
+      return `<path id="${id}" fill="none" d="M ${p1.x.toFixed(2)} ${p1.y.toFixed(2)} A ${r} ${r} 0 0 ${sweep} ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}"/>`;
+    };
+    const textPart = (id, text) =>
+      `<text font-family="-apple-system,Segoe UI,Roboto,Arial,sans-serif" font-size="10" style="fill:var(--muted)"><textPath href="#${id}" startOffset="50%" text-anchor="middle">${escapeHtml(text)}</textPath></text>`;
+    let labelDefs = "", labels = "";
+    wheel.forEach((a, i) => {
+      const start = i * step + gapDeg / 2, end = (i + 1) * step - gapDeg / 2;
+      const mid = toRad((start + end) / 2);
+      // Right at the left/right poles cos(mid) is close enough to zero that
+      // floating point noise alone can flip the sign — an epsilon keeps both
+      // poles deterministically on the "forward" side, which is the direction
+      // that reads correctly there.
+      const c = Math.cos(mid);
+      const bottomHalf = c < -1e-6;
+      const lines = splitLabel(a.label);
+      // The first word always goes on whichever concentric arc reads as the
+      // top line on screen — outer radius is higher on the top half of the
+      // wheel, but inner radius is higher on the bottom half, since "outward"
+      // points up above center and down below it.
+      const radii = lines.length === 1 ? [outerR + 13]
+        : bottomHalf ? [outerR + 12, outerR + 26] : [outerR + 26, outerR + 12];
+      lines.forEach((text, li) => {
+        const id = `wheel-label-${i}-${li}`;
+        labelDefs += arcPath(id, radii[li], start, end, bottomHalf);
+        labels += textPart(id, text);
+      });
+    });
+    const svg = `<svg viewBox="0 0 400 400" role="img" aria-label="Your fulfilment wheel. Exact scores are listed beside it.">${rings}${wedges}<defs>${labelDefs}</defs>${labels}</svg>`;
+    const list = wheel.map((a) => {
+      const pct = Math.max(0, Math.min(5, Number(a.score) || 0)) / 5 * 100;
+      return `<div class="life-wheel-row"><span class="name">${escapeHtml(a.label)}</span><span class="track"><span style="width:${pct}%"></span></span><span class="val">${escapeHtml(a.score)}/5</span></div>`;
+    }).join("");
+    $("life-wheel").innerHTML = `<p class="life-wheel-subtitle">A snapshot of your life</p><div class="life-wheel-grid"><div class="life-wheel-list">${list}</div><div class="life-wheel-svg">${svg}</div></div>`;
+    show("life-wheel");
   }
 
   function openGate(lede) {

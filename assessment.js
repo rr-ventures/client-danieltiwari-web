@@ -3999,13 +3999,51 @@ function captureDeeperFromDom() {
       if (controlListMatch) {
         const areaKey = controlListMatch[1];
         const q = 'Is there anything about the following that you cannot change and must therefore accept?';
-        const label = area ? `${area} — ${q}` : q;
         const yn = _deeperState['deeper_' + areaKey + '_control_yn'];
         if (yn === 'no') {
-          rows.push([label, 'No']);
+          rows.push([q, 'No']);
         } else {
           const items = distinctNonBlank(_deeperState['deeper_' + areaKey + '_control_items']);
-          if (items.length) rows.push([label, items.length > 1 ? items : items.join('; '), { clusterParent: 'control:' + areaKey }]);
+          if (items.length) rows.push([q, items.length > 1 ? items : items.join('; '), { clusterParent: 'control:' + areaKey }]);
+        }
+        return;
+      }
+
+      // Vision list + achievable ratings: the describe-your-5/5 question becomes
+      // the question, with each item's achievable rating folded straight into
+      // its bullet ("item — Achievable") rather than each one getting its own
+      // full sub-question block — one list, not N near-empty questions
+      // (Daniel, 2026-09-18). Bypasses the generic scan below on purpose, same
+      // reasoning as the other clustered fields.
+      const descMatch = sp.id.match(/^deeper-sub-(.+)-vision-describe$/);
+      if (descMatch) {
+        const areaKey = descMatch[1];
+        const vYn = _deeperState['deeper_' + areaKey + '_vision_yn'];
+        const vItems = (vYn === 'yes' || vYn === 'partially')
+          ? distinctNonBlank(_deeperState['deeper_' + areaKey + '_vision_items'])
+          : [];
+        if (vItems.length) {
+          const q = vYn === 'yes' ? 'Describe what your 5/5 would look like.' : 'Describe what you know about your 5/5 so far.';
+          const achievable = _deeperState['deeper_' + areaKey + '_vision_item_achievable'] || {};
+          const bullets = vItems.map((item, i) => {
+            const val = achievable[i];
+            const ans = val === 'yes' ? 'Achievable' : val === 'no' ? 'Literally impossible' : val === PREFER_NOT_VALUE ? PREFER_NOT_VALUE : '';
+            return ans ? `${item} — ${ans}` : item;
+          });
+          rows.push([q, bullets.length > 1 ? bullets : bullets.join('; ')]);
+        }
+        return;
+      }
+
+      // Revised vision: only exists if they chose to revise after part of the
+      // original was marked unachievable. A short, contextual label instead of
+      // the raw on-screen instruction text (Daniel, 2026-09-18).
+      const revisedMatch = sp.id.match(/^deeper-sub-(.+)-vision-revised$/);
+      if (revisedMatch) {
+        const areaKey = revisedMatch[1];
+        const items = distinctNonBlank(_deeperState['deeper_' + areaKey + '_vision_revised_items']);
+        if (items.length) {
+          rows.push(['Revised vision, after part of the original was marked unachievable', items.length > 1 ? items : items.join('; ')]);
         }
         return;
       }
@@ -4084,7 +4122,6 @@ function captureDeeperFromDom() {
 
       sp.querySelectorAll('.deeper-field').forEach((field) => {
         if (field.classList.contains('vision-actual-field')) return; // mandatory confirm checkbox — answer is always the same, not worth showing
-        if (field.classList.contains('vision-achievable-field')) return; // per-item achievable/not-achievable ratings — not needed in the email
         if (field.classList.contains('vision-achievable-check-field')) return; // whether it's still worth achieving / needs revising — not needed in the email
         if (field.classList.contains('confirm-check-field')) return; // mandatory confirm checkbox (e.g. control-attitude) — answer is always the same, not worth showing
         const lblEl = [...field.children].find((c) => c.tagName === 'LABEL') || field.querySelector('label');
@@ -4109,7 +4146,7 @@ function captureDeeperFromDom() {
           const combined = [...texts, ...checks];
           a = combined.length > 1 ? combined : combined.join('; ');
         }
-        if (a) rows.push(actsListMatch ? [area ? `${area} — ${q}` : q, a, { clusterParent: 'acts:' + actsListMatch[1] }] : [area ? `${area} — ${q}` : q, a]);
+        if (a) rows.push(actsListMatch ? [q, a, { clusterParent: 'acts:' + actsListMatch[1] }] : [q, a]);
       });
     });
   } catch (_e) { /* best effort */ }
@@ -4201,10 +4238,10 @@ function buildQaSummary(answers) {
   // ---- Life areas — ALL of them ----
   let areaRows = [];
   try {
-    areaRows = getWheelValues().map((a) => [a.label, `Fulfilment ${a.fulfillment}/5`]);
+    areaRows = getWheelValues().map((a) => [a.label, `${a.fulfillment}/5`]);
   } catch (_e) {
     (typeof AREAS !== 'undefined' ? AREAS : []).forEach(([key, label]) =>
-      areaRows.push([label, `Fulfilment ${answers['fulfillment_' + key] ?? '?'}/5`]));
+      areaRows.push([label, `${answers['fulfillment_' + key] ?? '?'}/5`]));
   }
   if (areaRows.length) { areaRows.forEach(([, a]) => mark(a)); groups.push({ title: 'Life areas — all 10, with ratings', rows: areaRows, subNumbered: true }); }
 
